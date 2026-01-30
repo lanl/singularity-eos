@@ -1,0 +1,304 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Customizing singularity-eos &mdash; Singularity-EOS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Mixed Cell Closures" href="using-closures.html" />
+    <link rel="prev" title="Equation of State Modifiers" href="modifiers.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Singularity-EOS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="philosophy.html">Design Philosophy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building.html">Building <cite>singularity-eos</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="integration.html">Integrating <cite>singularity-eos</cite> into a CMake project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-eos.html">The Equation of State API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">EOS Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modifiers.html">Equation of State Modifiers</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Customizing <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#custom-variant">Custom Variant</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#plugins">Plugins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#re-defining-the-default-variant">Re-defining the default variant</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="using-closures.html">Mixed Cell Closures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-kpt.html">Kinetic Phase Transition Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python.html">Python Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fortran.html">Fortran Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sphinx-doc.html">How to Use Sphinx for Writing Docs</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Singularity-EOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Customizing <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/src/customization.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="customizing-singularity-eos">
+<span id="customization"></span><h1>Customizing <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code><a class="headerlink" href="#customizing-singularity-eos" title="Link to this heading"></a></h1>
+<section id="custom-variant">
+<h2>Custom Variant<a class="headerlink" href="#custom-variant" title="Link to this heading"></a></h2>
+<p>If you would like to create your own custom variant with additional
+models (or a subset of models), you may do so by using the
+<code class="docutils literal notranslate"><span class="pre">eos_variant</span></code> class. For example,</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;singularity-eos/eos.hpp&gt;</span>
+<span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">singularity</span><span class="p">;</span>
+
+<span class="k">using</span><span class="w"> </span><span class="n">MyEOS_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eos_variant</span><span class="o">&lt;</span><span class="n">IdealGas</span><span class="p">,</span><span class="w"> </span><span class="n">Gruneisen</span><span class="o">&gt;</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>This will create a new type, <code class="docutils literal notranslate"><span class="pre">MyEOS_t</span></code> which contains only the
+<code class="docutils literal notranslate"><span class="pre">IdealGas</span></code> and <code class="docutils literal notranslate"><span class="pre">Gruneisen</span></code> classes. (All of these live under the
+<code class="docutils literal notranslate"><span class="pre">singularity</span></code> namespace.)</p>
+</section>
+<section id="plugins">
+<h2>Plugins<a class="headerlink" href="#plugins" title="Link to this heading"></a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Plugins are currently an experimental feature. Use at your own risk.</p>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> is also extensible via a plugins
+infrastructure. Via plugins, you may define additional equations of
+state and have them automatically built, tested, and installed by the
+library. You may even include them in the default <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code>
+variant type.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>We note that a downstream code built on <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> may
+have no need of a plugin infrastructure, as you can write your own
+EOS models and and choose your own <code class="docutils literal notranslate"><span class="pre">Variant</span></code> type for your code
+all within your context. Plugins are a way of adding arbitrary code
+to <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> that you may wish to share accross multiple
+downstream codes (for example).</p>
+</div>
+<p>The easiest way to explain how to add a plugin is probably by
+example. In the <code class="docutils literal notranslate"><span class="pre">example</span></code> directory of the <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code>
+source tree is a <code class="docutils literal notranslate"><span class="pre">plugin</span></code> subdirectory containing an example
+plugin. The example plugin contains an implementation of astrophysical
+dust. In this context dust is a pressure-less gas. We implement this
+with an equation of state that always returns zero pressure, but has a
+temperature and specific heat.</p>
+<p>The plugin directory contains a <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file (described
+more below) and a subdirectory named <code class="docutils literal notranslate"><span class="pre">dust</span></code>, which contains the
+source code. The name of the subdirectory will specify how it may be
+included in code referencing the plugin. For example, to include the
+dust equation of state explicitly, a user of this plugin would use the
+include statement</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;dust/dust.hpp&gt;</span>
+</pre></div>
+</div>
+<p>You may have as many subdirectories as you like, one for each “include
+path” you want to make available.</p>
+<p>The plugin directory also contains a <code class="docutils literal notranslate"><span class="pre">tst</span></code> directory, which contains
+an implementation file <code class="docutils literal notranslate"><span class="pre">tst/test_dust.cpp</span></code>, which contains several
+Catch2 tests. See the contribution guide for a longer discussion of
+the <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> testing infrastructure.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file registers the plugin with the build system
+via several custom <code class="docutils literal notranslate"><span class="pre">cmake</span></code> functions provided by
+<code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code>. To register a header file (and most files in
+<code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> should be header files) we use (for example)</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">register_headers</span><span class="p">(</span><span class="n">PLUGIN</span> <span class="n">dust</span> <span class="n">dust</span><span class="o">.</span><span class="n">hpp</span> <span class="n">dust_variant</span><span class="o">.</span><span class="n">hpp</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This specifies that the <code class="docutils literal notranslate"><span class="pre">dust</span></code> subdirectory contains two header
+files that the infrastructure should know about: <code class="docutils literal notranslate"><span class="pre">dust.hpp</span></code> and
+<code class="docutils literal notranslate"><span class="pre">dust_variant.hpp</span></code>. One such line is required for every additional
+top-level subdirectory of the plugin directory.</p>
+<p>The dust plugin has no source files, however, these may be registered with</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">register_srcs</span><span class="p">(</span><span class="n">src1</span> <span class="n">src2</span> <span class="n">src3</span> <span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>note that <code class="docutils literal notranslate"><span class="pre">register_srcs</span></code> does <strong>not</strong> take the <code class="docutils literal notranslate"><span class="pre">PLUGIN</span> <span class="pre">path</span></code>
+syntax. Simply use the relative path from the <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file to the source
+file.</p>
+<p>To register the test, we call</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">register_tests</span><span class="p">(</span><span class="n">tst</span><span class="o">/</span><span class="n">test_dust</span><span class="o">.</span><span class="n">cpp</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>As with source files, do not use the <code class="docutils literal notranslate"><span class="pre">PLUGIN</span> <span class="pre">PATH</span></code> syntax. Just use
+the relative path to the <code class="docutils literal notranslate"><span class="pre">cpp</span></code> file containing the tests.</p>
+<p>Finally, call</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">export_plugin</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>to ensure the registrations described above are pushed to “top level”
+scope of the build system.</p>
+<p>To use a plugin so-defined, you must tell the build system that it
+exists at configure time. To do so, call</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span><span class="n">DSINGULARITY_PLUGINS</span><span class="o">=</span><span class="s2">&quot;/path/to/my/plugin1;/path/to/my/plugin2&quot;</span>
+</pre></div>
+</div>
+<p>where the above defines a semicolon-separated list of paths to plugin
+directories. For example, to register the dust plugin:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span><span class="n">DSINGULARITY_PLUGINS</span><span class="o">=/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">singularity</span><span class="o">-</span><span class="n">eos</span><span class="o">/</span><span class="n">example</span><span class="o">/</span><span class="n">plugin</span>
+</pre></div>
+</div>
+</section>
+<section id="re-defining-the-default-variant">
+<h2>Re-defining the default variant<a class="headerlink" href="#re-defining-the-default-variant" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">dust</span></code> plugin also contains a file <code class="docutils literal notranslate"><span class="pre">dust/dust_variant.hpp</span></code>,
+which contains a definition of the <code class="docutils literal notranslate"><span class="pre">EOS</span></code> type (i.e., a variant) but
+with the dust equation of state included. To tell the infrastructure
+to use <strong>this</strong> variant rather than the default, specify the “include
+path” at configure time. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span><span class="n">DSINGULARITY_VARIANT</span><span class="o">=</span><span class="s2">&quot;dust/dust_variant.hpp&quot;</span>
+</pre></div>
+</div>
+<p>There may only be <em>one</em> definition for the <code class="docutils literal notranslate"><span class="pre">SINGULARITY_VARIANT</span></code> at
+a time, so only specify for one of your plugins, if you have multiple.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modifiers.html" class="btn btn-neutral float-left" title="Equation of State Modifiers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="using-closures.html" class="btn btn-neutral float-right" title="Mixed Cell Closures" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2023. Triad National Security.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Other Versions</span>
+    v: jmm/hip-inline
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Tags</dt>
+      <dd><a href="../../../goldfiles-1.6.2/index.html">goldfiles-1.6.2</a></dd>
+      <dd><a href="../../../goldfiles-1.8.0/index.html">goldfiles-1.8.0</a></dd>
+      <dd><a href="../../../release-1.10.0/src/customization.html">release-1.10.0</a></dd>
+      <dd><a href="../../../release-1.11.0/src/customization.html">release-1.11.0</a></dd>
+      <dd><a href="../../../release-1.6.0/index.html">release-1.6.0</a></dd>
+      <dd><a href="../../../release-1.6.1/index.html">release-1.6.1</a></dd>
+      <dd><a href="../../../release-1.6.2/index.html">release-1.6.2</a></dd>
+      <dd><a href="../../../release-1.7.0/index.html">release-1.7.0</a></dd>
+      <dd><a href="../../../release-1.8.0/index.html">release-1.8.0</a></dd>
+      <dd><a href="../../../release-1.9.0/src/customization.html">release-1.9.0</a></dd>
+      <dd><a href="../../../release-1.9.1/src/customization.html">release-1.9.1</a></dd>
+      <dd><a href="../../../release-1.9.2/src/customization.html">release-1.9.2</a></dd>
+    </dl>
+    <dl>
+      <dt>Branches</dt>
+      <dd><a href="../../../added_benchmark/src/customization.html">added_benchmark</a></dd>
+      <dd><a href="../../../aemattssing/src/customization.html">aemattssing</a></dd>
+      <dd><a href="../../../bgclayton_simple_macaw/src/customization.html">bgclayton_simple_macaw</a></dd>
+      <dd><a href="../../../blb/python_entropy/index.html">blb/python_entropy</a></dd>
+      <dd><a href="../../../brryan/isothermal/index.html">brryan/isothermal</a></dd>
+      <dd><a href="../../../cmake_fixup_static_linking/index.html">cmake_fixup_static_linking</a></dd>
+      <dd><a href="../../../dempsey/mass_frac/src/customization.html">dempsey/mass_frac</a></dd>
+      <dd><a href="../../../dholladay00/cleanup_variadic/index.html">dholladay00/cleanup_variadic</a></dd>
+      <dd><a href="../../../dholladay00/eap_debug/index.html">dholladay00/eap_debug</a></dd>
+      <dd><a href="../../../dholladay00/faster_ses2spin/index.html">dholladay00/faster_ses2spin</a></dd>
+      <dd><a href="../../../dholladay00/pt_solver/src/customization.html">dholladay00/pt_solver</a></dd>
+      <dd><a href="../../../dholladay00/xl_cuda_eospac/index.html">dholladay00/xl_cuda_eospac</a></dd>
+      <dd><a href="../../../docs_spack_devworkflow/src/customization.html">docs_spack_devworkflow</a></dd>
+      <dd><a href="../../../gopsub/crest/index.html">gopsub/crest</a></dd>
+      <dd><a href="../../../jdolence/default_shift/index.html">jdolence/default_shift</a></dd>
+      <dd><a href="../../../jdolence/new_pte/index.html">jdolence/new_pte</a></dd>
+      <dd><a href="../../../jhp/EAP_integration/index.html">jhp/EAP_integration</a></dd>
+      <dd><a href="../../../jhp/two_eos/src/customization.html">jhp/two_eos</a></dd>
+      <dd><a href="../../../jhp/update_copyright/index.html">jhp/update_copyright</a></dd>
+      <dd><a href="../../../jhp/using_cleanup/index.html">jhp/using_cleanup</a></dd>
+      <dd><a href="customization.html">jmm/hip-inline</a></dd>
+      <dd><a href="../../ports-testing/src/customization.html">jmm/ports-testing</a></dd>
+      <dd><a href="../../rdc/src/customization.html">jmm/rdc</a></dd>
+      <dd><a href="../../sesame2spiner-library/index.html">jmm/sesame2spiner-library</a></dd>
+      <dd><a href="../../sometimes-capture-by-reference/src/customization.html">jmm/sometimes-capture-by-reference</a></dd>
+      <dd><a href="../../spiner-introspection/src/customization.html">jmm/spiner-introspection</a></dd>
+      <dd><a href="../../svd/src/customization.html">jmm/svd</a></dd>
+      <dd><a href="../../template-lambda-sfinae-edition/index.html">jmm/template-lambda-sfinae-edition</a></dd>
+      <dd><a href="../../test-pte-mem-tweak/src/customization.html">jmm/test-pte-mem-tweak</a></dd>
+      <dd><a href="../../test-stellarcollapse-fast-logs/src/customization.html">jmm/test-stellarcollapse-fast-logs</a></dd>
+      <dd><a href="../../units-fixes/src/customization.html">jmm/units-fixes</a></dd>
+      <dd><a href="../../update-clang-format/src/customization.html">jmm/update-clang-format</a></dd>
+      <dd><a href="../../update-kokkos-linalg/src/customization.html">jmm/update-kokkos-linalg</a></dd>
+      <dd><a href="../../update-spackage-1.9.1/src/customization.html">jmm/update-spackage-1.9.1</a></dd>
+      <dd><a href="../../../lroberts36/tilted-maxwell/index.html">lroberts36/tilted-maxwell</a></dd>
+      <dd><a href="../../../main/src/customization.html">main</a></dd>
+      <dd><a href="../../../mauneyc/fix/CIcmake/index.html">mauneyc/fix/CIcmake</a></dd>
+      <dd><a href="../../../mauneyc/fix/checkOtherHDF5ParallelFlag/index.html">mauneyc/fix/checkOtherHDF5ParallelFlag</a></dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

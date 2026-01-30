@@ -1,0 +1,909 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fortran Interface &mdash; Singularity-EOS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Contributing" href="contributing.html" />
+    <link rel="prev" title="Python Bindings" href="python.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Singularity-EOS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="philosophy.html">Design Philosophy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building.html">Building <cite>singularity-eos</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="integration.html">Integrating <cite>singularity-eos</cite> into a CMake project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-eos.html">The Equation of State API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">EOS Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modifiers.html">Equation of State Modifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="customization.html">Customizing <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-closures.html">Mixed Cell Closures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-kpt.html">Kinetic Phase Transition Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python.html">Python Bindings</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Fortran Interface</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#modules">Modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-types">Data Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#initialization-functions">Initialization Functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#ideal-gas">Ideal Gas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gruneisen">Gruneisen</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#jones-wilkins-lee">Jones-Wilkins-Lee</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#davis-products">Davis Products</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#davis-reactants">Davis Reactants</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#noble-abel">Noble-Abel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#stiff-gas">Stiff Gas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sap-polynomial">SAP Polynomial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helmholtz">Helmholtz</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spiner">Spiner</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eospac">EOSPAC</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#eos-evaluation-functions">EOS Evaluation Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#finalization-function">Finalization Function</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sphinx-doc.html">How to Use Sphinx for Writing Docs</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Singularity-EOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Fortran Interface</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/src/fortran.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="fortran-interface">
+<span id="fortran"></span><h1>Fortran Interface<a class="headerlink" href="#fortran-interface" title="Link to this heading"></a></h1>
+<p>Singularity-EOS provides a Fortran interface which can be enabled with the CMake
+<code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_FORTRAN</span></code> option. The interface provides Fortran bindings to the C++ EOS
+types and gives access to both initialization functions and EOS evaluation functions.</p>
+<p>The Fortran interface is defined in <code class="docutils literal notranslate"><span class="pre">singularity-eos/eos/singularity_eos.f90</span></code>.</p>
+<section id="modules">
+<h2>Modules<a class="headerlink" href="#modules" title="Link to this heading"></a></h2>
+<p>The Fortran interface consists of two modules:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">singularity_eos_types</span></code> - Defines the data types used by the interface</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">singularity_eos</span></code> - Contains the functions for initializing and using EOS models</p></li>
+</ol>
+</section>
+<section id="data-types">
+<h2>Data Types<a class="headerlink" href="#data-types" title="Link to this heading"></a></h2>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="k">type</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_eos_ary_t</span>
+<span class="w">  </span><span class="k">type</span><span class="p">(</span><span class="kt">c_ptr</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">C_NULL_PTR</span>
+<span class="k">end type </span><span class="n">sg_eos_ary_t</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">sg_eos_ary_t</span></code> type is a wrapper around a C pointer to the underlying EOS object.</p>
+</section>
+<section id="initialization-functions">
+<h2>Initialization Functions<a class="headerlink" href="#initialization-functions" title="Link to this heading"></a></h2>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="kt">integer </span><span class="k">function </span><span class="n">init_sg_eos_f</span><span class="p">(</span><span class="n">nmat</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">)</span><span class="w"> </span><span class="k">result</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">nmat</span>
+<span class="w">  </span><span class="k">type</span><span class="p">(</span><span class="n">sg_eos_ary_t</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">  </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="k">end function </span><span class="n">init_sg_eos_f</span>
+</pre></div>
+</div>
+<p>Initializes the EOS array with the specified number of materials.</p>
+<p>The following functions are available for initializing EOS models:</p>
+<section id="ideal-gas">
+<h3>Ideal Gas<a class="headerlink" href="#ideal-gas" title="Link to this heading"></a></h3>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="kt">integer </span><span class="k">function </span><span class="n">init_sg_IdealGas_f</span><span class="p">(</span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                                   </span><span class="n">sg_mods_enabled</span><span class="p">,</span><span class="w"> </span><span class="n">sg_mods_values</span><span class="p">)</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="k">result</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">matindex</span>
+<span class="w">  </span><span class="k">type</span><span class="p">(</span><span class="n">sg_eos_ary_t</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">   </span><span class="kd">::</span><span class="w"> </span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_enabled</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w">        </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_values</span>
+<span class="k">end function </span><span class="n">init_sg_IdealGas_f</span>
+</pre></div>
+</div>
+<p>Initializes an Ideal Gas EOS model at the specified material index.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">matindex</span></code>: Material index (1-based in Fortran)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eos</span></code>: EOS array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gm1</span></code>: Gamma minus 1 (γ-1)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Cv</span></code>: Specific heat at constant volume</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_enabled</span></code>: Optional array for enabling modifiers</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_values</span></code>: Optional array for modifier values</p></li>
+</ul>
+</section>
+<section id="gruneisen">
+<h3>Gruneisen<a class="headerlink" href="#gruneisen" title="Link to this heading"></a></h3>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="kt">integer </span><span class="k">function </span><span class="n">init_sg_Gruneisen_f</span><span class="p">(</span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">C0</span><span class="p">,</span><span class="w"> </span><span class="n">s1</span><span class="p">,</span><span class="w"> </span><span class="n">s2</span><span class="p">,</span><span class="w"> </span><span class="n">s3</span><span class="p">,</span><span class="w"> </span><span class="n">G0</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                                    </span><span class="n">rho0</span><span class="p">,</span><span class="w"> </span><span class="n">T0</span><span class="p">,</span><span class="w"> </span><span class="n">P0</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span><span class="p">,</span><span class="w"> </span><span class="n">sg_mods_enabled</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                                    </span><span class="n">sg_mods_values</span><span class="p">)</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="k">result</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">matindex</span>
+<span class="w">  </span><span class="k">type</span><span class="p">(</span><span class="n">sg_eos_ary_t</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">   </span><span class="kd">::</span><span class="w"> </span><span class="n">C0</span><span class="p">,</span><span class="w"> </span><span class="n">s1</span><span class="p">,</span><span class="w"> </span><span class="n">s2</span><span class="p">,</span><span class="w"> </span><span class="n">s3</span><span class="p">,</span><span class="w"> </span><span class="n">G0</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">rho0</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">   </span><span class="kd">::</span><span class="w"> </span><span class="n">T0</span><span class="p">,</span><span class="w"> </span><span class="n">P0</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_enabled</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w">        </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_values</span>
+<span class="k">end function </span><span class="n">init_sg_Gruneisen_f</span>
+</pre></div>
+</div>
+<p>Initializes a Gruneisen EOS model at the specified material index.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">matindex</span></code>: Material index (1-based in Fortran)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eos</span></code>: EOS array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">C0</span></code>: Bulk sound speed</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">s1,</span> <span class="pre">s2,</span> <span class="pre">s3</span></code>: Coefficients for the shock Hugoniot</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">G0</span></code>: Gruneisen parameter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">b</span></code>: Gruneisen parameter correction</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rho0</span></code>: Reference density</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">T0</span></code>: Reference temperature</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">P0</span></code>: Reference pressure</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Cv</span></code>: Specific heat at constant volume</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_enabled</span></code>: Optional array for enabling modifiers</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_values</span></code>: Optional array for modifier values</p></li>
+</ul>
+</section>
+<section id="jones-wilkins-lee">
+<h3>Jones-Wilkins-Lee<a class="headerlink" href="#jones-wilkins-lee" title="Link to this heading"></a></h3>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="kt">integer </span><span class="k">function </span><span class="n">init_sg_JWL_f</span><span class="p">(</span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="n">R1</span><span class="p">,</span><span class="w"> </span><span class="n">R2</span><span class="p">,</span><span class="w"> </span><span class="n">w</span><span class="p">,</span><span class="w"> </span><span class="n">rho0</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                              </span><span class="n">sg_mods_enabled</span><span class="p">,</span><span class="w"> </span><span class="n">sg_mods_values</span><span class="p">)</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="k">result</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">matindex</span>
+<span class="w">  </span><span class="k">type</span><span class="p">(</span><span class="n">sg_eos_ary_t</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">   </span><span class="kd">::</span><span class="w"> </span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="n">R1</span><span class="p">,</span><span class="w"> </span><span class="n">R2</span><span class="p">,</span><span class="w"> </span><span class="n">w</span><span class="p">,</span><span class="w"> </span><span class="n">rho0</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_enabled</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w">        </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_values</span>
+<span class="k">end function </span><span class="n">init_sg_JWL_f</span>
+</pre></div>
+</div>
+<p>Initializes a JWL (Jones-Wilkins-Lee) EOS model at the specified material index.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">matindex</span></code>: Material index (1-based in Fortran)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eos</span></code>: EOS array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">A,</span> <span class="pre">B</span></code>: JWL parameters</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">R1,</span> <span class="pre">R2</span></code>: JWL parameters</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">w</span></code>: JWL parameter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rho0</span></code>: Reference density</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Cv</span></code>: Specific heat at constant volume</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_enabled</span></code>: Optional array for enabling modifiers</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_values</span></code>: Optional array for modifier values</p></li>
+</ul>
+</section>
+<section id="davis-products">
+<h3>Davis Products<a class="headerlink" href="#davis-products" title="Link to this heading"></a></h3>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="kt">integer </span><span class="k">function </span><span class="n">init_sg_DavisProducts_f</span><span class="p">(</span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">vc</span><span class="p">,</span><span class="w"> </span><span class="n">pc</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                                        </span><span class="n">Cv</span><span class="p">,</span><span class="w"> </span><span class="n">sg_mods_enabled</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                                        </span><span class="n">sg_mods_values</span><span class="p">)</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="k">result</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">matindex</span>
+<span class="w">  </span><span class="k">type</span><span class="p">(</span><span class="n">sg_eos_ary_t</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">   </span><span class="kd">::</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">vc</span><span class="p">,</span><span class="w"> </span><span class="n">pc</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_enabled</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w">        </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_values</span>
+<span class="k">end function </span><span class="n">init_sg_DavisProducts_f</span>
+</pre></div>
+</div>
+<p>Initializes a Davis Products EOS model at the specified material index.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">matindex</span></code>: Material index (1-based in Fortran)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eos</span></code>: EOS array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">a,</span> <span class="pre">b,</span> <span class="pre">k,</span> <span class="pre">n</span></code>: Davis Products parameters</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">vc</span></code>: Critical specific volume</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pc</span></code>: Critical pressure</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Cv</span></code>: Specific heat at constant volume</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_enabled</span></code>: Optional array for enabling modifiers</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_values</span></code>: Optional array for modifier values</p></li>
+</ul>
+</section>
+<section id="davis-reactants">
+<h3>Davis Reactants<a class="headerlink" href="#davis-reactants" title="Link to this heading"></a></h3>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="kt">integer </span><span class="k">function </span><span class="n">init_sg_DavisReactants_f</span><span class="p">(</span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">rho0</span><span class="p">,</span><span class="w"> </span><span class="n">e0</span><span class="p">,</span><span class="w"> </span><span class="n">P0</span><span class="p">,</span><span class="w"> </span><span class="n">T0</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                                         </span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="n">C</span><span class="p">,</span><span class="w"> </span><span class="n">G0</span><span class="p">,</span><span class="w"> </span><span class="n">Z</span><span class="p">,</span><span class="w"> </span><span class="n">alpha</span><span class="p">,</span><span class="w"> </span><span class="n">Cv0</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                                         </span><span class="n">sg_mods_enabled</span><span class="p">,</span><span class="w"> </span><span class="n">sg_mods_values</span><span class="p">)</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="k">result</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">matindex</span>
+<span class="w">  </span><span class="k">type</span><span class="p">(</span><span class="n">sg_eos_ary_t</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">   </span><span class="kd">::</span><span class="w"> </span><span class="n">rho0</span><span class="p">,</span><span class="w"> </span><span class="n">e0</span><span class="p">,</span><span class="w"> </span><span class="n">P0</span><span class="p">,</span><span class="w"> </span><span class="n">T0</span><span class="p">,</span><span class="w"> </span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="n">C</span><span class="p">,</span><span class="w"> </span><span class="n">G0</span><span class="p">,</span><span class="w"> </span><span class="n">Z</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">   </span><span class="kd">::</span><span class="w"> </span><span class="n">alpha</span><span class="p">,</span><span class="w"> </span><span class="n">Cv0</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_enabled</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w">        </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_values</span>
+<span class="k">end function </span><span class="n">init_sg_DavisReactants_f</span>
+</pre></div>
+</div>
+<p>Initializes a Davis Reactants EOS model at the specified material index.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">matindex</span></code>: Material index (1-based in Fortran)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eos</span></code>: EOS array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rho0</span></code>: Reference density</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">e0</span></code>: Reference specific internal energy</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">P0</span></code>: Reference pressure</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">T0</span></code>: Reference temperature</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">A,</span> <span class="pre">B,</span> <span class="pre">C</span></code>: Davis Reactants parameters</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">G0</span></code>: Gruneisen parameter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Z</span></code>: Davis Reactants parameter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">alpha</span></code>: Davis Reactants parameter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Cv0</span></code>: Specific heat at constant volume</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_enabled</span></code>: Optional array for enabling modifiers</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_values</span></code>: Optional array for modifier values</p></li>
+</ul>
+</section>
+<section id="noble-abel">
+<h3>Noble-Abel<a class="headerlink" href="#noble-abel" title="Link to this heading"></a></h3>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="kt">integer </span><span class="k">function </span><span class="n">init_sg_NobleAbel_f</span><span class="p">(</span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                                   </span><span class="n">bb</span><span class="p">,</span><span class="w"> </span><span class="n">qq</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                                   </span><span class="n">sg_mods_enabled</span><span class="p">,</span><span class="w"> </span><span class="n">sg_mods_values</span><span class="p">)</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="k">result</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">matindex</span>
+<span class="w">  </span><span class="k">type</span><span class="p">(</span><span class="n">sg_eos_ary_t</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">   </span><span class="kd">::</span><span class="w"> </span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span><span class="p">,</span><span class="w"> </span><span class="n">bb</span><span class="p">,</span><span class="w"> </span><span class="n">qq</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_enabled</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w">        </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_values</span>
+<span class="k">end function </span><span class="n">init_sg_NobleAbel_f</span>
+</pre></div>
+</div>
+<p>Initializes a Noble-Abel EOS model at the specified material index.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">matindex</span></code>: Material index (1-based in Fortran)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eos</span></code>: EOS array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gm1</span></code>: Gamma minus 1 (γ-1)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Cv</span></code>: Specific heat at constant volume</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bb</span></code>: Covolume parameter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">qq</span></code>: Energy shift parameter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_enabled</span></code>: Optional array for enabling modifiers</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_values</span></code>: Optional array for modifier values</p></li>
+</ul>
+</section>
+<section id="stiff-gas">
+<h3>Stiff Gas<a class="headerlink" href="#stiff-gas" title="Link to this heading"></a></h3>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="kt">integer </span><span class="k">function </span><span class="n">init_sg_StiffGas_f</span><span class="p">(</span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                                   </span><span class="n">Pinf</span><span class="p">,</span><span class="w"> </span><span class="n">qq</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                                   </span><span class="n">sg_mods_enabled</span><span class="p">,</span><span class="w"> </span><span class="n">sg_mods_values</span><span class="p">)</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="k">result</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">matindex</span>
+<span class="w">  </span><span class="k">type</span><span class="p">(</span><span class="n">sg_eos_ary_t</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">   </span><span class="kd">::</span><span class="w"> </span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span><span class="p">,</span><span class="w"> </span><span class="n">Pinf</span><span class="p">,</span><span class="w"> </span><span class="n">qq</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_enabled</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w">        </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_values</span>
+<span class="k">end function </span><span class="n">init_sg_StiffGas_f</span>
+</pre></div>
+</div>
+<p>Initializes a Stiff Gas EOS model at the specified material index.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">matindex</span></code>: Material index (1-based in Fortran)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eos</span></code>: EOS array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gm1</span></code>: Gamma minus 1 (γ-1)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Cv</span></code>: Specific heat at constant volume</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Pinf</span></code>: Pressure shift parameter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">qq</span></code>: Energy shift parameter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_enabled</span></code>: Optional array for enabling modifiers</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_values</span></code>: Optional array for modifier values</p></li>
+</ul>
+</section>
+<section id="sap-polynomial">
+<h3>SAP Polynomial<a class="headerlink" href="#sap-polynomial" title="Link to this heading"></a></h3>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="kt">integer </span><span class="k">function </span><span class="n">init_sg_SAP_Polynomial_f</span><span class="p">(</span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">rho0</span><span class="p">,</span><span class="w"> </span><span class="n">a0</span><span class="p">,</span><span class="w"> </span><span class="n">a1</span><span class="p">,</span><span class="w"> </span><span class="n">a2c</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                                         </span><span class="n">a2e</span><span class="p">,</span><span class="w"> </span><span class="n">a3</span><span class="p">,</span><span class="w"> </span><span class="n">b0</span><span class="p">,</span><span class="w"> </span><span class="n">b1</span><span class="p">,</span><span class="w"> </span><span class="n">b2c</span><span class="p">,</span><span class="w"> </span><span class="n">b2e</span><span class="p">,</span><span class="w"> </span><span class="n">b3</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                                         </span><span class="n">sg_mods_enabled</span><span class="p">,</span><span class="w"> </span><span class="n">sg_mods_values</span><span class="p">)</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="k">result</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">matindex</span>
+<span class="w">  </span><span class="k">type</span><span class="p">(</span><span class="n">sg_eos_ary_t</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">   </span><span class="kd">::</span><span class="w"> </span><span class="n">rho0</span><span class="p">,</span><span class="w"> </span><span class="n">a0</span><span class="p">,</span><span class="w"> </span><span class="n">a1</span><span class="p">,</span><span class="w"> </span><span class="n">a2c</span><span class="p">,</span><span class="w"> </span><span class="n">a2e</span><span class="p">,</span><span class="w"> </span><span class="n">a3</span><span class="p">,&amp;</span>
+<span class="w">           </span><span class="n">b0</span><span class="p">,</span><span class="w"> </span><span class="n">b1</span><span class="p">,</span><span class="w"> </span><span class="n">b2c</span><span class="p">,</span><span class="w"> </span><span class="n">b2e</span><span class="p">,</span><span class="w"> </span><span class="n">b3</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_enabled</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w">        </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_values</span>
+<span class="k">end function </span><span class="n">init_sg_SAP_Polynomial_f</span>
+</pre></div>
+</div>
+<p>Initializes a SAP (Separate Analytic Polynomials) Polynomial EOS model at the specified material index.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">matindex</span></code>: Material index (1-based in Fortran)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eos</span></code>: EOS array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rho0</span></code>: Reference density</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">a0,</span> <span class="pre">a1,</span> <span class="pre">a2c,</span> <span class="pre">a2e,</span> <span class="pre">a3</span></code>: Compression polynomial coefficients</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">b0,</span> <span class="pre">b1,</span> <span class="pre">b2c,</span> <span class="pre">b2e,</span> <span class="pre">b3</span></code>: Expansion polynomial coefficients</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_enabled</span></code>: Optional array for enabling modifiers</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_values</span></code>: Optional array for modifier values</p></li>
+</ul>
+<p>Additional initialization functions are available when Singularity-EOS is built with specific options:</p>
+</section>
+<section id="helmholtz">
+<h3>Helmholtz<a class="headerlink" href="#helmholtz" title="Link to this heading"></a></h3>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Only available when Singularity-eos is built with <code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_HELMHOLTZ</span></code> and <code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_SPINER_WITH_HDF5</span></code>.</p>
+</div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="kt">integer </span><span class="k">function </span><span class="n">init_sg_Helmholtz_f</span><span class="p">(</span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">filename</span><span class="p">,</span><span class="w"> </span><span class="n">rad</span><span class="p">,</span><span class="w"> </span><span class="n">gas</span><span class="p">,</span><span class="w"> </span><span class="n">coul</span><span class="p">,</span><span class="w"> </span><span class="n">ion</span><span class="p">,</span><span class="w"> </span><span class="n">ele</span><span class="p">,</span><span class="w"> </span><span class="n">verbose</span><span class="p">,</span><span class="w"> </span><span class="n">sg_mods_enabled</span><span class="p">,</span><span class="w"> </span><span class="n">sg_mods_values</span><span class="p">)</span><span class="w"> </span><span class="k">result</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">matindex</span>
+<span class="w">  </span><span class="k">type</span><span class="p">(</span><span class="n">sg_eos_ary_t</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="w">  </span><span class="kt">character</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_char</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(</span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">filename</span>
+<span class="w">  </span><span class="kt">logical</span><span class="p">(</span><span class="kt">c_bool</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">rad</span><span class="p">,</span><span class="w"> </span><span class="n">gas</span><span class="p">,</span><span class="w"> </span><span class="n">coul</span><span class="p">,</span><span class="w"> </span><span class="n">ion</span><span class="p">,</span><span class="w"> </span><span class="n">ele</span><span class="p">,</span><span class="w"> </span><span class="n">verbose</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_enabled</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w">        </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_values</span>
+<span class="k">end function </span><span class="n">init_sg_Helmholtz_f</span>
+</pre></div>
+</div>
+<p>Initializes a Helmholtz equation of state model at the specified material index.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">matindex</span></code>: Material index (1-based in Fortran)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eos</span></code>: EOS array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">filename</span></code>: Path to the Helmholtz table file (typically “helm_table.dat”)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rad</span></code>: Boolean to enable/disable radiation term</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gas</span></code>: Boolean to enable/disable gas term</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">coul</span></code>: Boolean to enable/disable Coulomb corrections</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ion</span></code>: Boolean to indicate if gas is ionized</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ele</span></code>: Boolean to indicate if electrons are degenerate</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">verbose</span></code>: Boolean to enable verbose output</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_enabled</span></code>: Optional array for enabling modifiers</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_values</span></code>: Optional array for modifier values</p></li>
+</ul>
+</section>
+<section id="spiner">
+<h3>Spiner<a class="headerlink" href="#spiner" title="Link to this heading"></a></h3>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Only available when Singularity-eos is built with <code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_SPINER_WITH_HDF5</span></code>.</p>
+</div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="kt">integer </span><span class="k">function </span><span class="n">init_sg_SpinerDependsRhoT_f</span><span class="p">(</span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">filename</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">sg_mods_enabled</span><span class="p">,</span><span class="w"> </span><span class="n">sg_mods_values</span><span class="p">)</span><span class="w"> </span><span class="k">result</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">matindex</span>
+<span class="w">  </span><span class="k">type</span><span class="p">(</span><span class="n">sg_eos_ary_t</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="w">  </span><span class="kt">character</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_char</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(</span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">filename</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">id</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_enabled</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w">        </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_values</span>
+<span class="k">end function </span><span class="n">init_sg_SpinerDependsRhoT_f</span>
+</pre></div>
+</div>
+<p>Initializes a tabulated EOS model that depends on density (ρ) and temperature (T) using the Spiner interpolation library.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">matindex</span></code>: Material index (1-based in Fortran)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eos</span></code>: EOS array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">filename</span></code>: Path to the HDF5 file containing the tabulated data</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">id</span></code>: Material ID in the HDF5 file</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_enabled</span></code>: Optional array for enabling modifiers</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_values</span></code>: Optional array for modifier values</p></li>
+</ul>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="kt">integer </span><span class="k">function </span><span class="n">init_sg_SpinerDependsRhoSie_f</span><span class="p">(</span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">filename</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">sg_mods_enabled</span><span class="p">,</span><span class="w"> </span><span class="n">sg_mods_values</span><span class="p">)</span><span class="w"> </span><span class="k">result</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">matindex</span>
+<span class="w">  </span><span class="k">type</span><span class="p">(</span><span class="n">sg_eos_ary_t</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="w">  </span><span class="kt">character</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_char</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(</span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">filename</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">id</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_enabled</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w">        </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_values</span>
+<span class="k">end function </span><span class="n">init_sg_SpinerDependsRhoSie_f</span>
+</pre></div>
+</div>
+<p>Initializes a tabulated EOS model that depends on density (ρ) and specific internal energy (sie) using the Spiner interpolation library.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">matindex</span></code>: Material index (1-based in Fortran)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eos</span></code>: EOS array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">filename</span></code>: Path to the HDF5 file containing the tabulated data</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">id</span></code>: Material ID in the HDF5 file</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_enabled</span></code>: Optional array for enabling modifiers</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_values</span></code>: Optional array for modifier values</p></li>
+</ul>
+</section>
+<section id="eospac">
+<h3>EOSPAC<a class="headerlink" href="#eospac" title="Link to this heading"></a></h3>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Only available when Singularity-eos is built with <code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_EOSPAC</span></code>.</p>
+</div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="kt">integer </span><span class="k">function </span><span class="n">init_sg_eospac_f</span><span class="p">(</span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">eospac_opts_values</span><span class="p">,</span><span class="w"> </span><span class="n">sg_mods_enabled</span><span class="p">,</span><span class="w"> </span><span class="n">sg_mods_values</span><span class="p">)</span><span class="w"> </span><span class="k">result</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">matindex</span>
+<span class="w">  </span><span class="k">type</span><span class="p">(</span><span class="n">sg_eos_ary_t</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">id</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">eospac_opts_values</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_enabled</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w">        </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_values</span>
+<span class="k">end function </span><span class="n">init_sg_eospac_f</span>
+</pre></div>
+</div>
+<p>Initializes an EOSPAC equation of state model at the specified material index.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">matindex</span></code>: Material index (1-based in Fortran)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eos</span></code>: EOS array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">id</span></code>: SESAME material ID</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eospac_opts_values</span></code>: Array of EOSPAC-specific options:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">eospac_opts_values(1)</span></code>: invert_at_setup (0/1)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eospac_opts_values(2)</span></code>: insert_data value</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eospac_opts_values(3)</span></code>: monotonicity option</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eospac_opts_values(4)</span></code>: apply_smoothing (0/1)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eospac_opts_values(5)</span></code>: apply_splitting option</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eospac_opts_values(6)</span></code>: linear_interp (0/1)</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_enabled</span></code>: Optional array for enabling modifiers</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sg_mods_values</span></code>: Optional array for modifier values</p></li>
+</ul>
+</section>
+</section>
+<section id="eos-evaluation-functions">
+<h2>EOS Evaluation Functions<a class="headerlink" href="#eos-evaluation-functions" title="Link to this heading"></a></h2>
+<p>The following functions are available for evaluating EOS models:</p>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="kt">integer </span><span class="k">function </span><span class="n">get_sg_EntropyFromDensityInternalEnergy_f</span><span class="p">(</span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">rhos</span><span class="p">,</span><span class="w"> </span><span class="n">sies</span><span class="p">,</span><span class="w"> </span><span class="n">entropies</span><span class="p">,</span><span class="w"> </span><span class="nb">len</span><span class="p">,</span><span class="w"> </span><span class="n">stride</span><span class="p">,</span><span class="w"> </span><span class="n">lambda_data</span><span class="p">)</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="k">result</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="nb">len</span>
+<span class="nb">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:,:,:),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">),</span><span class="w"> </span><span class="k">target</span><span class="kd">::</span><span class="w"> </span><span class="n">rhos</span><span class="p">,</span><span class="w"> </span><span class="n">sies</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:,:,:),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">),</span><span class="w"> </span><span class="k">target</span><span class="kd">::</span><span class="w"> </span><span class="n">entropies</span>
+<span class="w">  </span><span class="k">type</span><span class="p">(</span><span class="n">sg_eos_ary_t</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">),</span><span class="w"> </span><span class="k">optional</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">stride</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:,:,:,:),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="kd">::</span><span class="n">lambda_data</span>
+<span class="k">end function </span><span class="n">get_sg_EntropyFromDensityInternalEnergy_f</span>
+</pre></div>
+</div>
+<p>Calculates entropy from density and specific internal energy.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">matindex</span></code>: Material index (1-based in Fortran)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eos</span></code>: EOS array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rhos</span></code>: Input density array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sies</span></code>: Input specific internal energy array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">entropies</span></code>: Output entropy array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">len</span></code>: Number of elements to process</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stride</span></code>: Optional stride for processing elements</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lambda_data</span></code>: Optional array for additional parameters</p></li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Some EOS models do not support Entropy. For more details see <a class="reference internal" href="models.html#implemented-eos-models"><span class="std std-ref">models</span></a></p>
+</div>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="kt">integer </span><span class="k">function </span><span class="n">get_sg_PressureFromDensityInternalEnergy_f</span><span class="p">(</span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">rhos</span><span class="p">,</span><span class="w"> </span><span class="n">sies</span><span class="p">,</span><span class="w"> </span><span class="n">pressures</span><span class="p">,</span><span class="w"> </span><span class="nb">len</span><span class="p">,</span><span class="w"> </span><span class="n">stride</span><span class="p">,</span><span class="w"> </span><span class="n">lambda_data</span><span class="p">)</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="k">result</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="nb">len</span>
+<span class="nb">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:,:,:),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">),</span><span class="w"> </span><span class="k">target</span><span class="kd">::</span><span class="w"> </span><span class="n">rhos</span><span class="p">,</span><span class="w"> </span><span class="n">sies</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:,:,:),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">),</span><span class="w"> </span><span class="k">target</span><span class="kd">::</span><span class="w"> </span><span class="n">pressures</span>
+<span class="w">  </span><span class="k">type</span><span class="p">(</span><span class="n">sg_eos_ary_t</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">),</span><span class="w"> </span><span class="k">optional</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">stride</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:,:,:,:),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="kd">::</span><span class="n">lambda_data</span>
+<span class="k">end function </span><span class="n">get_sg_PressureFromDensityInternalEnergy_f</span>
+</pre></div>
+</div>
+<p>Calculates pressure from density and specific internal energy.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">matindex</span></code>: Material index (1-based in Fortran)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eos</span></code>: EOS array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rhos</span></code>: Input density array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sies</span></code>: Input specific internal energy array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pressures</span></code>: Output pressure array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">len</span></code>: Number of elements to process</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stride</span></code>: Optional stride for processing elements</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lambda_data</span></code>: Optional array for additional parameters</p></li>
+</ul>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="kt">integer </span><span class="k">function </span><span class="n">get_sg_MinInternalEnergyFromDensity_f</span><span class="p">(</span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">rhos</span><span class="p">,</span><span class="w"> </span><span class="n">sies</span><span class="p">,</span><span class="w"> </span><span class="nb">len</span><span class="p">)</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="k">result</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="nb">len</span>
+<span class="nb">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:,:,:),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">),</span><span class="w"> </span><span class="k">target</span><span class="kd">::</span><span class="w"> </span><span class="n">rhos</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:,:,:),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">),</span><span class="w"> </span><span class="k">target</span><span class="kd">::</span><span class="w"> </span><span class="n">sies</span>
+<span class="w">  </span><span class="k">type</span><span class="p">(</span><span class="n">sg_eos_ary_t</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="k">end function </span><span class="n">get_sg_MinInternalEnergyFromDensity_f</span>
+</pre></div>
+</div>
+<p>Calculates minimum internal energy from density.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">matindex</span></code>: Material index (1-based in Fortran)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eos</span></code>: EOS array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rhos</span></code>: Input density array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sies</span></code>: Output minimum specific internal energy array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">len</span></code>: Number of elements to process</p></li>
+</ul>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="kt">integer </span><span class="k">function </span><span class="n">get_sg_BulkModulusFromDensityInternalEnergy_f</span><span class="p">(</span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">rhos</span><span class="p">,</span><span class="w"> </span><span class="n">sies</span><span class="p">,</span><span class="w"> </span><span class="n">bmods</span><span class="p">,</span><span class="w"> </span><span class="nb">len</span><span class="p">,</span><span class="w"> </span><span class="n">stride</span><span class="p">,</span><span class="w"> </span><span class="n">lambda_data</span><span class="p">)</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="k">result</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="nb">len</span>
+<span class="nb">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:,:,:),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">),</span><span class="w"> </span><span class="k">target</span><span class="kd">::</span><span class="w"> </span><span class="n">rhos</span><span class="p">,</span><span class="w"> </span><span class="n">sies</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:,:,:),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">),</span><span class="w"> </span><span class="k">target</span><span class="kd">::</span><span class="w"> </span><span class="n">bmods</span>
+<span class="w">  </span><span class="k">type</span><span class="p">(</span><span class="n">sg_eos_ary_t</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">),</span><span class="w"> </span><span class="k">optional</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">stride</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:,:,:,:),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="kd">::</span><span class="n">lambda_data</span>
+<span class="k">end function </span><span class="n">get_sg_BulkModulusFromDensityInternalEnergy_f</span>
+</pre></div>
+</div>
+<p>Calculates bulk modulus from density and specific internal energy.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">matindex</span></code>: Material index (1-based in Fortran)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eos</span></code>: EOS array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rhos</span></code>: Input density array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sies</span></code>: Input specific internal energy array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bmods</span></code>: Output bulk modulus array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">len</span></code>: Number of elements to process</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stride</span></code>: Optional stride for processing elements</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lambda_data</span></code>: Optional array for additional parameters</p></li>
+</ul>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="kt">integer </span><span class="k">function </span><span class="n">get_sg_eos_f</span><span class="p">(</span><span class="n">nmat</span><span class="p">,</span><span class="w"> </span><span class="n">ncell</span><span class="p">,</span><span class="w"> </span><span class="n">cell_dim</span><span class="p">,&amp;</span>
+<span class="w">                             </span><span class="n">option</span><span class="p">,&amp;</span>
+<span class="w">                             </span><span class="n">eos_offsets</span><span class="p">,&amp;</span>
+<span class="w">                             </span><span class="n">eos</span><span class="p">,&amp;</span>
+<span class="w">                             </span><span class="n">offsets</span><span class="p">,&amp;</span>
+<span class="w">                             </span><span class="n">press</span><span class="p">,</span><span class="w"> </span><span class="n">pmax</span><span class="p">,</span><span class="w"> </span><span class="n">vol</span><span class="p">,</span><span class="w"> </span><span class="n">spvol</span><span class="p">,</span><span class="w"> </span><span class="n">sie</span><span class="p">,</span><span class="w"> </span><span class="n">temp</span><span class="p">,</span><span class="w"> </span><span class="n">bmod</span><span class="p">,&amp;</span>
+<span class="w">                             </span><span class="n">dpde</span><span class="p">,</span><span class="w"> </span><span class="n">cv</span><span class="p">,&amp;</span>
+<span class="w">                             </span><span class="n">frac_mass</span><span class="p">,</span><span class="w"> </span><span class="n">frac_vol</span><span class="p">,</span><span class="w"> </span><span class="n">frac_sie</span><span class="p">,&amp;</span>
+<span class="w">                             </span><span class="n">frac_bmod</span><span class="p">,</span><span class="w"> </span><span class="n">frac_dpde</span><span class="p">,</span><span class="w"> </span><span class="n">frac_cv</span><span class="p">,&amp;</span>
+<span class="w">                             </span><span class="n">mass_frac_cutoff</span><span class="p">)</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="k">result</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">nmat</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">ncell</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">cell_dim</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">option</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">eos_offsets</span>
+<span class="w">  </span><span class="k">type</span><span class="p">(</span><span class="n">sg_eos_ary_t</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">  </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">offsets</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w">   </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">press</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w">   </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">pmax</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w">   </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">vol</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w">   </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">spvol</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w">   </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">sie</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w">   </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">temp</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w">   </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">bmod</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w">   </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">dpde</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w">   </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">cv</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:,:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">frac_mass</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:,:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">frac_vol</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:,:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">frac_sie</span>
+<span class="w">  </span><span class="c">! optionals</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:,:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">frac_bmod</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:,:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">frac_dpde</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:,:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">frac_cv</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w">                         </span><span class="k">optional</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">mass_frac_cutoff</span>
+<span class="k">end function </span><span class="n">get_sg_eos_f</span>
+</pre></div>
+</div>
+<p>Main EOS evaluation function for mixed cells. This function is used to calculate various thermodynamic quantities for multiple materials in mixed cells.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">nmat</span></code>: Number of materials</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ncell</span></code>: Number of cells</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cell_dim</span></code>: Cell dimension</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">option</span></code>: Option flag for calculation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eos_offsets</span></code>: Array of EOS offsets</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eos</span></code>: EOS array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">offsets</span></code>: Array of offsets</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">press</span></code>: Pressure array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pmax</span></code>: Maximum pressure array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">vol</span></code>: Volume array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">spvol</span></code>: Specific volume array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sie</span></code>: Specific internal energy array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">temp</span></code>: Temperature array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bmod</span></code>: Bulk modulus array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dpde</span></code>: Derivative of pressure with respect to energy array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cv</span></code>: Specific heat array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">frac_mass</span></code>: Mass fraction array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">frac_vol</span></code>: Volume fraction array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">frac_sie</span></code>: Specific internal energy fraction array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">frac_bmod</span></code>: Optional bulk modulus fraction array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">frac_dpde</span></code>: Optional derivative of pressure with respect to energy fraction array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">frac_cv</span></code>: Optional specific heat fraction array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mass_frac_cutoff</span></code>: Optional mass fraction cutoff</p></li>
+</ul>
+</section>
+<section id="finalization-function">
+<h2>Finalization Function<a class="headerlink" href="#finalization-function" title="Link to this heading"></a></h2>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="kt">integer </span><span class="k">function </span><span class="n">finalize_sg_eos_f</span><span class="p">(</span><span class="n">nmat</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">)</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="k">result</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">nmat</span>
+<span class="w">  </span><span class="k">type</span><span class="p">(</span><span class="n">sg_eos_ary_t</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="k">end function </span><span class="n">finalize_sg_eos_f</span>
+</pre></div>
+</div>
+<p>Finalizes the EOS array, freeing any allocated resources.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">nmat</span></code>: Number of materials</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eos</span></code>: EOS array</p></li>
+</ul>
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h2>
+<p>Here’s a simple example of using the Fortran interface to initialize and use an Ideal Gas EOS:</p>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="k">program </span><span class="n">example_sg_fortran_interface</span>
+<span class="c">! modules</span>
+<span class="k">use </span><span class="n">singularity_eos_types</span>
+<span class="k">use </span><span class="n">singularity_eos</span>
+<span class="c">! no implicit vars</span>
+<span class="k">implicit none</span>
+<span class="c">! variable declaration</span>
+<span class="kt">integer</span><span class="w">                                   </span><span class="kd">::</span><span class="w"> </span><span class="n">nmat</span><span class="p">,</span><span class="w"> </span><span class="n">res</span><span class="p">,</span><span class="w"> </span><span class="n">mat</span>
+<span class="k">type</span><span class="p">(</span><span class="n">sg_eos_ary_t</span><span class="p">)</span><span class="w">                        </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="w">            </span><span class="kd">::</span><span class="w"> </span><span class="n">rhos</span><span class="p">,</span><span class="w"> </span><span class="n">sies</span><span class="p">,</span><span class="w"> </span><span class="n">pressures</span>
+
+<span class="c">! set test parameters</span>
+<span class="n">nmat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+
+<span class="c">! allocate and initialize eos&#39;s</span>
+<span class="n">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">init_sg_eos_f</span><span class="p">(</span><span class="n">nmat</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">)</span>
+<span class="n">mat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+
+<span class="c">! Initialize an ideal gas EOS</span>
+<span class="n">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">init_sg_IdealGas_f</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="mf">0.4d0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0d7</span><span class="p">)</span>
+
+<span class="c">! Set input values</span>
+<span class="n">rhos</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0d0</span><span class="w">  </span><span class="c">! density in g/cm^3</span>
+<span class="n">sies</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0d6</span><span class="w">  </span><span class="c">! specific internal energy in erg/g</span>
+
+<span class="c">! Calculate pressure</span>
+<span class="n">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">get_sg_PressureFromDensityInternalEnergy_f</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">rhos</span><span class="p">,</span><span class="w"> </span><span class="n">sies</span><span class="p">,</span><span class="w"> </span><span class="n">pressures</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c">! Print result</span>
+<span class="k">print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Pressure = &quot;</span><span class="p">,</span><span class="w"> </span><span class="n">pressures</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span><span class="w"> </span><span class="s2">&quot; dyne/cm^2&quot;</span>
+
+<span class="c">! cleanup</span>
+<span class="n">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">finalize_sg_eos_f</span><span class="p">(</span><span class="n">nmat</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">)</span>
+
+<span class="k">end program </span><span class="n">example_sg_fortran_interface</span>
+</pre></div>
+</div>
+<p>This example demonstrates using tabulated EOS models with a density-temperature grid:</p>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="k">program </span><span class="n">tabulated_eos_example</span>
+<span class="w">    </span><span class="k">use </span><span class="n">singularity_eos_types</span>
+<span class="w">    </span><span class="k">use </span><span class="n">singularity_eos</span>
+<span class="w">    </span><span class="k">implicit none</span>
+
+<span class="k">    </span><span class="kt">integer</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">nmat</span><span class="p">,</span><span class="w"> </span><span class="n">res</span><span class="p">,</span><span class="w"> </span><span class="n">mat</span><span class="p">,</span><span class="w"> </span><span class="n">ncell</span><span class="p">,</span><span class="w"> </span><span class="n">cell_dim</span><span class="p">,</span><span class="w"> </span><span class="n">option</span>
+<span class="w">    </span><span class="k">type</span><span class="p">(</span><span class="n">sg_eos_ary_t</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="w">    </span><span class="kt">integer</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">matid</span>
+<span class="w">    </span><span class="kt">integer</span><span class="p">,</span><span class="w"> </span><span class="k">allocatable</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">eos_offsets</span><span class="p">(:),</span><span class="w"> </span><span class="n">offsets</span><span class="p">(:)</span>
+<span class="w">    </span><span class="kt">real</span><span class="p">(</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">allocatable</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">press</span><span class="p">(:),</span><span class="w"> </span><span class="n">pmax</span><span class="p">(:),</span><span class="w"> </span><span class="n">vol</span><span class="p">(:),</span><span class="w"> </span><span class="n">spvol</span><span class="p">(:),</span><span class="w"> </span><span class="n">sie</span><span class="p">(:),</span><span class="w"> </span><span class="n">temp</span><span class="p">(:)</span>
+<span class="w">    </span><span class="kt">real</span><span class="p">(</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">allocatable</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">bmod</span><span class="p">(:),</span><span class="w"> </span><span class="n">dpde</span><span class="p">(:),</span><span class="w"> </span><span class="n">cv</span><span class="p">(:)</span>
+<span class="w">    </span><span class="kt">real</span><span class="p">(</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">allocatable</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">density</span><span class="p">(:)</span>
+<span class="w">    </span><span class="kt">real</span><span class="p">(</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">allocatable</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">frac_mass</span><span class="p">(:,:),</span><span class="w"> </span><span class="n">frac_vol</span><span class="p">(:,:),</span><span class="w"> </span><span class="n">frac_sie</span><span class="p">(:,:)</span>
+
+<span class="w">    </span><span class="c">! Grid parameters</span>
+<span class="w">    </span><span class="kt">integer</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">ndens</span><span class="p">,</span><span class="w"> </span><span class="n">ntemp</span><span class="p">,</span><span class="w"> </span><span class="n">idx</span>
+<span class="w">    </span><span class="kt">real</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">dens_min</span><span class="p">,</span><span class="w"> </span><span class="n">dens_max</span><span class="p">,</span><span class="w"> </span><span class="n">temp_min</span><span class="p">,</span><span class="w"> </span><span class="n">temp_max</span>
+<span class="w">    </span><span class="kt">real</span><span class="p">(</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">eospac_opts</span>
+<span class="w">    </span><span class="kt">integer</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span>
+
+<span class="w">    </span><span class="c">! Set up parameters</span>
+<span class="w">    </span><span class="n">nmat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="n">ndens</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span>
+<span class="w">    </span><span class="n">ntemp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span>
+<span class="w">    </span><span class="n">ncell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ndens</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">ntemp</span>
+
+<span class="w">    </span><span class="c">! Define grid ranges</span>
+<span class="w">    </span><span class="n">dens_min</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.1</span><span class="w">    </span><span class="c">! g/cm^3</span>
+<span class="w">    </span><span class="n">dens_max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="mf">0.0</span><span class="w">   </span><span class="c">! g/cm^3</span>
+<span class="w">    </span><span class="n">temp_min</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.1</span><span class="w">    </span><span class="c">! eV (note: temperature in eV, not Kelvin)</span>
+<span class="w">    </span><span class="n">temp_max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span><span class="mf">0.0</span><span class="w">  </span><span class="c">! eV</span>
+
+<span class="w">    </span><span class="n">cell_dim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ncell</span>
+<span class="w">    </span><span class="n">option</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="mi">3</span><span class="w">  </span><span class="c">! Option flag: -3 means density and temperature as inputs</span>
+
+<span class="w">    </span><span class="c">! Allocate arrays</span>
+<span class="w">    </span><span class="k">allocate</span><span class="p">(</span><span class="n">eos_offsets</span><span class="p">(</span><span class="n">nmat</span><span class="p">),</span><span class="w"> </span><span class="n">offsets</span><span class="p">(</span><span class="n">ncell</span><span class="p">),</span><span class="w"> </span><span class="n">density</span><span class="p">(</span><span class="n">ncell</span><span class="p">))</span>
+<span class="w">    </span><span class="k">allocate</span><span class="p">(</span><span class="n">press</span><span class="p">(</span><span class="n">ncell</span><span class="p">),</span><span class="w"> </span><span class="n">pmax</span><span class="p">(</span><span class="n">ncell</span><span class="p">),</span><span class="w"> </span><span class="n">vol</span><span class="p">(</span><span class="n">ncell</span><span class="p">),</span><span class="w"> </span><span class="n">spvol</span><span class="p">(</span><span class="n">ncell</span><span class="p">))</span>
+<span class="w">    </span><span class="k">allocate</span><span class="p">(</span><span class="n">sie</span><span class="p">(</span><span class="n">ncell</span><span class="p">),</span><span class="w"> </span><span class="n">temp</span><span class="p">(</span><span class="n">ncell</span><span class="p">),</span><span class="w"> </span><span class="n">bmod</span><span class="p">(</span><span class="n">ncell</span><span class="p">),</span><span class="w"> </span><span class="n">dpde</span><span class="p">(</span><span class="n">ncell</span><span class="p">),</span><span class="w"> </span><span class="n">cv</span><span class="p">(</span><span class="n">ncell</span><span class="p">))</span>
+<span class="w">    </span><span class="k">allocate</span><span class="p">(</span><span class="n">frac_mass</span><span class="p">(</span><span class="n">ncell</span><span class="p">,</span><span class="w"> </span><span class="n">nmat</span><span class="p">),</span><span class="w"> </span><span class="n">frac_vol</span><span class="p">(</span><span class="n">ncell</span><span class="p">,</span><span class="w"> </span><span class="n">nmat</span><span class="p">),</span><span class="w"> </span><span class="n">frac_sie</span><span class="p">(</span><span class="n">ncell</span><span class="p">,</span><span class="w"> </span><span class="n">nmat</span><span class="p">))</span>
+
+<span class="w">    </span><span class="c">! Initialize arrays</span>
+<span class="w">    </span><span class="n">eos_offsets</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="n">offsets</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">ncell</span><span class="p">)]</span>
+<span class="w">    </span><span class="n">press</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0d0</span>
+<span class="w">    </span><span class="n">pmax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0d0</span>
+<span class="w">    </span><span class="n">vol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0d0</span>
+<span class="w">    </span><span class="n">spvol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0d0</span>
+<span class="w">    </span><span class="n">sie</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0d0</span>
+<span class="w">    </span><span class="n">bmod</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0d0</span>
+<span class="w">    </span><span class="n">dpde</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0d0</span>
+<span class="w">    </span><span class="n">cv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0d0</span>
+<span class="w">    </span><span class="n">frac_mass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0d0</span>
+<span class="w">    </span><span class="n">frac_vol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0d0</span>
+<span class="w">    </span><span class="n">frac_sie</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0d0</span>
+
+<span class="w">    </span><span class="c">! Set up density-temperature grid</span>
+<span class="w">    </span><span class="n">idx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">    </span><span class="k">do </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">ndens</span>
+<span class="w">        </span><span class="k">do </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">ntemp</span>
+<span class="w">            </span><span class="n">idx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">idx</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">            </span><span class="c">! Logarithmic spacing</span>
+<span class="w">            </span><span class="n">density</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dens_min</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">dens_max</span><span class="o">/</span><span class="n">dens_min</span><span class="p">)</span><span class="o">**</span><span class="p">((</span><span class="n">i</span><span class="o">-</span><span class="mf">1.0d0</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">ndens</span><span class="o">-</span><span class="mf">1.0d0</span><span class="p">))</span>
+<span class="w">            </span><span class="n">spvol</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0d0</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">density</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+<span class="w">            </span><span class="n">temp</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">temp_min</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">temp_max</span><span class="o">/</span><span class="n">temp_min</span><span class="p">)</span><span class="o">**</span><span class="p">((</span><span class="n">j</span><span class="o">-</span><span class="mf">1.0d0</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">ntemp</span><span class="o">-</span><span class="mf">1.0d0</span><span class="p">))</span>
+<span class="w">        </span><span class="k">end do</span>
+<span class="k">    end do</span>
+
+<span class="w">    </span><span class="c">! Initialize EOS</span>
+<span class="w">    </span><span class="n">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">init_sg_eos_f</span><span class="p">(</span><span class="n">nmat</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">)</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">res</span><span class="w"> </span><span class="o">/=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">then</span>
+<span class="k">        print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Error initializing EOS:&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">res</span>
+<span class="w">        </span><span class="k">stop</span>
+<span class="k">    end if</span>
+
+<span class="w">    </span><span class="c">! Set EOSPAC options (all zeros for default behavior)</span>
+<span class="w">    </span><span class="n">eospac_opts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0d0</span>
+
+<span class="w">    </span><span class="c">! Initialize material with EOSPAC</span>
+<span class="w">    </span><span class="n">mat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="n">matid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">9999</span><span class="w">  </span><span class="c">! Example material ID</span>
+<span class="w">    </span><span class="n">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">init_sg_eospac_f</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">matid</span><span class="p">,</span><span class="w"> </span><span class="n">eospac_opts</span><span class="p">)</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">res</span><span class="w"> </span><span class="o">/=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">then</span>
+<span class="k">        print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Error initializing EOSPAC:&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">res</span>
+<span class="w">        </span><span class="k">stop</span>
+<span class="k">    end if</span>
+
+<span class="w">    </span><span class="c">! Calculate EOS properties</span>
+<span class="w">    </span><span class="c">! Note: Temperature is in eV for get_sg_eos_f</span>
+<span class="w">    </span><span class="n">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">get_sg_eos_f</span><span class="p">(</span><span class="n">nmat</span><span class="p">,</span><span class="w"> </span><span class="n">ncell</span><span class="p">,</span><span class="w"> </span><span class="n">cell_dim</span><span class="p">,</span><span class="w"> </span><span class="n">option</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                      </span><span class="n">eos_offsets</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">offsets</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                      </span><span class="n">press</span><span class="p">,</span><span class="w"> </span><span class="n">pmax</span><span class="p">,</span><span class="w"> </span><span class="n">vol</span><span class="p">,</span><span class="w"> </span><span class="n">spvol</span><span class="p">,</span><span class="w"> </span><span class="n">sie</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                      </span><span class="n">temp</span><span class="p">,</span><span class="w"> </span><span class="n">bmod</span><span class="p">,</span><span class="w"> </span><span class="n">dpde</span><span class="p">,</span><span class="w"> </span><span class="n">cv</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                      </span><span class="n">frac_mass</span><span class="p">,</span><span class="w"> </span><span class="n">frac_vol</span><span class="p">,</span><span class="w"> </span><span class="n">frac_sie</span><span class="p">)</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">res</span><span class="w"> </span><span class="o">/=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">then</span>
+<span class="k">        print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Error in get_sg_eos_f:&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">res</span>
+<span class="w">        </span><span class="k">stop</span>
+<span class="k">    end if</span>
+
+<span class="w">    </span><span class="c">! Print some results</span>
+<span class="w">    </span><span class="k">print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Results for first grid point:&quot;</span>
+<span class="w">    </span><span class="k">print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Density = &quot;</span><span class="p">,</span><span class="w"> </span><span class="n">density</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span><span class="w"> </span><span class="s2">&quot; g/cm^3&quot;</span>
+<span class="w">    </span><span class="k">print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Temperature = &quot;</span><span class="p">,</span><span class="w"> </span><span class="n">temp</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span><span class="w"> </span><span class="s2">&quot; eV&quot;</span>
+<span class="w">    </span><span class="k">print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Pressure = &quot;</span><span class="p">,</span><span class="w"> </span><span class="n">press</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span><span class="w"> </span><span class="s2">&quot; dyne/cm^2&quot;</span>
+<span class="w">    </span><span class="k">print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;SIE = &quot;</span><span class="p">,</span><span class="w"> </span><span class="n">sie</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span><span class="w"> </span><span class="s2">&quot; erg/g&quot;</span>
+
+<span class="w">    </span><span class="c">! Clean up</span>
+<span class="w">    </span><span class="k">deallocate</span><span class="p">(</span><span class="n">eos_offsets</span><span class="p">,</span><span class="w"> </span><span class="n">offsets</span><span class="p">,</span><span class="w"> </span><span class="n">press</span><span class="p">,</span><span class="w"> </span><span class="n">pmax</span><span class="p">,</span><span class="w"> </span><span class="n">vol</span><span class="p">,</span><span class="w"> </span><span class="n">spvol</span><span class="p">)</span>
+<span class="w">    </span><span class="k">deallocate</span><span class="p">(</span><span class="n">sie</span><span class="p">,</span><span class="w"> </span><span class="n">temp</span><span class="p">,</span><span class="w"> </span><span class="n">bmod</span><span class="p">,</span><span class="w"> </span><span class="n">dpde</span><span class="p">,</span><span class="w"> </span><span class="n">cv</span><span class="p">,</span><span class="w"> </span><span class="n">density</span><span class="p">)</span>
+<span class="w">    </span><span class="k">deallocate</span><span class="p">(</span><span class="n">frac_mass</span><span class="p">,</span><span class="w"> </span><span class="n">frac_vol</span><span class="p">,</span><span class="w"> </span><span class="n">frac_sie</span><span class="p">)</span>
+
+<span class="w">    </span><span class="n">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">finalize_sg_eos_f</span><span class="p">(</span><span class="n">nmat</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">)</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">res</span><span class="w"> </span><span class="o">/=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">then</span>
+<span class="k">        print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Error finalizing EOS:&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">res</span>
+<span class="w">        </span><span class="k">stop</span>
+<span class="k">    end if</span>
+
+<span class="k">end program </span><span class="n">tabulated_eos_example</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When using the <code class="docutils literal notranslate"><span class="pre">get_sg_eos_f</span></code> function, temperature inputs should be provided in electron volts (eV), not Kelvin. This is different from some other functions in the interface that expect temperature in Kelvin.</p>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="python.html" class="btn btn-neutral float-left" title="Python Bindings" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="contributing.html" class="btn btn-neutral float-right" title="Contributing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2023. Triad National Security.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Other Versions</span>
+    v: release-1.10.0
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Tags</dt>
+      <dd><a href="../../goldfiles-1.6.2/index.html">goldfiles-1.6.2</a></dd>
+      <dd><a href="../../goldfiles-1.8.0/index.html">goldfiles-1.8.0</a></dd>
+      <dd><a href="fortran.html">release-1.10.0</a></dd>
+      <dd><a href="../../release-1.11.0/src/fortran.html">release-1.11.0</a></dd>
+      <dd><a href="../../release-1.6.0/index.html">release-1.6.0</a></dd>
+      <dd><a href="../../release-1.6.1/index.html">release-1.6.1</a></dd>
+      <dd><a href="../../release-1.6.2/index.html">release-1.6.2</a></dd>
+      <dd><a href="../../release-1.7.0/index.html">release-1.7.0</a></dd>
+      <dd><a href="../../release-1.8.0/index.html">release-1.8.0</a></dd>
+      <dd><a href="../../release-1.9.0/index.html">release-1.9.0</a></dd>
+      <dd><a href="../../release-1.9.1/index.html">release-1.9.1</a></dd>
+      <dd><a href="../../release-1.9.2/index.html">release-1.9.2</a></dd>
+    </dl>
+    <dl>
+      <dt>Branches</dt>
+      <dd><a href="../../added_benchmark/src/fortran.html">added_benchmark</a></dd>
+      <dd><a href="../../aemattssing/src/fortran.html">aemattssing</a></dd>
+      <dd><a href="../../bgclayton_simple_macaw/src/fortran.html">bgclayton_simple_macaw</a></dd>
+      <dd><a href="../../blb/python_entropy/index.html">blb/python_entropy</a></dd>
+      <dd><a href="../../brryan/isothermal/index.html">brryan/isothermal</a></dd>
+      <dd><a href="../../cmake_fixup_static_linking/index.html">cmake_fixup_static_linking</a></dd>
+      <dd><a href="../../dempsey/mass_frac/src/fortran.html">dempsey/mass_frac</a></dd>
+      <dd><a href="../../dholladay00/cleanup_variadic/index.html">dholladay00/cleanup_variadic</a></dd>
+      <dd><a href="../../dholladay00/eap_debug/index.html">dholladay00/eap_debug</a></dd>
+      <dd><a href="../../dholladay00/faster_ses2spin/index.html">dholladay00/faster_ses2spin</a></dd>
+      <dd><a href="../../dholladay00/pt_solver/index.html">dholladay00/pt_solver</a></dd>
+      <dd><a href="../../dholladay00/xl_cuda_eospac/index.html">dholladay00/xl_cuda_eospac</a></dd>
+      <dd><a href="../../docs_spack_devworkflow/src/fortran.html">docs_spack_devworkflow</a></dd>
+      <dd><a href="../../gopsub/crest/index.html">gopsub/crest</a></dd>
+      <dd><a href="../../jdolence/default_shift/index.html">jdolence/default_shift</a></dd>
+      <dd><a href="../../jdolence/new_pte/index.html">jdolence/new_pte</a></dd>
+      <dd><a href="../../jhp/EAP_integration/index.html">jhp/EAP_integration</a></dd>
+      <dd><a href="../../jhp/two_eos/src/fortran.html">jhp/two_eos</a></dd>
+      <dd><a href="../../jhp/update_copyright/index.html">jhp/update_copyright</a></dd>
+      <dd><a href="../../jhp/using_cleanup/index.html">jhp/using_cleanup</a></dd>
+      <dd><a href="../../jmm/hip-inline/src/fortran.html">jmm/hip-inline</a></dd>
+      <dd><a href="../../jmm/ports-testing/src/fortran.html">jmm/ports-testing</a></dd>
+      <dd><a href="../../jmm/rdc/index.html">jmm/rdc</a></dd>
+      <dd><a href="../../jmm/sesame2spiner-library/index.html">jmm/sesame2spiner-library</a></dd>
+      <dd><a href="../../jmm/sometimes-capture-by-reference/src/fortran.html">jmm/sometimes-capture-by-reference</a></dd>
+      <dd><a href="../../jmm/spiner-introspection/src/fortran.html">jmm/spiner-introspection</a></dd>
+      <dd><a href="../../jmm/svd/src/fortran.html">jmm/svd</a></dd>
+      <dd><a href="../../jmm/template-lambda-sfinae-edition/index.html">jmm/template-lambda-sfinae-edition</a></dd>
+      <dd><a href="../../jmm/test-pte-mem-tweak/src/fortran.html">jmm/test-pte-mem-tweak</a></dd>
+      <dd><a href="../../jmm/test-stellarcollapse-fast-logs/index.html">jmm/test-stellarcollapse-fast-logs</a></dd>
+      <dd><a href="../../jmm/units-fixes/src/fortran.html">jmm/units-fixes</a></dd>
+      <dd><a href="../../jmm/update-clang-format/src/fortran.html">jmm/update-clang-format</a></dd>
+      <dd><a href="../../jmm/update-kokkos-linalg/src/fortran.html">jmm/update-kokkos-linalg</a></dd>
+      <dd><a href="../../jmm/update-spackage-1.9.1/index.html">jmm/update-spackage-1.9.1</a></dd>
+      <dd><a href="../../lroberts36/tilted-maxwell/index.html">lroberts36/tilted-maxwell</a></dd>
+      <dd><a href="../../main/src/fortran.html">main</a></dd>
+      <dd><a href="../../mauneyc/fix/CIcmake/index.html">mauneyc/fix/CIcmake</a></dd>
+      <dd><a href="../../mauneyc/fix/checkOtherHDF5ParallelFlag/index.html">mauneyc/fix/checkOtherHDF5ParallelFlag</a></dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

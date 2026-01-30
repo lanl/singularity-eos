@@ -1,0 +1,240 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Design Philosophy &mdash; Singularity-EOS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Building Singularity-EOS" href="building.html" />
+    <link rel="prev" title="Getting Started" href="getting-started.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Singularity-EOS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Design Philosophy</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#host-code-first">Host-Code First</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#material-physics-is-messy-but-reproducibility-is-important">Material Physics is Messy, but Reproducibility is Important</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#no-compromise-on-performance-portability">No Compromise on Performance Portability</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#performance-flexibility-usability-and-extendability">Performance, Flexibility, Usability, and Extendability</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="building.html">Building Singularity-EOS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-eos.html">The Equation of State API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">EOS Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modifiers.html">Equation of State Modifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-closures.html">Mixed Cell Closures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python.html">Python Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sphinx-doc.html">How to Use Sphinx for Writing Docs</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Singularity-EOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Design Philosophy</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/src/philosophy.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="design-philosophy">
+<span id="philosophy"></span><h1>Design Philosophy<a class="headerlink" href="#design-philosophy" title="Link to this heading"></a></h1>
+<p>Here we discuss some of the design principles that went in to
+<code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code>.</p>
+<section id="host-code-first">
+<h2>Host-Code First<a class="headerlink" href="#host-code-first" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">singularity--eos</span></code> is designed for use in continuum dynamics code
+from a “host-code” first perspective. In other words, it serves up
+what a fluid dynamics code may need, in the way it needs it. No more
+and no less.</p>
+<p>This guiding principle motivates several design decisions:</p>
+<ul class="simple">
+<li><p>We are not interested in being a one-stop-shop for material physics,
+we expose only the kind of material physics used in continuum
+dynamics.</p></li>
+<li><p>A host code should be able to use the looping and data access
+patterns it wants to. We provide functions that operate on <em>scalar</em>
+quantities, rather than vectors of data. If a host-code needs to
+loop over vector quantities, we use the <code class="docutils literal notranslate"><span class="pre">indexer</span></code> notation, rather
+than explicitly demanding contiguous arrays of data, so that the
+host code can choose its memory layout if it likes.</p></li>
+<li><p>We trust our users to know the memory layout, access patterns, and
+information they need. We thus are not afraid to expose, e.g.,
+initial guesses, root finder caching, etc, in the name of
+performance and flexibility.</p></li>
+<li><p>When possible, we expose trades-spaces such as accuracy vs. memory
+usage or computational cost.</p></li>
+</ul>
+</section>
+<section id="material-physics-is-messy-but-reproducibility-is-important">
+<h2>Material Physics is Messy, but Reproducibility is Important<a class="headerlink" href="#material-physics-is-messy-but-reproducibility-is-important" title="Link to this heading"></a></h2>
+<p>We recognize that material physics is complicated and try to bake this
+understanding into the code. This motivates, for example, the multiple
+kinds of PTE equilibrium solvers, as well as the <code class="docutils literal notranslate"><span class="pre">preferredInput</span></code>
+and <code class="docutils literal notranslate"><span class="pre">FillEos</span></code> machinery.</p>
+<p>This also motivates the hot-swappable modifiers for equation of state
+models. Capturing real-world material, or production-hardening an
+equation of state can be challenging and imperfect. The modifiers
+allow the user to ensure an EOS meets their needs, in a way that is
+reproducible and comparable accross host codes.</p>
+</section>
+<section id="no-compromise-on-performance-portability">
+<h2>No Compromise on Performance Portability<a class="headerlink" href="#no-compromise-on-performance-portability" title="Link to this heading"></a></h2>
+<p>All pieces of <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> are performance portable and will
+run natively on CPU, GPU, and whatever comes next.</p>
+</section>
+<section id="performance-flexibility-usability-and-extendability">
+<h2>Performance, Flexibility, Usability, and Extendability<a class="headerlink" href="#performance-flexibility-usability-and-extendability" title="Link to this heading"></a></h2>
+<p>We recognize that performance, runtime usability and flexibility, and
+extendability are all imporant, and do our best to navigate this
+trade-space. We write our code in as modular a way as possible, but we
+recognize that sometimes abstraction gets in the way.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="getting-started.html" class="btn btn-neutral float-left" title="Getting Started" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="building.html" class="btn btn-neutral float-right" title="Building Singularity-EOS" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2023. Triad National Security.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Other Versions</span>
+    v: jdolence/default_shift
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Tags</dt>
+      <dd><a href="../../../goldfiles-1.6.2/src/philosophy.html">goldfiles-1.6.2</a></dd>
+      <dd><a href="../../../goldfiles-1.8.0/src/philosophy.html">goldfiles-1.8.0</a></dd>
+      <dd><a href="../../../release-1.10.0/src/philosophy.html">release-1.10.0</a></dd>
+      <dd><a href="../../../release-1.11.0/src/philosophy.html">release-1.11.0</a></dd>
+      <dd><a href="../../../release-1.6.0/src/philosophy.html">release-1.6.0</a></dd>
+      <dd><a href="../../../release-1.6.1/src/philosophy.html">release-1.6.1</a></dd>
+      <dd><a href="../../../release-1.6.2/src/philosophy.html">release-1.6.2</a></dd>
+      <dd><a href="../../../release-1.7.0/src/philosophy.html">release-1.7.0</a></dd>
+      <dd><a href="../../../release-1.8.0/src/philosophy.html">release-1.8.0</a></dd>
+      <dd><a href="../../../release-1.9.0/src/philosophy.html">release-1.9.0</a></dd>
+      <dd><a href="../../../release-1.9.1/src/philosophy.html">release-1.9.1</a></dd>
+      <dd><a href="../../../release-1.9.2/src/philosophy.html">release-1.9.2</a></dd>
+    </dl>
+    <dl>
+      <dt>Branches</dt>
+      <dd><a href="../../../added_benchmark/src/philosophy.html">added_benchmark</a></dd>
+      <dd><a href="../../../aemattssing/src/philosophy.html">aemattssing</a></dd>
+      <dd><a href="../../../bgclayton_simple_macaw/src/philosophy.html">bgclayton_simple_macaw</a></dd>
+      <dd><a href="../../../blb/python_entropy/src/philosophy.html">blb/python_entropy</a></dd>
+      <dd><a href="../../../brryan/isothermal/src/philosophy.html">brryan/isothermal</a></dd>
+      <dd><a href="../../../cmake_fixup_static_linking/src/philosophy.html">cmake_fixup_static_linking</a></dd>
+      <dd><a href="../../../dempsey/mass_frac/src/philosophy.html">dempsey/mass_frac</a></dd>
+      <dd><a href="../../../dholladay00/cleanup_variadic/src/philosophy.html">dholladay00/cleanup_variadic</a></dd>
+      <dd><a href="../../../dholladay00/eap_debug/src/philosophy.html">dholladay00/eap_debug</a></dd>
+      <dd><a href="../../../dholladay00/faster_ses2spin/src/philosophy.html">dholladay00/faster_ses2spin</a></dd>
+      <dd><a href="../../../dholladay00/pt_solver/src/philosophy.html">dholladay00/pt_solver</a></dd>
+      <dd><a href="../../../dholladay00/xl_cuda_eospac/src/philosophy.html">dholladay00/xl_cuda_eospac</a></dd>
+      <dd><a href="../../../docs_spack_devworkflow/src/philosophy.html">docs_spack_devworkflow</a></dd>
+      <dd><a href="../../../gopsub/crest/src/philosophy.html">gopsub/crest</a></dd>
+      <dd><a href="philosophy.html">jdolence/default_shift</a></dd>
+      <dd><a href="../../new_pte/src/philosophy.html">jdolence/new_pte</a></dd>
+      <dd><a href="../../../jhp/EAP_integration/src/philosophy.html">jhp/EAP_integration</a></dd>
+      <dd><a href="../../../jhp/two_eos/src/philosophy.html">jhp/two_eos</a></dd>
+      <dd><a href="../../../jhp/update_copyright/src/philosophy.html">jhp/update_copyright</a></dd>
+      <dd><a href="../../../jhp/using_cleanup/src/philosophy.html">jhp/using_cleanup</a></dd>
+      <dd><a href="../../../jmm/hip-inline/src/philosophy.html">jmm/hip-inline</a></dd>
+      <dd><a href="../../../jmm/ports-testing/src/philosophy.html">jmm/ports-testing</a></dd>
+      <dd><a href="../../../jmm/rdc/src/philosophy.html">jmm/rdc</a></dd>
+      <dd><a href="../../../jmm/sesame2spiner-library/src/philosophy.html">jmm/sesame2spiner-library</a></dd>
+      <dd><a href="../../../jmm/sometimes-capture-by-reference/src/philosophy.html">jmm/sometimes-capture-by-reference</a></dd>
+      <dd><a href="../../../jmm/spiner-introspection/src/philosophy.html">jmm/spiner-introspection</a></dd>
+      <dd><a href="../../../jmm/svd/src/philosophy.html">jmm/svd</a></dd>
+      <dd><a href="../../../jmm/template-lambda-sfinae-edition/src/philosophy.html">jmm/template-lambda-sfinae-edition</a></dd>
+      <dd><a href="../../../jmm/test-pte-mem-tweak/src/philosophy.html">jmm/test-pte-mem-tweak</a></dd>
+      <dd><a href="../../../jmm/test-stellarcollapse-fast-logs/src/philosophy.html">jmm/test-stellarcollapse-fast-logs</a></dd>
+      <dd><a href="../../../jmm/units-fixes/src/philosophy.html">jmm/units-fixes</a></dd>
+      <dd><a href="../../../jmm/update-clang-format/src/philosophy.html">jmm/update-clang-format</a></dd>
+      <dd><a href="../../../jmm/update-kokkos-linalg/src/philosophy.html">jmm/update-kokkos-linalg</a></dd>
+      <dd><a href="../../../jmm/update-spackage-1.9.1/src/philosophy.html">jmm/update-spackage-1.9.1</a></dd>
+      <dd><a href="../../../lroberts36/tilted-maxwell/src/philosophy.html">lroberts36/tilted-maxwell</a></dd>
+      <dd><a href="../../../main/src/philosophy.html">main</a></dd>
+      <dd><a href="../../../mauneyc/fix/CIcmake/src/philosophy.html">mauneyc/fix/CIcmake</a></dd>
+      <dd><a href="../../../mauneyc/fix/checkOtherHDF5ParallelFlag/src/philosophy.html">mauneyc/fix/checkOtherHDF5ParallelFlag</a></dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

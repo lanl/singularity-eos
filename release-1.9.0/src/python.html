@@ -1,0 +1,1467 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Python Bindings &mdash; Singularity-EOS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Contributing" href="contributing.html" />
+    <link rel="prev" title="Mixed Cell Closures" href="using-closures.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Singularity-EOS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="philosophy.html">Design Philosophy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building.html">Building <cite>singularity-eos</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="integration.html">Integrating <cite>singularity-eos</cite> into a CMake project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-eos.html">The Equation of State API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">EOS Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modifiers.html">Equation of State Modifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="customization.html">Customizing <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-closures.html">Mixed Cell Closures</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Python Bindings</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#example">Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#modifiers">Modifiers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#class-reference">Class Reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#singularity_eos.EOSState"><code class="docutils literal notranslate"><span class="pre">EOSState</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#singularity_eos.IdealGas"><code class="docutils literal notranslate"><span class="pre">IdealGas</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.IdealGas.BulkModulusFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">IdealGas.BulkModulusFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.IdealGas.BulkModulusFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">IdealGas.BulkModulusFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.IdealGas.DensityEnergyFromPressureTemperature"><code class="docutils literal notranslate"><span class="pre">IdealGas.DensityEnergyFromPressureTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.IdealGas.FillEos"><code class="docutils literal notranslate"><span class="pre">IdealGas.FillEos()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.IdealGas.Finalize"><code class="docutils literal notranslate"><span class="pre">IdealGas.Finalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.IdealGas.GruneisenParamFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">IdealGas.GruneisenParamFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.IdealGas.GruneisenParamFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">IdealGas.GruneisenParamFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.IdealGas.InternalEnergyFromDensityPressure"><code class="docutils literal notranslate"><span class="pre">IdealGas.InternalEnergyFromDensityPressure()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.IdealGas.InternalEnergyFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">IdealGas.InternalEnergyFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.IdealGas.MinimumDensity"><code class="docutils literal notranslate"><span class="pre">IdealGas.MinimumDensity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.IdealGas.MinimumTemperature"><code class="docutils literal notranslate"><span class="pre">IdealGas.MinimumTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.IdealGas.PressureFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">IdealGas.PressureFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.IdealGas.PressureFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">IdealGas.PressureFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.IdealGas.PrintParams"><code class="docutils literal notranslate"><span class="pre">IdealGas.PrintParams()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.IdealGas.SpecificHeatFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">IdealGas.SpecificHeatFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.IdealGas.SpecificHeatFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">IdealGas.SpecificHeatFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.IdealGas.TemperatureFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">IdealGas.TemperatureFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.IdealGas.ValuesAtReferenceState"><code class="docutils literal notranslate"><span class="pre">IdealGas.ValuesAtReferenceState()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.IdealGas.max_scratch_size"><code class="docutils literal notranslate"><span class="pre">IdealGas.max_scratch_size()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.IdealGas.scratch_size"><code class="docutils literal notranslate"><span class="pre">IdealGas.scratch_size()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#singularity_eos.Gruneisen"><code class="docutils literal notranslate"><span class="pre">Gruneisen</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.Gruneisen.BulkModulusFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">Gruneisen.BulkModulusFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.Gruneisen.BulkModulusFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">Gruneisen.BulkModulusFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.Gruneisen.DensityEnergyFromPressureTemperature"><code class="docutils literal notranslate"><span class="pre">Gruneisen.DensityEnergyFromPressureTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.Gruneisen.FillEos"><code class="docutils literal notranslate"><span class="pre">Gruneisen.FillEos()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.Gruneisen.Finalize"><code class="docutils literal notranslate"><span class="pre">Gruneisen.Finalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.Gruneisen.GruneisenParamFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">Gruneisen.GruneisenParamFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.Gruneisen.GruneisenParamFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">Gruneisen.GruneisenParamFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.Gruneisen.InternalEnergyFromDensityPressure"><code class="docutils literal notranslate"><span class="pre">Gruneisen.InternalEnergyFromDensityPressure()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.Gruneisen.InternalEnergyFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">Gruneisen.InternalEnergyFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.Gruneisen.MinimumDensity"><code class="docutils literal notranslate"><span class="pre">Gruneisen.MinimumDensity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.Gruneisen.MinimumTemperature"><code class="docutils literal notranslate"><span class="pre">Gruneisen.MinimumTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.Gruneisen.PressureFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">Gruneisen.PressureFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.Gruneisen.PressureFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">Gruneisen.PressureFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.Gruneisen.PrintParams"><code class="docutils literal notranslate"><span class="pre">Gruneisen.PrintParams()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.Gruneisen.SpecificHeatFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">Gruneisen.SpecificHeatFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.Gruneisen.SpecificHeatFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">Gruneisen.SpecificHeatFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.Gruneisen.TemperatureFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">Gruneisen.TemperatureFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.Gruneisen.ValuesAtReferenceState"><code class="docutils literal notranslate"><span class="pre">Gruneisen.ValuesAtReferenceState()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.Gruneisen.max_scratch_size"><code class="docutils literal notranslate"><span class="pre">Gruneisen.max_scratch_size()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.Gruneisen.scratch_size"><code class="docutils literal notranslate"><span class="pre">Gruneisen.scratch_size()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#singularity_eos.JWL"><code class="docutils literal notranslate"><span class="pre">JWL</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.JWL.BulkModulusFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">JWL.BulkModulusFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.JWL.BulkModulusFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">JWL.BulkModulusFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.JWL.DensityEnergyFromPressureTemperature"><code class="docutils literal notranslate"><span class="pre">JWL.DensityEnergyFromPressureTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.JWL.FillEos"><code class="docutils literal notranslate"><span class="pre">JWL.FillEos()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.JWL.Finalize"><code class="docutils literal notranslate"><span class="pre">JWL.Finalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.JWL.GruneisenParamFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">JWL.GruneisenParamFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.JWL.GruneisenParamFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">JWL.GruneisenParamFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.JWL.InternalEnergyFromDensityPressure"><code class="docutils literal notranslate"><span class="pre">JWL.InternalEnergyFromDensityPressure()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.JWL.InternalEnergyFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">JWL.InternalEnergyFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.JWL.MinimumDensity"><code class="docutils literal notranslate"><span class="pre">JWL.MinimumDensity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.JWL.MinimumTemperature"><code class="docutils literal notranslate"><span class="pre">JWL.MinimumTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.JWL.PressureFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">JWL.PressureFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.JWL.PressureFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">JWL.PressureFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.JWL.PrintParams"><code class="docutils literal notranslate"><span class="pre">JWL.PrintParams()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.JWL.SpecificHeatFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">JWL.SpecificHeatFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.JWL.SpecificHeatFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">JWL.SpecificHeatFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.JWL.TemperatureFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">JWL.TemperatureFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.JWL.ValuesAtReferenceState"><code class="docutils literal notranslate"><span class="pre">JWL.ValuesAtReferenceState()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.JWL.max_scratch_size"><code class="docutils literal notranslate"><span class="pre">JWL.max_scratch_size()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.JWL.scratch_size"><code class="docutils literal notranslate"><span class="pre">JWL.scratch_size()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#singularity_eos.DavisReactants"><code class="docutils literal notranslate"><span class="pre">DavisReactants</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisReactants.BulkModulusFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">DavisReactants.BulkModulusFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisReactants.BulkModulusFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">DavisReactants.BulkModulusFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisReactants.DensityEnergyFromPressureTemperature"><code class="docutils literal notranslate"><span class="pre">DavisReactants.DensityEnergyFromPressureTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisReactants.FillEos"><code class="docutils literal notranslate"><span class="pre">DavisReactants.FillEos()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisReactants.Finalize"><code class="docutils literal notranslate"><span class="pre">DavisReactants.Finalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisReactants.GruneisenParamFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">DavisReactants.GruneisenParamFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisReactants.GruneisenParamFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">DavisReactants.GruneisenParamFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisReactants.InternalEnergyFromDensityPressure"><code class="docutils literal notranslate"><span class="pre">DavisReactants.InternalEnergyFromDensityPressure()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisReactants.InternalEnergyFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">DavisReactants.InternalEnergyFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisReactants.MinimumDensity"><code class="docutils literal notranslate"><span class="pre">DavisReactants.MinimumDensity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisReactants.MinimumTemperature"><code class="docutils literal notranslate"><span class="pre">DavisReactants.MinimumTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisReactants.PressureFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">DavisReactants.PressureFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisReactants.PressureFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">DavisReactants.PressureFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisReactants.PrintParams"><code class="docutils literal notranslate"><span class="pre">DavisReactants.PrintParams()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisReactants.SpecificHeatFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">DavisReactants.SpecificHeatFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisReactants.SpecificHeatFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">DavisReactants.SpecificHeatFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisReactants.TemperatureFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">DavisReactants.TemperatureFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisReactants.ValuesAtReferenceState"><code class="docutils literal notranslate"><span class="pre">DavisReactants.ValuesAtReferenceState()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisReactants.max_scratch_size"><code class="docutils literal notranslate"><span class="pre">DavisReactants.max_scratch_size()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisReactants.scratch_size"><code class="docutils literal notranslate"><span class="pre">DavisReactants.scratch_size()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#singularity_eos.DavisProducts"><code class="docutils literal notranslate"><span class="pre">DavisProducts</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisProducts.BulkModulusFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">DavisProducts.BulkModulusFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisProducts.BulkModulusFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">DavisProducts.BulkModulusFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisProducts.DensityEnergyFromPressureTemperature"><code class="docutils literal notranslate"><span class="pre">DavisProducts.DensityEnergyFromPressureTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisProducts.FillEos"><code class="docutils literal notranslate"><span class="pre">DavisProducts.FillEos()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisProducts.Finalize"><code class="docutils literal notranslate"><span class="pre">DavisProducts.Finalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisProducts.GruneisenParamFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">DavisProducts.GruneisenParamFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisProducts.GruneisenParamFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">DavisProducts.GruneisenParamFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisProducts.InternalEnergyFromDensityPressure"><code class="docutils literal notranslate"><span class="pre">DavisProducts.InternalEnergyFromDensityPressure()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisProducts.InternalEnergyFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">DavisProducts.InternalEnergyFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisProducts.MinimumDensity"><code class="docutils literal notranslate"><span class="pre">DavisProducts.MinimumDensity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisProducts.MinimumTemperature"><code class="docutils literal notranslate"><span class="pre">DavisProducts.MinimumTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisProducts.PressureFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">DavisProducts.PressureFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisProducts.PressureFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">DavisProducts.PressureFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisProducts.PrintParams"><code class="docutils literal notranslate"><span class="pre">DavisProducts.PrintParams()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisProducts.SpecificHeatFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">DavisProducts.SpecificHeatFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisProducts.SpecificHeatFromDensityTemperature"><code class="docutils literal notranslate"><span class="pre">DavisProducts.SpecificHeatFromDensityTemperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisProducts.TemperatureFromDensityInternalEnergy"><code class="docutils literal notranslate"><span class="pre">DavisProducts.TemperatureFromDensityInternalEnergy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisProducts.ValuesAtReferenceState"><code class="docutils literal notranslate"><span class="pre">DavisProducts.ValuesAtReferenceState()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisProducts.max_scratch_size"><code class="docutils literal notranslate"><span class="pre">DavisProducts.max_scratch_size()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#singularity_eos.DavisProducts.scratch_size"><code class="docutils literal notranslate"><span class="pre">DavisProducts.scratch_size()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#modifier-reference">Modifier Reference:</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#singularity_eos.Shifted"><code class="docutils literal notranslate"><span class="pre">Shifted()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#singularity_eos.Scaled"><code class="docutils literal notranslate"><span class="pre">Scaled()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#singularity_eos.BilinearRamp"><code class="docutils literal notranslate"><span class="pre">BilinearRamp()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sphinx-doc.html">How to Use Sphinx for Writing Docs</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Singularity-EOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Python Bindings</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/src/python.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="python-bindings">
+<span id="python"></span><h1>Python Bindings<a class="headerlink" href="#python-bindings" title="Link to this heading"></a></h1>
+<p>Singularity EOS provides Python bindings which can be enabled with the CMake
+<code class="docutils literal notranslate"><span class="pre">SINGULARITY_BUILD_PYTHON</span></code> option. They provide a 1:1 mapping of the C++ EOS
+types and give access to both scalar and vector functions.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>At this time, all Python bindings are host-only.</p>
+</div>
+<section id="example">
+<h2>Example<a class="headerlink" href="#example" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">singularity_eos</span> <span class="kn">import</span> <span class="n">IdealGas</span>
+
+<span class="c1"># Parameters for ideal gas</span>
+<span class="n">gm1</span> <span class="o">=</span> <span class="mf">0.6</span>
+<span class="n">Cv</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">eos</span> <span class="o">=</span> <span class="n">IdealGas</span><span class="p">(</span><span class="n">gm1</span><span class="p">,</span> <span class="n">Cv</span><span class="p">)</span>
+<span class="n">rho</span> <span class="o">=</span> <span class="o">...</span>
+<span class="n">sie</span> <span class="o">=</span> <span class="o">...</span>
+<span class="n">P</span> <span class="o">=</span> <span class="n">eos</span><span class="o">.</span><span class="n">PressureFromDensityInternalEnergy</span><span class="p">(</span><span class="n">rho</span><span class="p">,</span> <span class="n">sie</span><span class="p">)</span>
+<span class="n">eos</span><span class="o">.</span><span class="n">Finalize</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>A more elaborate example can be found in <code class="docutils literal notranslate"><span class="pre">examples/get_sound_speed_press.py</span></code>.</p>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<p>List may not be complete.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><a class="reference internal" href="#singularity_eos.IdealGas" title="singularity_eos.IdealGas"><code class="xref py py-class docutils literal notranslate"><span class="pre">IdealGas</span></code></a></p></li>
+<li><p><a class="reference internal" href="#singularity_eos.Gruneisen" title="singularity_eos.Gruneisen"><code class="xref py py-class docutils literal notranslate"><span class="pre">Gruneisen</span></code></a></p></li>
+<li><p><a class="reference internal" href="#singularity_eos.JWL" title="singularity_eos.JWL"><code class="xref py py-class docutils literal notranslate"><span class="pre">JWL</span></code></a></p></li>
+<li><p><a class="reference internal" href="#singularity_eos.DavisReactants" title="singularity_eos.DavisReactants"><code class="xref py py-class docutils literal notranslate"><span class="pre">DavisReactants</span></code></a></p></li>
+<li><p><a class="reference internal" href="#singularity_eos.DavisProducts" title="singularity_eos.DavisProducts"><code class="xref py py-class docutils literal notranslate"><span class="pre">DavisProducts</span></code></a></p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="modifiers">
+<h2>Modifiers<a class="headerlink" href="#modifiers" title="Link to this heading"></a></h2>
+<p>Similar to what is described in <a class="reference internal" href="modifiers.html"><span class="doc">Equation of State Modifiers</span></a>, the Python bindings allow you to create modified
+versions of EOS with modifiers. Beware that the Python variants follow the same
+rules as the C++ modifiers, so not all combinations are possible.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><a class="reference internal" href="#singularity_eos.Shifted" title="singularity_eos.Shifted"><code class="xref py py-func docutils literal notranslate"><span class="pre">Shifted()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#singularity_eos.Scaled" title="singularity_eos.Scaled"><code class="xref py py-func docutils literal notranslate"><span class="pre">Scaled()</span></code></a></p></li>
+<li><p><a class="reference internal" href="#singularity_eos.BilinearRamp" title="singularity_eos.BilinearRamp"><code class="xref py py-func docutils literal notranslate"><span class="pre">BilinearRamp()</span></code></a></p></li>
+<li><p><code class="xref py py-func docutils literal notranslate"><span class="pre">Relativistic()</span></code></p></li>
+<li><p><code class="xref py py-func docutils literal notranslate"><span class="pre">UnitSystem()</span></code></p></li>
+</ul>
+</div></blockquote>
+<p>To create a modified EOS, simply pass an existing EOS to a modifier function
+along with any modifier arguments.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">singularity_eos</span> <span class="kn">import</span> <span class="n">IdealGas</span><span class="p">,</span> <span class="n">Scaled</span><span class="p">,</span> <span class="n">Shifted</span>
+
+<span class="c1"># Parameters for ideal gas</span>
+<span class="n">gm1</span> <span class="o">=</span> <span class="mf">0.6</span>
+<span class="n">Cv</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">eos</span> <span class="o">=</span> <span class="n">Scaled</span><span class="p">(</span><span class="n">Shifted</span><span class="p">(</span><span class="n">IdealGas</span><span class="p">(</span><span class="n">gm1</span><span class="p">,</span> <span class="n">Cv</span><span class="p">),</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>While you are operating with Python types during construction, the final EOS
+object will be backed by a pure C++ type. E.g., the Python expression
+<code class="docutils literal notranslate"><span class="pre">Scaled(Shifted(IdealGas(gm1,</span> <span class="pre">Cv),</span> <span class="pre">shift),</span> <span class="pre">scale)</span></code> will return a Python object
+that wraps the <code class="docutils literal notranslate"><span class="pre">ScaledEOS&lt;ShiftedEOS&lt;IdealGas&gt;&gt;</span></code> C++ type.</p>
+</div>
+</section>
+<section id="class-reference">
+<h2>Class Reference<a class="headerlink" href="#class-reference" title="Link to this heading"></a></h2>
+<p>List may not be complete.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="singularity_eos.EOSState">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">singularity_eos.</span></span><span class="sig-name descname"><span class="pre">EOSState</span></span><a class="headerlink" href="#singularity_eos.EOSState" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="singularity_eos.IdealGas">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">singularity_eos.</span></span><span class="sig-name descname"><span class="pre">IdealGas</span></span><a class="headerlink" href="#singularity_eos.IdealGas" title="Link to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.IdealGas.BulkModulusFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">BulkModulusFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.IdealGas.BulkModulusFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>BulkModulusFromDensityInternalEnergy(self: singularity_eos.IdealGas, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>BulkModulusFromDensityInternalEnergy(self: singularity_eos.IdealGas, rho: float, sie: float) -&gt; float</p></li>
+<li><p>BulkModulusFromDensityInternalEnergy(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>BulkModulusFromDensityInternalEnergy(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.IdealGas.BulkModulusFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">BulkModulusFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.IdealGas.BulkModulusFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>BulkModulusFromDensityTemperature(self: singularity_eos.IdealGas, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>BulkModulusFromDensityTemperature(self: singularity_eos.IdealGas, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>BulkModulusFromDensityTemperature(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>BulkModulusFromDensityTemperature(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.IdealGas.DensityEnergyFromPressureTemperature">
+<span class="sig-name descname"><span class="pre">DensityEnergyFromPressureTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.IdealGas.DensityEnergyFromPressureTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>DensityEnergyFromPressureTemperature(self: singularity_eos.IdealGas, press: float, temp: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; Tuple[float, float]</p></li>
+<li><p>DensityEnergyFromPressureTemperature(self: singularity_eos.IdealGas, press: float, temp: float) -&gt; Tuple[float, float]</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.IdealGas.FillEos">
+<span class="sig-name descname"><span class="pre">FillEos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.IdealGas.FillEos" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>FillEos(self: singularity_eos.IdealGas, <a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs) -&gt; singularity_eos.EOSState</p></li>
+<li><p>FillEos(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64], output: int, lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>FillEos(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64], output: int) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.IdealGas.Finalize">
+<span class="sig-name descname"><span class="pre">Finalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#singularity_eos.IdealGas" title="singularity_eos.IdealGas"><span class="pre">singularity_eos.IdealGas</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#singularity_eos.IdealGas.Finalize" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.IdealGas.GruneisenParamFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">GruneisenParamFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.IdealGas.GruneisenParamFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>GruneisenParamFromDensityInternalEnergy(self: singularity_eos.IdealGas, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>GruneisenParamFromDensityInternalEnergy(self: singularity_eos.IdealGas, rho: float, sie: float) -&gt; float</p></li>
+<li><p>GruneisenParamFromDensityInternalEnergy(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], gm1s: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>GruneisenParamFromDensityInternalEnergy(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], gm1s: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.IdealGas.GruneisenParamFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">GruneisenParamFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.IdealGas.GruneisenParamFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>GruneisenParamFromDensityTemperature(self: singularity_eos.IdealGas, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>GruneisenParamFromDensityTemperature(self: singularity_eos.IdealGas, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>GruneisenParamFromDensityTemperature(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], gm1s: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>GruneisenParamFromDensityTemperature(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], gm1s: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.IdealGas.InternalEnergyFromDensityPressure">
+<span class="sig-name descname"><span class="pre">InternalEnergyFromDensityPressure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.IdealGas.InternalEnergyFromDensityPressure" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>InternalEnergyFromDensityPressure(self: singularity_eos.IdealGas, rho: float, P: float, sie: float) -&gt; float</p></li>
+<li><p>InternalEnergyFromDensityPressure(self: singularity_eos.IdealGas, rho: float, P: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>InternalEnergyFromDensityPressure(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], Ps: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>InternalEnergyFromDensityPressure(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], Ps: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.IdealGas.InternalEnergyFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">InternalEnergyFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.IdealGas.InternalEnergyFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>InternalEnergyFromDensityTemperature(self: singularity_eos.IdealGas, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>InternalEnergyFromDensityTemperature(self: singularity_eos.IdealGas, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>InternalEnergyFromDensityTemperature(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>InternalEnergyFromDensityTemperature(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.IdealGas.MinimumDensity">
+<span class="sig-name descname"><span class="pre">MinimumDensity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#singularity_eos.IdealGas" title="singularity_eos.IdealGas"><span class="pre">singularity_eos.IdealGas</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#singularity_eos.IdealGas.MinimumDensity" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.IdealGas.MinimumTemperature">
+<span class="sig-name descname"><span class="pre">MinimumTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#singularity_eos.IdealGas" title="singularity_eos.IdealGas"><span class="pre">singularity_eos.IdealGas</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#singularity_eos.IdealGas.MinimumTemperature" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.IdealGas.PressureFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">PressureFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.IdealGas.PressureFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>PressureFromDensityInternalEnergy(self: singularity_eos.IdealGas, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>PressureFromDensityInternalEnergy(self: singularity_eos.IdealGas, rho: float, sie: float) -&gt; float</p></li>
+<li><p>PressureFromDensityInternalEnergy(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>PressureFromDensityInternalEnergy(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.IdealGas.PressureFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">PressureFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.IdealGas.PressureFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>PressureFromDensityTemperature(self: singularity_eos.IdealGas, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>PressureFromDensityTemperature(self: singularity_eos.IdealGas, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>PressureFromDensityTemperature(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>PressureFromDensityTemperature(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.IdealGas.PrintParams">
+<span class="sig-name descname"><span class="pre">PrintParams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#singularity_eos.IdealGas" title="singularity_eos.IdealGas"><span class="pre">singularity_eos.IdealGas</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#singularity_eos.IdealGas.PrintParams" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.IdealGas.SpecificHeatFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">SpecificHeatFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.IdealGas.SpecificHeatFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>SpecificHeatFromDensityInternalEnergy(self: singularity_eos.IdealGas, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>SpecificHeatFromDensityInternalEnergy(self: singularity_eos.IdealGas, rho: float, sie: float) -&gt; float</p></li>
+<li><p>SpecificHeatFromDensityInternalEnergy(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>SpecificHeatFromDensityInternalEnergy(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.IdealGas.SpecificHeatFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">SpecificHeatFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.IdealGas.SpecificHeatFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>SpecificHeatFromDensityTemperature(self: singularity_eos.IdealGas, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>SpecificHeatFromDensityTemperature(self: singularity_eos.IdealGas, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>SpecificHeatFromDensityTemperature(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>SpecificHeatFromDensityTemperature(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.IdealGas.TemperatureFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">TemperatureFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.IdealGas.TemperatureFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>TemperatureFromDensityInternalEnergy(self: singularity_eos.IdealGas, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>TemperatureFromDensityInternalEnergy(self: singularity_eos.IdealGas, rho: float, sie: float) -&gt; float</p></li>
+<li><p>TemperatureFromDensityInternalEnergy(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>TemperatureFromDensityInternalEnergy(self: singularity_eos.IdealGas, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.IdealGas.ValuesAtReferenceState">
+<span class="sig-name descname"><span class="pre">ValuesAtReferenceState</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.IdealGas.ValuesAtReferenceState" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>ValuesAtReferenceState(self: singularity_eos.IdealGas, arg0: numpy.ndarray[numpy.float64]) -&gt; singularity_eos.EOSState</p></li>
+<li><p>ValuesAtReferenceState(self: singularity_eos.IdealGas) -&gt; singularity_eos.EOSState</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.IdealGas.max_scratch_size">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">max_scratch_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nelements</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#singularity_eos.IdealGas.max_scratch_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.IdealGas.scratch_size">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">scratch_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nelements</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#singularity_eos.IdealGas.scratch_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="singularity_eos.Gruneisen">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">singularity_eos.</span></span><span class="sig-name descname"><span class="pre">Gruneisen</span></span><a class="headerlink" href="#singularity_eos.Gruneisen" title="Link to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.Gruneisen.BulkModulusFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">BulkModulusFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.Gruneisen.BulkModulusFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>BulkModulusFromDensityInternalEnergy(self: singularity_eos.Gruneisen, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>BulkModulusFromDensityInternalEnergy(self: singularity_eos.Gruneisen, rho: float, sie: float) -&gt; float</p></li>
+<li><p>BulkModulusFromDensityInternalEnergy(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>BulkModulusFromDensityInternalEnergy(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.Gruneisen.BulkModulusFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">BulkModulusFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.Gruneisen.BulkModulusFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>BulkModulusFromDensityTemperature(self: singularity_eos.Gruneisen, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>BulkModulusFromDensityTemperature(self: singularity_eos.Gruneisen, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>BulkModulusFromDensityTemperature(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>BulkModulusFromDensityTemperature(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.Gruneisen.DensityEnergyFromPressureTemperature">
+<span class="sig-name descname"><span class="pre">DensityEnergyFromPressureTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.Gruneisen.DensityEnergyFromPressureTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>DensityEnergyFromPressureTemperature(self: singularity_eos.Gruneisen, press: float, temp: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; Tuple[float, float]</p></li>
+<li><p>DensityEnergyFromPressureTemperature(self: singularity_eos.Gruneisen, press: float, temp: float) -&gt; Tuple[float, float]</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.Gruneisen.FillEos">
+<span class="sig-name descname"><span class="pre">FillEos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.Gruneisen.FillEos" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>FillEos(self: singularity_eos.Gruneisen, <a href="#id3"><span class="problematic" id="id4">**</span></a>kwargs) -&gt; singularity_eos.EOSState</p></li>
+<li><p>FillEos(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64], output: int, lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>FillEos(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64], output: int) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.Gruneisen.Finalize">
+<span class="sig-name descname"><span class="pre">Finalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#singularity_eos.Gruneisen" title="singularity_eos.Gruneisen"><span class="pre">singularity_eos.Gruneisen</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#singularity_eos.Gruneisen.Finalize" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.Gruneisen.GruneisenParamFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">GruneisenParamFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.Gruneisen.GruneisenParamFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>GruneisenParamFromDensityInternalEnergy(self: singularity_eos.Gruneisen, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>GruneisenParamFromDensityInternalEnergy(self: singularity_eos.Gruneisen, rho: float, sie: float) -&gt; float</p></li>
+<li><p>GruneisenParamFromDensityInternalEnergy(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], gm1s: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>GruneisenParamFromDensityInternalEnergy(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], gm1s: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.Gruneisen.GruneisenParamFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">GruneisenParamFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.Gruneisen.GruneisenParamFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>GruneisenParamFromDensityTemperature(self: singularity_eos.Gruneisen, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>GruneisenParamFromDensityTemperature(self: singularity_eos.Gruneisen, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>GruneisenParamFromDensityTemperature(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], gm1s: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>GruneisenParamFromDensityTemperature(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], gm1s: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.Gruneisen.InternalEnergyFromDensityPressure">
+<span class="sig-name descname"><span class="pre">InternalEnergyFromDensityPressure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.Gruneisen.InternalEnergyFromDensityPressure" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>InternalEnergyFromDensityPressure(self: singularity_eos.Gruneisen, rho: float, P: float, sie: float) -&gt; float</p></li>
+<li><p>InternalEnergyFromDensityPressure(self: singularity_eos.Gruneisen, rho: float, P: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>InternalEnergyFromDensityPressure(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], Ps: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>InternalEnergyFromDensityPressure(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], Ps: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.Gruneisen.InternalEnergyFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">InternalEnergyFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.Gruneisen.InternalEnergyFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>InternalEnergyFromDensityTemperature(self: singularity_eos.Gruneisen, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>InternalEnergyFromDensityTemperature(self: singularity_eos.Gruneisen, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>InternalEnergyFromDensityTemperature(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>InternalEnergyFromDensityTemperature(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.Gruneisen.MinimumDensity">
+<span class="sig-name descname"><span class="pre">MinimumDensity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#singularity_eos.Gruneisen" title="singularity_eos.Gruneisen"><span class="pre">singularity_eos.Gruneisen</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#singularity_eos.Gruneisen.MinimumDensity" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.Gruneisen.MinimumTemperature">
+<span class="sig-name descname"><span class="pre">MinimumTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#singularity_eos.Gruneisen" title="singularity_eos.Gruneisen"><span class="pre">singularity_eos.Gruneisen</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#singularity_eos.Gruneisen.MinimumTemperature" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.Gruneisen.PressureFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">PressureFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.Gruneisen.PressureFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>PressureFromDensityInternalEnergy(self: singularity_eos.Gruneisen, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>PressureFromDensityInternalEnergy(self: singularity_eos.Gruneisen, rho: float, sie: float) -&gt; float</p></li>
+<li><p>PressureFromDensityInternalEnergy(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>PressureFromDensityInternalEnergy(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.Gruneisen.PressureFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">PressureFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.Gruneisen.PressureFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>PressureFromDensityTemperature(self: singularity_eos.Gruneisen, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>PressureFromDensityTemperature(self: singularity_eos.Gruneisen, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>PressureFromDensityTemperature(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>PressureFromDensityTemperature(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.Gruneisen.PrintParams">
+<span class="sig-name descname"><span class="pre">PrintParams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#singularity_eos.Gruneisen" title="singularity_eos.Gruneisen"><span class="pre">singularity_eos.Gruneisen</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#singularity_eos.Gruneisen.PrintParams" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.Gruneisen.SpecificHeatFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">SpecificHeatFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.Gruneisen.SpecificHeatFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>SpecificHeatFromDensityInternalEnergy(self: singularity_eos.Gruneisen, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>SpecificHeatFromDensityInternalEnergy(self: singularity_eos.Gruneisen, rho: float, sie: float) -&gt; float</p></li>
+<li><p>SpecificHeatFromDensityInternalEnergy(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>SpecificHeatFromDensityInternalEnergy(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.Gruneisen.SpecificHeatFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">SpecificHeatFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.Gruneisen.SpecificHeatFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>SpecificHeatFromDensityTemperature(self: singularity_eos.Gruneisen, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>SpecificHeatFromDensityTemperature(self: singularity_eos.Gruneisen, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>SpecificHeatFromDensityTemperature(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>SpecificHeatFromDensityTemperature(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.Gruneisen.TemperatureFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">TemperatureFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.Gruneisen.TemperatureFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>TemperatureFromDensityInternalEnergy(self: singularity_eos.Gruneisen, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>TemperatureFromDensityInternalEnergy(self: singularity_eos.Gruneisen, rho: float, sie: float) -&gt; float</p></li>
+<li><p>TemperatureFromDensityInternalEnergy(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>TemperatureFromDensityInternalEnergy(self: singularity_eos.Gruneisen, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.Gruneisen.ValuesAtReferenceState">
+<span class="sig-name descname"><span class="pre">ValuesAtReferenceState</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.Gruneisen.ValuesAtReferenceState" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>ValuesAtReferenceState(self: singularity_eos.Gruneisen, arg0: numpy.ndarray[numpy.float64]) -&gt; singularity_eos.EOSState</p></li>
+<li><p>ValuesAtReferenceState(self: singularity_eos.Gruneisen) -&gt; singularity_eos.EOSState</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.Gruneisen.max_scratch_size">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">max_scratch_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nelements</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#singularity_eos.Gruneisen.max_scratch_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.Gruneisen.scratch_size">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">scratch_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nelements</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#singularity_eos.Gruneisen.scratch_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="singularity_eos.JWL">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">singularity_eos.</span></span><span class="sig-name descname"><span class="pre">JWL</span></span><a class="headerlink" href="#singularity_eos.JWL" title="Link to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.JWL.BulkModulusFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">BulkModulusFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.JWL.BulkModulusFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>BulkModulusFromDensityInternalEnergy(self: singularity_eos.JWL, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>BulkModulusFromDensityInternalEnergy(self: singularity_eos.JWL, rho: float, sie: float) -&gt; float</p></li>
+<li><p>BulkModulusFromDensityInternalEnergy(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>BulkModulusFromDensityInternalEnergy(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.JWL.BulkModulusFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">BulkModulusFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.JWL.BulkModulusFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>BulkModulusFromDensityTemperature(self: singularity_eos.JWL, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>BulkModulusFromDensityTemperature(self: singularity_eos.JWL, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>BulkModulusFromDensityTemperature(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>BulkModulusFromDensityTemperature(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.JWL.DensityEnergyFromPressureTemperature">
+<span class="sig-name descname"><span class="pre">DensityEnergyFromPressureTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.JWL.DensityEnergyFromPressureTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>DensityEnergyFromPressureTemperature(self: singularity_eos.JWL, press: float, temp: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; Tuple[float, float]</p></li>
+<li><p>DensityEnergyFromPressureTemperature(self: singularity_eos.JWL, press: float, temp: float) -&gt; Tuple[float, float]</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.JWL.FillEos">
+<span class="sig-name descname"><span class="pre">FillEos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.JWL.FillEos" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>FillEos(self: singularity_eos.JWL, <a href="#id5"><span class="problematic" id="id6">**</span></a>kwargs) -&gt; singularity_eos.EOSState</p></li>
+<li><p>FillEos(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64], output: int, lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>FillEos(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64], output: int) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.JWL.Finalize">
+<span class="sig-name descname"><span class="pre">Finalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#singularity_eos.JWL" title="singularity_eos.JWL"><span class="pre">singularity_eos.JWL</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#singularity_eos.JWL.Finalize" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.JWL.GruneisenParamFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">GruneisenParamFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.JWL.GruneisenParamFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>GruneisenParamFromDensityInternalEnergy(self: singularity_eos.JWL, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>GruneisenParamFromDensityInternalEnergy(self: singularity_eos.JWL, rho: float, sie: float) -&gt; float</p></li>
+<li><p>GruneisenParamFromDensityInternalEnergy(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], gm1s: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>GruneisenParamFromDensityInternalEnergy(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], gm1s: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.JWL.GruneisenParamFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">GruneisenParamFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.JWL.GruneisenParamFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>GruneisenParamFromDensityTemperature(self: singularity_eos.JWL, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>GruneisenParamFromDensityTemperature(self: singularity_eos.JWL, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>GruneisenParamFromDensityTemperature(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], gm1s: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>GruneisenParamFromDensityTemperature(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], gm1s: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.JWL.InternalEnergyFromDensityPressure">
+<span class="sig-name descname"><span class="pre">InternalEnergyFromDensityPressure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.JWL.InternalEnergyFromDensityPressure" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>InternalEnergyFromDensityPressure(self: singularity_eos.JWL, rho: float, P: float, sie: float) -&gt; float</p></li>
+<li><p>InternalEnergyFromDensityPressure(self: singularity_eos.JWL, rho: float, P: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>InternalEnergyFromDensityPressure(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], Ps: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>InternalEnergyFromDensityPressure(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], Ps: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.JWL.InternalEnergyFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">InternalEnergyFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.JWL.InternalEnergyFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>InternalEnergyFromDensityTemperature(self: singularity_eos.JWL, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>InternalEnergyFromDensityTemperature(self: singularity_eos.JWL, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>InternalEnergyFromDensityTemperature(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>InternalEnergyFromDensityTemperature(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.JWL.MinimumDensity">
+<span class="sig-name descname"><span class="pre">MinimumDensity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#singularity_eos.JWL" title="singularity_eos.JWL"><span class="pre">singularity_eos.JWL</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#singularity_eos.JWL.MinimumDensity" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.JWL.MinimumTemperature">
+<span class="sig-name descname"><span class="pre">MinimumTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#singularity_eos.JWL" title="singularity_eos.JWL"><span class="pre">singularity_eos.JWL</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#singularity_eos.JWL.MinimumTemperature" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.JWL.PressureFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">PressureFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.JWL.PressureFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>PressureFromDensityInternalEnergy(self: singularity_eos.JWL, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>PressureFromDensityInternalEnergy(self: singularity_eos.JWL, rho: float, sie: float) -&gt; float</p></li>
+<li><p>PressureFromDensityInternalEnergy(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>PressureFromDensityInternalEnergy(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.JWL.PressureFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">PressureFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.JWL.PressureFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>PressureFromDensityTemperature(self: singularity_eos.JWL, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>PressureFromDensityTemperature(self: singularity_eos.JWL, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>PressureFromDensityTemperature(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>PressureFromDensityTemperature(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.JWL.PrintParams">
+<span class="sig-name descname"><span class="pre">PrintParams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#singularity_eos.JWL" title="singularity_eos.JWL"><span class="pre">singularity_eos.JWL</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#singularity_eos.JWL.PrintParams" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.JWL.SpecificHeatFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">SpecificHeatFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.JWL.SpecificHeatFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>SpecificHeatFromDensityInternalEnergy(self: singularity_eos.JWL, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>SpecificHeatFromDensityInternalEnergy(self: singularity_eos.JWL, rho: float, sie: float) -&gt; float</p></li>
+<li><p>SpecificHeatFromDensityInternalEnergy(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>SpecificHeatFromDensityInternalEnergy(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.JWL.SpecificHeatFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">SpecificHeatFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.JWL.SpecificHeatFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>SpecificHeatFromDensityTemperature(self: singularity_eos.JWL, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>SpecificHeatFromDensityTemperature(self: singularity_eos.JWL, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>SpecificHeatFromDensityTemperature(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>SpecificHeatFromDensityTemperature(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.JWL.TemperatureFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">TemperatureFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.JWL.TemperatureFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>TemperatureFromDensityInternalEnergy(self: singularity_eos.JWL, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>TemperatureFromDensityInternalEnergy(self: singularity_eos.JWL, rho: float, sie: float) -&gt; float</p></li>
+<li><p>TemperatureFromDensityInternalEnergy(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>TemperatureFromDensityInternalEnergy(self: singularity_eos.JWL, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.JWL.ValuesAtReferenceState">
+<span class="sig-name descname"><span class="pre">ValuesAtReferenceState</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.JWL.ValuesAtReferenceState" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>ValuesAtReferenceState(self: singularity_eos.JWL, arg0: numpy.ndarray[numpy.float64]) -&gt; singularity_eos.EOSState</p></li>
+<li><p>ValuesAtReferenceState(self: singularity_eos.JWL) -&gt; singularity_eos.EOSState</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.JWL.max_scratch_size">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">max_scratch_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nelements</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#singularity_eos.JWL.max_scratch_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.JWL.scratch_size">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">scratch_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nelements</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#singularity_eos.JWL.scratch_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="singularity_eos.DavisReactants">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">singularity_eos.</span></span><span class="sig-name descname"><span class="pre">DavisReactants</span></span><a class="headerlink" href="#singularity_eos.DavisReactants" title="Link to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisReactants.BulkModulusFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">BulkModulusFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisReactants.BulkModulusFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>BulkModulusFromDensityInternalEnergy(self: singularity_eos.DavisReactants, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>BulkModulusFromDensityInternalEnergy(self: singularity_eos.DavisReactants, rho: float, sie: float) -&gt; float</p></li>
+<li><p>BulkModulusFromDensityInternalEnergy(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>BulkModulusFromDensityInternalEnergy(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisReactants.BulkModulusFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">BulkModulusFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisReactants.BulkModulusFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>BulkModulusFromDensityTemperature(self: singularity_eos.DavisReactants, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>BulkModulusFromDensityTemperature(self: singularity_eos.DavisReactants, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>BulkModulusFromDensityTemperature(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>BulkModulusFromDensityTemperature(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisReactants.DensityEnergyFromPressureTemperature">
+<span class="sig-name descname"><span class="pre">DensityEnergyFromPressureTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisReactants.DensityEnergyFromPressureTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>DensityEnergyFromPressureTemperature(self: singularity_eos.DavisReactants, press: float, temp: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; Tuple[float, float]</p></li>
+<li><p>DensityEnergyFromPressureTemperature(self: singularity_eos.DavisReactants, press: float, temp: float) -&gt; Tuple[float, float]</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisReactants.FillEos">
+<span class="sig-name descname"><span class="pre">FillEos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisReactants.FillEos" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>FillEos(self: singularity_eos.DavisReactants, <a href="#id7"><span class="problematic" id="id8">**</span></a>kwargs) -&gt; singularity_eos.EOSState</p></li>
+<li><p>FillEos(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64], output: int, lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>FillEos(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64], output: int) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisReactants.Finalize">
+<span class="sig-name descname"><span class="pre">Finalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#singularity_eos.DavisReactants" title="singularity_eos.DavisReactants"><span class="pre">singularity_eos.DavisReactants</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#singularity_eos.DavisReactants.Finalize" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisReactants.GruneisenParamFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">GruneisenParamFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisReactants.GruneisenParamFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>GruneisenParamFromDensityInternalEnergy(self: singularity_eos.DavisReactants, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>GruneisenParamFromDensityInternalEnergy(self: singularity_eos.DavisReactants, rho: float, sie: float) -&gt; float</p></li>
+<li><p>GruneisenParamFromDensityInternalEnergy(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], gm1s: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>GruneisenParamFromDensityInternalEnergy(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], gm1s: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisReactants.GruneisenParamFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">GruneisenParamFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisReactants.GruneisenParamFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>GruneisenParamFromDensityTemperature(self: singularity_eos.DavisReactants, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>GruneisenParamFromDensityTemperature(self: singularity_eos.DavisReactants, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>GruneisenParamFromDensityTemperature(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], gm1s: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>GruneisenParamFromDensityTemperature(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], gm1s: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisReactants.InternalEnergyFromDensityPressure">
+<span class="sig-name descname"><span class="pre">InternalEnergyFromDensityPressure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisReactants.InternalEnergyFromDensityPressure" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>InternalEnergyFromDensityPressure(self: singularity_eos.DavisReactants, rho: float, P: float, sie: float) -&gt; float</p></li>
+<li><p>InternalEnergyFromDensityPressure(self: singularity_eos.DavisReactants, rho: float, P: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>InternalEnergyFromDensityPressure(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], Ps: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>InternalEnergyFromDensityPressure(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], Ps: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisReactants.InternalEnergyFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">InternalEnergyFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisReactants.InternalEnergyFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>InternalEnergyFromDensityTemperature(self: singularity_eos.DavisReactants, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>InternalEnergyFromDensityTemperature(self: singularity_eos.DavisReactants, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>InternalEnergyFromDensityTemperature(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>InternalEnergyFromDensityTemperature(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisReactants.MinimumDensity">
+<span class="sig-name descname"><span class="pre">MinimumDensity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#singularity_eos.DavisReactants" title="singularity_eos.DavisReactants"><span class="pre">singularity_eos.DavisReactants</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#singularity_eos.DavisReactants.MinimumDensity" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisReactants.MinimumTemperature">
+<span class="sig-name descname"><span class="pre">MinimumTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#singularity_eos.DavisReactants" title="singularity_eos.DavisReactants"><span class="pre">singularity_eos.DavisReactants</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#singularity_eos.DavisReactants.MinimumTemperature" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisReactants.PressureFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">PressureFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisReactants.PressureFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>PressureFromDensityInternalEnergy(self: singularity_eos.DavisReactants, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>PressureFromDensityInternalEnergy(self: singularity_eos.DavisReactants, rho: float, sie: float) -&gt; float</p></li>
+<li><p>PressureFromDensityInternalEnergy(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>PressureFromDensityInternalEnergy(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisReactants.PressureFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">PressureFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisReactants.PressureFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>PressureFromDensityTemperature(self: singularity_eos.DavisReactants, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>PressureFromDensityTemperature(self: singularity_eos.DavisReactants, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>PressureFromDensityTemperature(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>PressureFromDensityTemperature(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisReactants.PrintParams">
+<span class="sig-name descname"><span class="pre">PrintParams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#singularity_eos.DavisReactants" title="singularity_eos.DavisReactants"><span class="pre">singularity_eos.DavisReactants</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#singularity_eos.DavisReactants.PrintParams" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisReactants.SpecificHeatFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">SpecificHeatFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisReactants.SpecificHeatFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>SpecificHeatFromDensityInternalEnergy(self: singularity_eos.DavisReactants, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>SpecificHeatFromDensityInternalEnergy(self: singularity_eos.DavisReactants, rho: float, sie: float) -&gt; float</p></li>
+<li><p>SpecificHeatFromDensityInternalEnergy(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>SpecificHeatFromDensityInternalEnergy(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisReactants.SpecificHeatFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">SpecificHeatFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisReactants.SpecificHeatFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>SpecificHeatFromDensityTemperature(self: singularity_eos.DavisReactants, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>SpecificHeatFromDensityTemperature(self: singularity_eos.DavisReactants, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>SpecificHeatFromDensityTemperature(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>SpecificHeatFromDensityTemperature(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisReactants.TemperatureFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">TemperatureFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisReactants.TemperatureFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>TemperatureFromDensityInternalEnergy(self: singularity_eos.DavisReactants, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>TemperatureFromDensityInternalEnergy(self: singularity_eos.DavisReactants, rho: float, sie: float) -&gt; float</p></li>
+<li><p>TemperatureFromDensityInternalEnergy(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>TemperatureFromDensityInternalEnergy(self: singularity_eos.DavisReactants, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisReactants.ValuesAtReferenceState">
+<span class="sig-name descname"><span class="pre">ValuesAtReferenceState</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisReactants.ValuesAtReferenceState" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>ValuesAtReferenceState(self: singularity_eos.DavisReactants, arg0: numpy.ndarray[numpy.float64]) -&gt; singularity_eos.EOSState</p></li>
+<li><p>ValuesAtReferenceState(self: singularity_eos.DavisReactants) -&gt; singularity_eos.EOSState</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisReactants.max_scratch_size">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">max_scratch_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nelements</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#singularity_eos.DavisReactants.max_scratch_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisReactants.scratch_size">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">scratch_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nelements</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#singularity_eos.DavisReactants.scratch_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="singularity_eos.DavisProducts">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">singularity_eos.</span></span><span class="sig-name descname"><span class="pre">DavisProducts</span></span><a class="headerlink" href="#singularity_eos.DavisProducts" title="Link to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisProducts.BulkModulusFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">BulkModulusFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisProducts.BulkModulusFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>BulkModulusFromDensityInternalEnergy(self: singularity_eos.DavisProducts, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>BulkModulusFromDensityInternalEnergy(self: singularity_eos.DavisProducts, rho: float, sie: float) -&gt; float</p></li>
+<li><p>BulkModulusFromDensityInternalEnergy(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>BulkModulusFromDensityInternalEnergy(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisProducts.BulkModulusFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">BulkModulusFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisProducts.BulkModulusFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>BulkModulusFromDensityTemperature(self: singularity_eos.DavisProducts, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>BulkModulusFromDensityTemperature(self: singularity_eos.DavisProducts, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>BulkModulusFromDensityTemperature(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>BulkModulusFromDensityTemperature(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisProducts.DensityEnergyFromPressureTemperature">
+<span class="sig-name descname"><span class="pre">DensityEnergyFromPressureTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisProducts.DensityEnergyFromPressureTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>DensityEnergyFromPressureTemperature(self: singularity_eos.DavisProducts, press: float, temp: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; Tuple[float, float]</p></li>
+<li><p>DensityEnergyFromPressureTemperature(self: singularity_eos.DavisProducts, press: float, temp: float) -&gt; Tuple[float, float]</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisProducts.FillEos">
+<span class="sig-name descname"><span class="pre">FillEos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisProducts.FillEos" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>FillEos(self: singularity_eos.DavisProducts, <a href="#id9"><span class="problematic" id="id10">**</span></a>kwargs) -&gt; singularity_eos.EOSState</p></li>
+<li><p>FillEos(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64], output: int, lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>FillEos(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64], bmods: numpy.ndarray[numpy.float64], output: int) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisProducts.Finalize">
+<span class="sig-name descname"><span class="pre">Finalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#singularity_eos.DavisProducts" title="singularity_eos.DavisProducts"><span class="pre">singularity_eos.DavisProducts</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#singularity_eos.DavisProducts.Finalize" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisProducts.GruneisenParamFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">GruneisenParamFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisProducts.GruneisenParamFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>GruneisenParamFromDensityInternalEnergy(self: singularity_eos.DavisProducts, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>GruneisenParamFromDensityInternalEnergy(self: singularity_eos.DavisProducts, rho: float, sie: float) -&gt; float</p></li>
+<li><p>GruneisenParamFromDensityInternalEnergy(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], gm1s: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>GruneisenParamFromDensityInternalEnergy(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], gm1s: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisProducts.GruneisenParamFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">GruneisenParamFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisProducts.GruneisenParamFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>GruneisenParamFromDensityTemperature(self: singularity_eos.DavisProducts, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>GruneisenParamFromDensityTemperature(self: singularity_eos.DavisProducts, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>GruneisenParamFromDensityTemperature(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], gm1s: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>GruneisenParamFromDensityTemperature(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], gm1s: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisProducts.InternalEnergyFromDensityPressure">
+<span class="sig-name descname"><span class="pre">InternalEnergyFromDensityPressure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisProducts.InternalEnergyFromDensityPressure" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>InternalEnergyFromDensityPressure(self: singularity_eos.DavisProducts, rho: float, P: float, sie: float) -&gt; float</p></li>
+<li><p>InternalEnergyFromDensityPressure(self: singularity_eos.DavisProducts, rho: float, P: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>InternalEnergyFromDensityPressure(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], Ps: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>InternalEnergyFromDensityPressure(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], Ps: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisProducts.InternalEnergyFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">InternalEnergyFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisProducts.InternalEnergyFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>InternalEnergyFromDensityTemperature(self: singularity_eos.DavisProducts, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>InternalEnergyFromDensityTemperature(self: singularity_eos.DavisProducts, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>InternalEnergyFromDensityTemperature(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>InternalEnergyFromDensityTemperature(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisProducts.MinimumDensity">
+<span class="sig-name descname"><span class="pre">MinimumDensity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#singularity_eos.DavisProducts" title="singularity_eos.DavisProducts"><span class="pre">singularity_eos.DavisProducts</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#singularity_eos.DavisProducts.MinimumDensity" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisProducts.MinimumTemperature">
+<span class="sig-name descname"><span class="pre">MinimumTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#singularity_eos.DavisProducts" title="singularity_eos.DavisProducts"><span class="pre">singularity_eos.DavisProducts</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#singularity_eos.DavisProducts.MinimumTemperature" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisProducts.PressureFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">PressureFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisProducts.PressureFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>PressureFromDensityInternalEnergy(self: singularity_eos.DavisProducts, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>PressureFromDensityInternalEnergy(self: singularity_eos.DavisProducts, rho: float, sie: float) -&gt; float</p></li>
+<li><p>PressureFromDensityInternalEnergy(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>PressureFromDensityInternalEnergy(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisProducts.PressureFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">PressureFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisProducts.PressureFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>PressureFromDensityTemperature(self: singularity_eos.DavisProducts, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>PressureFromDensityTemperature(self: singularity_eos.DavisProducts, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>PressureFromDensityTemperature(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>PressureFromDensityTemperature(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], pressures: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisProducts.PrintParams">
+<span class="sig-name descname"><span class="pre">PrintParams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#singularity_eos.DavisProducts" title="singularity_eos.DavisProducts"><span class="pre">singularity_eos.DavisProducts</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#singularity_eos.DavisProducts.PrintParams" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisProducts.SpecificHeatFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">SpecificHeatFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisProducts.SpecificHeatFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>SpecificHeatFromDensityInternalEnergy(self: singularity_eos.DavisProducts, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>SpecificHeatFromDensityInternalEnergy(self: singularity_eos.DavisProducts, rho: float, sie: float) -&gt; float</p></li>
+<li><p>SpecificHeatFromDensityInternalEnergy(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>SpecificHeatFromDensityInternalEnergy(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisProducts.SpecificHeatFromDensityTemperature">
+<span class="sig-name descname"><span class="pre">SpecificHeatFromDensityTemperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisProducts.SpecificHeatFromDensityTemperature" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>SpecificHeatFromDensityTemperature(self: singularity_eos.DavisProducts, rho: float, temperature: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>SpecificHeatFromDensityTemperature(self: singularity_eos.DavisProducts, rho: float, temperature: float) -&gt; float</p></li>
+<li><p>SpecificHeatFromDensityTemperature(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>SpecificHeatFromDensityTemperature(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], cvs: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisProducts.TemperatureFromDensityInternalEnergy">
+<span class="sig-name descname"><span class="pre">TemperatureFromDensityInternalEnergy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisProducts.TemperatureFromDensityInternalEnergy" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>TemperatureFromDensityInternalEnergy(self: singularity_eos.DavisProducts, rho: float, sie: float, lmbda: numpy.ndarray[numpy.float64]) -&gt; float</p></li>
+<li><p>TemperatureFromDensityInternalEnergy(self: singularity_eos.DavisProducts, rho: float, sie: float) -&gt; float</p></li>
+<li><p>TemperatureFromDensityInternalEnergy(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64], lmbdas: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+<li><p>TemperatureFromDensityInternalEnergy(self: singularity_eos.DavisProducts, rhos: numpy.ndarray[numpy.float64], sies: numpy.ndarray[numpy.float64], temperatures: numpy.ndarray[numpy.float64]) -&gt; None</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisProducts.ValuesAtReferenceState">
+<span class="sig-name descname"><span class="pre">ValuesAtReferenceState</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.DavisProducts.ValuesAtReferenceState" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>ValuesAtReferenceState(self: singularity_eos.DavisProducts, arg0: numpy.ndarray[numpy.float64]) -&gt; singularity_eos.EOSState</p></li>
+<li><p>ValuesAtReferenceState(self: singularity_eos.DavisProducts) -&gt; singularity_eos.EOSState</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisProducts.max_scratch_size">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">max_scratch_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nelements</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#singularity_eos.DavisProducts.max_scratch_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="singularity_eos.DavisProducts.scratch_size">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">scratch_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nelements</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#singularity_eos.DavisProducts.scratch_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="modifier-reference">
+<h2>Modifier Reference:<a class="headerlink" href="#modifier-reference" title="Link to this heading"></a></h2>
+<p>List may not be complete.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="singularity_eos.Shifted">
+<span class="sig-prename descclassname"><span class="pre">singularity_eos.</span></span><span class="sig-name descname"><span class="pre">Shifted</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.Shifted" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>Shifted(eos: singularity_eos.IdealGas, shift: float) -&gt; singularity::ShiftedEOS&lt;singularity::IdealGas&gt;</p></li>
+<li><p>Shifted(eos: singularity_eos.Gruneisen, shift: float) -&gt; singularity::ShiftedEOS&lt;singularity::Gruneisen&gt;</p></li>
+<li><p>Shifted(eos: singularity::Vinet, shift: float) -&gt; singularity::ShiftedEOS&lt;singularity::Vinet&gt;</p></li>
+<li><p>Shifted(eos: singularity::MGUsup, shift: float) -&gt; singularity::ShiftedEOS&lt;singularity::MGUsup&gt;</p></li>
+<li><p>Shifted(eos: singularity::PowerMG, shift: float) -&gt; singularity::ShiftedEOS&lt;singularity::PowerMG&gt;</p></li>
+<li><p>Shifted(eos: singularity_eos.JWL, shift: float) -&gt; singularity::ShiftedEOS&lt;singularity::JWL&gt;</p></li>
+<li><p>Shifted(eos: singularity_eos.DavisReactants, shift: float) -&gt; singularity::ShiftedEOS&lt;singularity::DavisReactants&gt;</p></li>
+<li><p>Shifted(eos: singularity_eos.DavisProducts, shift: float) -&gt; singularity::ShiftedEOS&lt;singularity::DavisProducts&gt;</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="singularity_eos.Scaled">
+<span class="sig-prename descclassname"><span class="pre">singularity_eos.</span></span><span class="sig-name descname"><span class="pre">Scaled</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.Scaled" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>Scaled(eos: singularity_eos.IdealGas, scaled: float) -&gt; singularity::ScaledEOS&lt;singularity::IdealGas&gt;</p></li>
+<li><p>Scaled(eos: singularity_eos.Gruneisen, scaled: float) -&gt; singularity::ScaledEOS&lt;singularity::Gruneisen&gt;</p></li>
+<li><p>Scaled(eos: singularity::Vinet, scaled: float) -&gt; singularity::ScaledEOS&lt;singularity::Vinet&gt;</p></li>
+<li><p>Scaled(eos: singularity::MGUsup, scaled: float) -&gt; singularity::ScaledEOS&lt;singularity::MGUsup&gt;</p></li>
+<li><p>Scaled(eos: singularity::PowerMG, scaled: float) -&gt; singularity::ScaledEOS&lt;singularity::PowerMG&gt;</p></li>
+<li><p>Scaled(eos: singularity_eos.JWL, scaled: float) -&gt; singularity::ScaledEOS&lt;singularity::JWL&gt;</p></li>
+<li><p>Scaled(eos: singularity_eos.DavisReactants, scaled: float) -&gt; singularity::ScaledEOS&lt;singularity::DavisReactants&gt;</p></li>
+<li><p>Scaled(eos: singularity_eos.DavisProducts, scaled: float) -&gt; singularity::ScaledEOS&lt;singularity::DavisProducts&gt;</p></li>
+<li><p>Scaled(eos: singularity_eos.ShiftedIdealGas, scaled: float) -&gt; singularity::ScaledEOS&lt;singularity::ShiftedEOS&lt;singularity::IdealGas&gt; &gt;</p></li>
+<li><p>Scaled(eos: singularity_eos.ShiftedGruneisen, scaled: float) -&gt; singularity::ScaledEOS&lt;singularity::ShiftedEOS&lt;singularity::Gruneisen&gt; &gt;</p></li>
+<li><p>Scaled(eos: singularity_eos.ShiftedVinet, scaled: float) -&gt; singularity::ScaledEOS&lt;singularity::ShiftedEOS&lt;singularity::Vinet&gt; &gt;</p></li>
+<li><p>Scaled(eos: singularity_eos.ShiftedMGUsup, scaled: float) -&gt; singularity::ScaledEOS&lt;singularity::ShiftedEOS&lt;singularity::MGUsup&gt; &gt;</p></li>
+<li><p>Scaled(eos: singularity_eos.ShiftedPowerMG, scaled: float) -&gt; singularity::ScaledEOS&lt;singularity::ShiftedEOS&lt;singularity::PowerMG&gt; &gt;</p></li>
+<li><p>Scaled(eos: singularity_eos.ShiftedJWL, scaled: float) -&gt; singularity::ScaledEOS&lt;singularity::ShiftedEOS&lt;singularity::JWL&gt; &gt;</p></li>
+<li><p>Scaled(eos: singularity_eos.ShiftedDavisReactants, scaled: float) -&gt; singularity::ScaledEOS&lt;singularity::ShiftedEOS&lt;singularity::DavisReactants&gt; &gt;</p></li>
+<li><p>Scaled(eos: singularity_eos.ShiftedDavisProducts, scaled: float) -&gt; singularity::ScaledEOS&lt;singularity::ShiftedEOS&lt;singularity::DavisProducts&gt; &gt;</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="singularity_eos.BilinearRamp">
+<span class="sig-prename descclassname"><span class="pre">singularity_eos.</span></span><span class="sig-name descname"><span class="pre">BilinearRamp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#singularity_eos.BilinearRamp" title="Link to this definition"></a></dt>
+<dd><p>Overloaded function.</p>
+<ol class="arabic simple">
+<li><p>BilinearRamp(eos: singularity_eos.IdealGas, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::IdealGas&gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.Gruneisen, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::Gruneisen&gt;</p></li>
+<li><p>BilinearRamp(eos: singularity::Vinet, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::Vinet&gt;</p></li>
+<li><p>BilinearRamp(eos: singularity::MGUsup, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::MGUsup&gt;</p></li>
+<li><p>BilinearRamp(eos: singularity::PowerMG, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::PowerMG&gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.JWL, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::JWL&gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.DavisReactants, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::DavisReactants&gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.DavisProducts, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::DavisProducts&gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ShiftedIdealGas, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ShiftedEOS&lt;singularity::IdealGas&gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ShiftedGruneisen, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ShiftedEOS&lt;singularity::Gruneisen&gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ShiftedVinet, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ShiftedEOS&lt;singularity::Vinet&gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ShiftedMGUsup, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ShiftedEOS&lt;singularity::MGUsup&gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ShiftedPowerMG, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ShiftedEOS&lt;singularity::PowerMG&gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ShiftedJWL, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ShiftedEOS&lt;singularity::JWL&gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ShiftedDavisReactants, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ShiftedEOS&lt;singularity::DavisReactants&gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ShiftedDavisProducts, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ShiftedEOS&lt;singularity::DavisProducts&gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ScaledIdealGas, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ScaledEOS&lt;singularity::IdealGas&gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ScaledGruneisen, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ScaledEOS&lt;singularity::Gruneisen&gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ScaledVinet, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ScaledEOS&lt;singularity::Vinet&gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ScaledMGUsup, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ScaledEOS&lt;singularity::MGUsup&gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ScaledPowerMG, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ScaledEOS&lt;singularity::PowerMG&gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ScaledJWL, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ScaledEOS&lt;singularity::JWL&gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ScaledDavisReactants, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ScaledEOS&lt;singularity::DavisReactants&gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ScaledDavisProducts, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ScaledEOS&lt;singularity::DavisProducts&gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ScaledShiftedIdealGas, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ScaledEOS&lt;singularity::ShiftedEOS&lt;singularity::IdealGas&gt; &gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ScaledShiftedGruneisen, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ScaledEOS&lt;singularity::ShiftedEOS&lt;singularity::Gruneisen&gt; &gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ScaledShiftedVinet, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ScaledEOS&lt;singularity::ShiftedEOS&lt;singularity::Vinet&gt; &gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ScaledShiftedMGUsup, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ScaledEOS&lt;singularity::ShiftedEOS&lt;singularity::MGUsup&gt; &gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ScaledShiftedPowerMG, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ScaledEOS&lt;singularity::ShiftedEOS&lt;singularity::PowerMG&gt; &gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ScaledShiftedJWL, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ScaledEOS&lt;singularity::ShiftedEOS&lt;singularity::JWL&gt; &gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ScaledShiftedDavisReactants, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ScaledEOS&lt;singularity::ShiftedEOS&lt;singularity::DavisReactants&gt; &gt; &gt;</p></li>
+<li><p>BilinearRamp(eos: singularity_eos.ScaledShiftedDavisProducts, r0: float, a: float, b: float, c: float) -&gt; singularity::BilinearRampEOS&lt;singularity::ScaledEOS&lt;singularity::ShiftedEOS&lt;singularity::DavisProducts&gt; &gt; &gt;</p></li>
+</ol>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="using-closures.html" class="btn btn-neutral float-left" title="Mixed Cell Closures" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="contributing.html" class="btn btn-neutral float-right" title="Contributing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2023. Triad National Security.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Other Versions</span>
+    v: release-1.9.0
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Tags</dt>
+      <dd><a href="../../goldfiles-1.6.2/src/python.html">goldfiles-1.6.2</a></dd>
+      <dd><a href="../../goldfiles-1.8.0/src/python.html">goldfiles-1.8.0</a></dd>
+      <dd><a href="../../release-1.10.0/src/python.html">release-1.10.0</a></dd>
+      <dd><a href="../../release-1.11.0/src/python.html">release-1.11.0</a></dd>
+      <dd><a href="../../release-1.6.0/src/python.html">release-1.6.0</a></dd>
+      <dd><a href="../../release-1.6.1/src/python.html">release-1.6.1</a></dd>
+      <dd><a href="../../release-1.6.2/src/python.html">release-1.6.2</a></dd>
+      <dd><a href="../../release-1.7.0/src/python.html">release-1.7.0</a></dd>
+      <dd><a href="../../release-1.8.0/src/python.html">release-1.8.0</a></dd>
+      <dd><a href="python.html">release-1.9.0</a></dd>
+      <dd><a href="../../release-1.9.1/src/python.html">release-1.9.1</a></dd>
+      <dd><a href="../../release-1.9.2/src/python.html">release-1.9.2</a></dd>
+    </dl>
+    <dl>
+      <dt>Branches</dt>
+      <dd><a href="../../added_benchmark/src/python.html">added_benchmark</a></dd>
+      <dd><a href="../../aemattssing/src/python.html">aemattssing</a></dd>
+      <dd><a href="../../bgclayton_simple_macaw/src/python.html">bgclayton_simple_macaw</a></dd>
+      <dd><a href="../../blb/python_entropy/src/python.html">blb/python_entropy</a></dd>
+      <dd><a href="../../brryan/isothermal/src/python.html">brryan/isothermal</a></dd>
+      <dd><a href="../../cmake_fixup_static_linking/src/python.html">cmake_fixup_static_linking</a></dd>
+      <dd><a href="../../dempsey/mass_frac/src/python.html">dempsey/mass_frac</a></dd>
+      <dd><a href="../../dholladay00/cleanup_variadic/src/python.html">dholladay00/cleanup_variadic</a></dd>
+      <dd><a href="../../dholladay00/eap_debug/src/python.html">dholladay00/eap_debug</a></dd>
+      <dd><a href="../../dholladay00/faster_ses2spin/src/python.html">dholladay00/faster_ses2spin</a></dd>
+      <dd><a href="../../dholladay00/pt_solver/src/python.html">dholladay00/pt_solver</a></dd>
+      <dd><a href="../../dholladay00/xl_cuda_eospac/src/python.html">dholladay00/xl_cuda_eospac</a></dd>
+      <dd><a href="../../docs_spack_devworkflow/src/python.html">docs_spack_devworkflow</a></dd>
+      <dd><a href="../../gopsub/crest/src/python.html">gopsub/crest</a></dd>
+      <dd><a href="../../jdolence/default_shift/src/python.html">jdolence/default_shift</a></dd>
+      <dd><a href="../../jdolence/new_pte/index.html">jdolence/new_pte</a></dd>
+      <dd><a href="../../jhp/EAP_integration/src/python.html">jhp/EAP_integration</a></dd>
+      <dd><a href="../../jhp/two_eos/src/python.html">jhp/two_eos</a></dd>
+      <dd><a href="../../jhp/update_copyright/src/python.html">jhp/update_copyright</a></dd>
+      <dd><a href="../../jhp/using_cleanup/src/python.html">jhp/using_cleanup</a></dd>
+      <dd><a href="../../jmm/hip-inline/src/python.html">jmm/hip-inline</a></dd>
+      <dd><a href="../../jmm/ports-testing/src/python.html">jmm/ports-testing</a></dd>
+      <dd><a href="../../jmm/rdc/src/python.html">jmm/rdc</a></dd>
+      <dd><a href="../../jmm/sesame2spiner-library/index.html">jmm/sesame2spiner-library</a></dd>
+      <dd><a href="../../jmm/sometimes-capture-by-reference/src/python.html">jmm/sometimes-capture-by-reference</a></dd>
+      <dd><a href="../../jmm/spiner-introspection/src/python.html">jmm/spiner-introspection</a></dd>
+      <dd><a href="../../jmm/svd/src/python.html">jmm/svd</a></dd>
+      <dd><a href="../../jmm/template-lambda-sfinae-edition/src/python.html">jmm/template-lambda-sfinae-edition</a></dd>
+      <dd><a href="../../jmm/test-pte-mem-tweak/src/python.html">jmm/test-pte-mem-tweak</a></dd>
+      <dd><a href="../../jmm/test-stellarcollapse-fast-logs/src/python.html">jmm/test-stellarcollapse-fast-logs</a></dd>
+      <dd><a href="../../jmm/units-fixes/src/python.html">jmm/units-fixes</a></dd>
+      <dd><a href="../../jmm/update-clang-format/src/python.html">jmm/update-clang-format</a></dd>
+      <dd><a href="../../jmm/update-kokkos-linalg/src/python.html">jmm/update-kokkos-linalg</a></dd>
+      <dd><a href="../../jmm/update-spackage-1.9.1/src/python.html">jmm/update-spackage-1.9.1</a></dd>
+      <dd><a href="../../lroberts36/tilted-maxwell/src/python.html">lroberts36/tilted-maxwell</a></dd>
+      <dd><a href="../../main/src/python.html">main</a></dd>
+      <dd><a href="../../mauneyc/fix/CIcmake/src/python.html">mauneyc/fix/CIcmake</a></dd>
+      <dd><a href="../../mauneyc/fix/checkOtherHDF5ParallelFlag/src/python.html">mauneyc/fix/checkOtherHDF5ParallelFlag</a></dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

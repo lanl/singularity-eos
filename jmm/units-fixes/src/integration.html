@@ -1,0 +1,230 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Integrating singularity-eos into a CMake project &mdash; Singularity-EOS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="The Equation of State API" href="using-eos.html" />
+    <link rel="prev" title="Building singularity-eos" href="building.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Singularity-EOS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="philosophy.html">Design Philosophy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building.html">Building <cite>singularity-eos</cite></a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Integrating <cite>singularity-eos</cite> into a CMake project</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#example-integrating-singularity-eos-into-a-fortran-code">Example: Integrating singularity-eos into a Fortran code</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="using-eos.html">The Equation of State API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">EOS Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modifiers.html">Equation of State Modifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="customization.html">Customizing <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-closures.html">Mixed Cell Closures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-kpt.html">Kinetic Phase Transition Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python.html">Python Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fortran.html">Fortran Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sphinx-doc.html">How to Use Sphinx for Writing Docs</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Singularity-EOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Integrating <cite>singularity-eos</cite> into a CMake project</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/src/integration.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="integrating-singularity-eos-into-a-cmake-project">
+<h1>Integrating <cite>singularity-eos</cite> into a CMake project<a class="headerlink" href="#integrating-singularity-eos-into-a-cmake-project" title="Link to this heading"></a></h1>
+<p>Installing singularity-eos into a prefix, either manually or via Spack gives
+you an installation that can  be used in other projects via CMake. Assuming
+your installation is visible to CMake, either by installing in a known prefix
+or setting <code class="docutils literal notranslate"><span class="pre">CMAKE_PREFIX_PATH</span></code> manually, a CMake project can integrate
+Singularity-EOS via <code class="docutils literal notranslate"><span class="pre">find_package(singularity-eos)</span></code> and using the provided
+targets to link to it.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">find_package</span><span class="p">(</span><span class="n">singularity</span><span class="o">-</span><span class="n">eos</span><span class="p">)</span>
+<span class="o">...</span>
+<span class="n">target_link_libraries</span><span class="p">(</span><span class="n">yourTarget</span> <span class="n">PRIVATE</span> <span class="n">singularity</span><span class="o">-</span><span class="n">eos</span><span class="p">::</span><span class="n">singularity</span><span class="o">-</span><span class="n">eos</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> config module provides the following targets:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">singularity-eos::singularity-eos_Interface</span></code>:</dt><dd><p>The C++ header-only library, adding the necessary include directories and
+other dependencies such as mpark-variant and ports-of-call.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">singularity-eos::singularity-eos_Library</span></code>:</dt><dd><p>The static or shared library installed when building with
+<code class="docutils literal notranslate"><span class="pre">SINGULARITY_BUILD_CLOSURE=on</span></code>. If <code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_FORTRAN=on</span></code>, this also includes the
+Fortran bindings and adds include path for its Fortran module.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">singularity-eos::singularity-eos</span></code></dt><dd><p>Convenience target that contains either
+<code class="docutils literal notranslate"><span class="pre">singularity-eos::singularity-eos_Interface</span></code>,
+<code class="docutils literal notranslate"><span class="pre">singularity-eos::singularity-eos_Library</span></code>, or both, depending on the
+COMPONENTS selection during <code class="docutils literal notranslate"><span class="pre">find_package</span></code>. By default, if no COMPONENTS
+are specified both are included.</p>
+</dd>
+</dl>
+<section id="example-integrating-singularity-eos-into-a-fortran-code">
+<h2>Example: Integrating singularity-eos into a Fortran code<a class="headerlink" href="#example-integrating-singularity-eos-into-a-fortran-code" title="Link to this heading"></a></h2>
+<p>Fortran projects do not require the C++ header-only library and its
+dependencies, but only the compiled Fortran bindings provided by
+Singularity-EOS. To avoid unnecessary dependency checks by CMake, a Fortran
+project would integrate Singularity-EOS as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">find_package</span><span class="p">(</span><span class="n">singularity</span><span class="o">-</span><span class="n">eos</span> <span class="n">COMPONENTS</span> <span class="n">Library</span><span class="p">)</span>
+<span class="o">...</span>
+<span class="n">target_link_libraries</span><span class="p">(</span><span class="n">yourTarget</span> <span class="n">PRIVATE</span> <span class="n">singularity</span><span class="o">-</span><span class="n">eos</span><span class="p">::</span><span class="n">singularity</span><span class="o">-</span><span class="n">eos</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="building.html" class="btn btn-neutral float-left" title="Building singularity-eos" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="using-eos.html" class="btn btn-neutral float-right" title="The Equation of State API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2023. Triad National Security.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Other Versions</span>
+    v: jmm/units-fixes
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Tags</dt>
+      <dd><a href="../../../goldfiles-1.6.2/index.html">goldfiles-1.6.2</a></dd>
+      <dd><a href="../../../goldfiles-1.8.0/index.html">goldfiles-1.8.0</a></dd>
+      <dd><a href="../../../release-1.10.0/src/integration.html">release-1.10.0</a></dd>
+      <dd><a href="../../../release-1.11.0/src/integration.html">release-1.11.0</a></dd>
+      <dd><a href="../../../release-1.6.0/index.html">release-1.6.0</a></dd>
+      <dd><a href="../../../release-1.6.1/index.html">release-1.6.1</a></dd>
+      <dd><a href="../../../release-1.6.2/index.html">release-1.6.2</a></dd>
+      <dd><a href="../../../release-1.7.0/index.html">release-1.7.0</a></dd>
+      <dd><a href="../../../release-1.8.0/index.html">release-1.8.0</a></dd>
+      <dd><a href="../../../release-1.9.0/src/integration.html">release-1.9.0</a></dd>
+      <dd><a href="../../../release-1.9.1/src/integration.html">release-1.9.1</a></dd>
+      <dd><a href="../../../release-1.9.2/src/integration.html">release-1.9.2</a></dd>
+    </dl>
+    <dl>
+      <dt>Branches</dt>
+      <dd><a href="../../../added_benchmark/src/integration.html">added_benchmark</a></dd>
+      <dd><a href="../../../aemattssing/src/integration.html">aemattssing</a></dd>
+      <dd><a href="../../../bgclayton_simple_macaw/src/integration.html">bgclayton_simple_macaw</a></dd>
+      <dd><a href="../../../blb/python_entropy/index.html">blb/python_entropy</a></dd>
+      <dd><a href="../../../brryan/isothermal/src/integration.html">brryan/isothermal</a></dd>
+      <dd><a href="../../../cmake_fixup_static_linking/src/integration.html">cmake_fixup_static_linking</a></dd>
+      <dd><a href="../../../dempsey/mass_frac/src/integration.html">dempsey/mass_frac</a></dd>
+      <dd><a href="../../../dholladay00/cleanup_variadic/index.html">dholladay00/cleanup_variadic</a></dd>
+      <dd><a href="../../../dholladay00/eap_debug/index.html">dholladay00/eap_debug</a></dd>
+      <dd><a href="../../../dholladay00/faster_ses2spin/index.html">dholladay00/faster_ses2spin</a></dd>
+      <dd><a href="../../../dholladay00/pt_solver/src/integration.html">dholladay00/pt_solver</a></dd>
+      <dd><a href="../../../dholladay00/xl_cuda_eospac/src/integration.html">dholladay00/xl_cuda_eospac</a></dd>
+      <dd><a href="../../../docs_spack_devworkflow/src/integration.html">docs_spack_devworkflow</a></dd>
+      <dd><a href="../../../gopsub/crest/index.html">gopsub/crest</a></dd>
+      <dd><a href="../../../jdolence/default_shift/index.html">jdolence/default_shift</a></dd>
+      <dd><a href="../../../jdolence/new_pte/index.html">jdolence/new_pte</a></dd>
+      <dd><a href="../../../jhp/EAP_integration/src/integration.html">jhp/EAP_integration</a></dd>
+      <dd><a href="../../../jhp/two_eos/src/integration.html">jhp/two_eos</a></dd>
+      <dd><a href="../../../jhp/update_copyright/index.html">jhp/update_copyright</a></dd>
+      <dd><a href="../../../jhp/using_cleanup/index.html">jhp/using_cleanup</a></dd>
+      <dd><a href="../../hip-inline/src/integration.html">jmm/hip-inline</a></dd>
+      <dd><a href="../../ports-testing/src/integration.html">jmm/ports-testing</a></dd>
+      <dd><a href="../../rdc/src/integration.html">jmm/rdc</a></dd>
+      <dd><a href="../../sesame2spiner-library/index.html">jmm/sesame2spiner-library</a></dd>
+      <dd><a href="../../sometimes-capture-by-reference/src/integration.html">jmm/sometimes-capture-by-reference</a></dd>
+      <dd><a href="../../spiner-introspection/src/integration.html">jmm/spiner-introspection</a></dd>
+      <dd><a href="../../svd/src/integration.html">jmm/svd</a></dd>
+      <dd><a href="../../template-lambda-sfinae-edition/src/integration.html">jmm/template-lambda-sfinae-edition</a></dd>
+      <dd><a href="../../test-pte-mem-tweak/src/integration.html">jmm/test-pte-mem-tweak</a></dd>
+      <dd><a href="../../test-stellarcollapse-fast-logs/src/integration.html">jmm/test-stellarcollapse-fast-logs</a></dd>
+      <dd><a href="integration.html">jmm/units-fixes</a></dd>
+      <dd><a href="../../update-clang-format/src/integration.html">jmm/update-clang-format</a></dd>
+      <dd><a href="../../update-kokkos-linalg/src/integration.html">jmm/update-kokkos-linalg</a></dd>
+      <dd><a href="../../update-spackage-1.9.1/src/integration.html">jmm/update-spackage-1.9.1</a></dd>
+      <dd><a href="../../../lroberts36/tilted-maxwell/index.html">lroberts36/tilted-maxwell</a></dd>
+      <dd><a href="../../../main/src/integration.html">main</a></dd>
+      <dd><a href="../../../mauneyc/fix/CIcmake/index.html">mauneyc/fix/CIcmake</a></dd>
+      <dd><a href="../../../mauneyc/fix/checkOtherHDF5ParallelFlag/index.html">mauneyc/fix/checkOtherHDF5ParallelFlag</a></dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

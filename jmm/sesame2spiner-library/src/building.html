@@ -1,0 +1,499 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Building Singularity-EOS &mdash; Singularity-EOS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="The Equation of State API" href="using-eos.html" />
+    <link rel="prev" title="Design Philosophy" href="philosophy.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Singularity-EOS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="philosophy.html">Design Philosophy</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Building Singularity-EOS</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#installing-via-spack">Installing Via Spack</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#building-via-cmake">Building Via Cmake</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dependencies">Dependencies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="using-eos.html">The Equation of State API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">EOS Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-closures.html">Mixed Cell Closures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sphinx-doc.html">How to Use Sphinx for Writing Docs</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Singularity-EOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Building Singularity-EOS</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/src/building.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="building-singularity-eos">
+<span id="building"></span><h1>Building Singularity-EOS<a class="headerlink" href="#building-singularity-eos" title="Link to this heading"></a></h1>
+<p>There are two main ways to build singularity-eos:
+1. Through the spack interface
+2. Through the cmake system</p>
+<section id="installing-via-spack">
+<h2>Installing Via Spack<a class="headerlink" href="#installing-via-spack" title="Link to this heading"></a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The spack build is currently experimental.
+Please report problems you havee as github issues.</p>
+</div>
+<p>Although the spackage has not yet made it to the main <a class="reference external" href="https://spack.io/">Spack</a>
+repositories, we provide a spackage for <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> witin the
+the singularity-eos source repository. If you have spack installed,
+simply call</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>--recursive<span class="w"> </span>git@github.com:lanl/singularity-eos.git
+spack<span class="w"> </span>repo<span class="w"> </span>add<span class="w"> </span>singularity-eos/spack-repo
+spack<span class="w"> </span>install<span class="w"> </span>singularity-eos
+</pre></div>
+</div>
+<p>to install <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> into your spack instance. The spackage
+supports a number of relevant variants:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Variant Name [default]</p></th>
+<th class="head"><p>Allowed Values</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>build_extra [none]</p></td>
+<td><p>none, sesame,
+stellarcollapse</p></td>
+<td><p>Build sesame2spiner
+or stellarcollapse2spiner</p></td>
+</tr>
+<tr class="row-odd"><td><p>build_type [RelWithDebInfo]</p></td>
+<td><p>Debug, Release,
+RelWitHDebInfo,
+MinSizeRel</p></td>
+<td><p>Equivalent to
+-DCMAKE_BUILD_TYPE
+in cmake build</p></td>
+</tr>
+<tr class="row-even"><td><p>cuda [off]</p></td>
+<td><p>on, off</p></td>
+<td><p>Build with cuda</p></td>
+</tr>
+<tr class="row-odd"><td><p>cuda_arch [none]</p></td>
+<td><p>see kokkos spec</p></td>
+<td><p>The target GPU architecture</p></td>
+</tr>
+<tr class="row-even"><td><p>doc [off]</p></td>
+<td><p>on, off</p></td>
+<td><p>Build sphinx docs</p></td>
+</tr>
+<tr class="row-odd"><td><p>format [off]</p></td>
+<td><p>on, off</p></td>
+<td><p>Support for clang-format</p></td>
+</tr>
+<tr class="row-even"><td><p>fortran [on]</p></td>
+<td><p>on, off</p></td>
+<td><p>Provide fortran bindings</p></td>
+</tr>
+<tr class="row-odd"><td><p>ipo [off]</p></td>
+<td><p>on, off</p></td>
+<td><p>CMake interprocedural
+optimization</p></td>
+</tr>
+<tr class="row-even"><td><p>kokkos [off]</p></td>
+<td><p>on, off</p></td>
+<td><p>Enable Kokkos backend
+Required for cuda support</p></td>
+</tr>
+<tr class="row-odd"><td><p>kokkos-kernels [off]</p></td>
+<td><p>on, off</p></td>
+<td><p>Use kokkos-kernels for
+linear algebra suport,
+which is needed with
+mixed-cell closures on GPU</p></td>
+</tr>
+<tr class="row-even"><td><p>mpi [off]</p></td>
+<td><p>on, off</p></td>
+<td><p>Build with parallel HDF5
+otherwise build with serial</p></td>
+</tr>
+<tr class="row-odd"><td><p>openmp [off]</p></td>
+<td><p>on, off</p></td>
+<td><p>Build Kokkos openmp backend</p></td>
+</tr>
+<tr class="row-even"><td><p>tests [off]</p></td>
+<td><p>on, off</p></td>
+<td><p>Build tests</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="building-via-cmake">
+<h2>Building Via Cmake<a class="headerlink" href="#building-via-cmake" title="Link to this heading"></a></h2>
+<p>The <a class="reference external" href="https://cmake.org/">cmake</a> build offers a few more options. For example, it
+supports building without <code class="docutils literal notranslate"><span class="pre">hdf5</span></code> and bulding “in-tree” by adding the
+<code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> directory via cmake’s <code class="docutils literal notranslate"><span class="pre">add_subdirectory</span></code>.</p>
+<p>For example, if <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> is a submodule in the <code class="docutils literal notranslate"><span class="pre">external</span></code>
+directory of your project, you might call a line like this in your
+<code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>.</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">add_subdirectory</span><span class="p">(</span><span class="s">external/singularity-eos</span><span class="w"> </span><span class="s">singularity-eos</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>At it’s simplest, the cmake build process looks like this:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>--recursive<span class="w"> </span>git@github.com:lanl/singularity-eos.git
+<span class="nb">cd</span><span class="w"> </span>singularity-eos
+mkdir<span class="w"> </span>bin
+<span class="nb">cd</span><span class="w"> </span>bin
+cmake<span class="w"> </span>..
+make<span class="w"> </span>install
+</pre></div>
+</div>
+<p>You can set options on the cmake line via, e.g.,</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>-DSINGULARITY_USE_HDF5<span class="o">=</span>ON<span class="w"> </span>-DCMAKE_BUILD_TYPE<span class="o">=</span>Debug<span class="w"> </span>..
+</pre></div>
+</div>
+<p>at the cmake configure line. The following cmake options (in addition
+to the standard ones) are supported:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Option [default]</p></th>
+<th class="head"><p>Value Type</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SINGULARITY_USE_HDF5</p></td>
+<td><p>boolean</p></td>
+<td><p>OFF</p></td>
+<td><p>Use HDF5</p></td>
+</tr>
+<tr class="row-odd"><td><p>SINGULARITY_USE_FORTRAN</p></td>
+<td><p>boolean</p></td>
+<td><p>ON</p></td>
+<td><p>Enable fortran bindings</p></td>
+</tr>
+<tr class="row-even"><td><p>SINGULARITY_USE_KOKKOS</p></td>
+<td><p>boolean</p></td>
+<td><p>OFF</p></td>
+<td><p>Use Kokkos backend. Required for GPU support</p></td>
+</tr>
+<tr class="row-odd"><td><p>SINGULARITY_USE_EOSPAC</p></td>
+<td><p>boolean</p></td>
+<td><p>OFF</p></td>
+<td><p>Enable eospac. Required for sesame2spiner and
+for the eospac equation of state class.</p></td>
+</tr>
+<tr class="row-even"><td><p>SINGULARITY_USE_CUDA</p></td>
+<td><p>boolean</p></td>
+<td><p>OFF</p></td>
+<td><p>Enable cuda</p></td>
+</tr>
+<tr class="row-odd"><td><p>SINGULARITY_USE_KOKKOSKERNELS</p></td>
+<td><p>boolean</p></td>
+<td><p>OFF</p></td>
+<td><p>Use kokkos kernels for linear algebra.
+Linear algebra is needed for mixed cell
+closures. And kokkos kernels is required for
+linear algebra on GPU. If kokkos kernels is
+disabled, Eigen is used.</p></td>
+</tr>
+<tr class="row-even"><td><p>SINGULARITY_BUILD_TESTS</p></td>
+<td><p>boolean</p></td>
+<td><p>OFF</p></td>
+<td><p>Turn on testing</p></td>
+</tr>
+<tr class="row-odd"><td><p>SINGULARITY_BUILD_EXAMPLES</p></td>
+<td><p>boolean</p></td>
+<td><p>OFF</p></td>
+<td><p>Build code in examples directory</p></td>
+</tr>
+<tr class="row-even"><td><p>SINGULARITY_BUILD_SESAME2SPINER</p></td>
+<td><p>boolean</p></td>
+<td><p>OFF</p></td>
+<td><p>Build converter from sesame to sp5 tables</p></td>
+</tr>
+<tr class="row-odd"><td><p>SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER</p></td>
+<td><p>boolean</p></td>
+<td><p>OFF</p></td>
+<td><p>Build converter from stellar collapse
+tables to sp5 format.
+This is not required to use the
+stellar collapse reader, but sp5 files are
+faster to load.</p></td>
+</tr>
+<tr class="row-even"><td><p>SINGULARITY_BETTER_DEBUG_FLAGS</p></td>
+<td><p>boolean</p></td>
+<td><p>ON</p></td>
+<td><p>Makes for more verbose compiler output
+but can cause problems for in-tree builds.</p></td>
+</tr>
+<tr class="row-odd"><td><p>SINGULARITY_HIDE_MORE_WARNINGS</p></td>
+<td><p>boolean</p></td>
+<td><p>OFF</p></td>
+<td><p>Makes for less verbose compiler output
+but can cause problems for in-tree builds.</p></td>
+</tr>
+<tr class="row-even"><td><p>SINGULARITY_SUBMODULE_MODE</p></td>
+<td><p>boolean</p></td>
+<td><p>OFF</p></td>
+<td><p>Set other options for in-tree builds</p></td>
+</tr>
+<tr class="row-odd"><td><p>SINGULARITY_BUILD_CLOSURE</p></td>
+<td><p>boolean</p></td>
+<td><p>ON</p></td>
+<td><p>Build mixed cell closure models</p></td>
+</tr>
+<tr class="row-even"><td><p>SINGULARITY_TEST_SESAME</p></td>
+<td><p>boolean</p></td>
+<td><p>OFF</p></td>
+<td><p>Test the sesame table readers</p></td>
+</tr>
+<tr class="row-odd"><td><p>SINGULARITY_TEST_STELLAR_COLLAPSE</p></td>
+<td><p>boolean</p></td>
+<td><p>OFF</p></td>
+<td><p>Test stellar collapse readers</p></td>
+</tr>
+<tr class="row-even"><td><p>SINGULARITY_USE_SINGLE_LOGS</p></td>
+<td><p>boolean</p></td>
+<td><p>OFF</p></td>
+<td><p>Use single-precision logs. Can harm accuracy.</p></td>
+</tr>
+<tr class="row-odd"><td><p>SINGULARITY_FMATH_USE_ORDER_4</p></td>
+<td><p>boolean</p></td>
+<td><p>OFF</p></td>
+<td rowspan="2"><p>Use 4th- or 5th-order accurate fast logs.
+This is faster but less accurate.
+The default accuracy is 7th-order.</p></td>
+</tr>
+<tr class="row-even"><td><p>SINGULARITY_FMATH_USE_ORDER_4</p></td>
+<td><p>boolean</p></td>
+<td><p>OFF</p></td>
+</tr>
+<tr class="row-odd"><td><p>SINGULARITY_HDF5_INSTALL_DIR</p></td>
+<td><p>string</p></td>
+<td><p>NONE</p></td>
+<td rowspan="4"><p>Location of external library.
+Not needed, but a hint for cmake.</p></td>
+</tr>
+<tr class="row-even"><td><p>SINGULARITY_MPI_INSTALL_DIR</p></td>
+<td><p>string</p></td>
+<td><p>NONE</p></td>
+</tr>
+<tr class="row-odd"><td><p>SINGULARITY_KOKKOS_INSTALL_DIR</p></td>
+<td><p>string</p></td>
+<td><p>NONE</p></td>
+</tr>
+<tr class="row-even"><td><p>SINGULARITY_KOKKOSKERNERNELS_INSTALL_DIR</p></td>
+<td><p>string</p></td>
+<td><p>NONE</p></td>
+</tr>
+<tr class="row-odd"><td><p>SINGULARITY_KOKKOSKERNELS_SUB_DIR</p></td>
+<td><p>string</p></td>
+<td><p>NONE</p></td>
+<td><p>Set this to build kokkos-kernels “in-tree”
+by adding it as a subdirectory.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> has a number of dependencies that are handled in a
+number of different ways:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/lanl/spiner">spiner</a> is a required dependency, included as a submodule</p></li>
+<li><p><a class="reference external" href="https://www.hdfgroup.org/solutions/hdf5/">hdf5</a> is an optional dependency. It is needed for the table
+readers. If you want it, it must be installed externally and
+findable by <code class="docutils literal notranslate"><span class="pre">cmake</span></code>. <code class="docutils literal notranslate"><span class="pre">MPI</span></code> is an optional dependency of
+<code class="docutils literal notranslate"><span class="pre">hdf5</span></code>, but otherwise not needed.</p></li>
+<li><p><a class="reference external" href="https://laws.lanl.gov/projects/data/eos/eospacReleases.php">eospac</a> is an optional dependency. This is needed if you want to
+use sesame tables. If you want it, it must be installed externally
+and findable by <code class="docutils literal notranslate"><span class="pre">cmake</span></code></p></li>
+<li><p><a class="reference external" href="https://github.com/kokkos/kokkos">kokkos</a> is an optional dependency. It provides GPU support. If it’s
+available externally, <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> will use the available
+version. If not, <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> will use its own version,
+packaged as a submodule.</p></li>
+<li><p><a class="reference external" href="https://eigen.tuxfamily.org/index.php?title=Main_Page">Eigen</a> is an optional dependency and is used for linear algebra on
+the CPU when doing mixed-cell closures. If it’s available
+externally, <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> will use the available version. If
+not, <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> will use its own version, packaged as a
+submodule.</p></li>
+<li><p><a class="reference external" href="https://github.com/kokkos/kokkos-kernels/">kokkos-kernels</a> is an optional dependency. This must be available
+externally if desired, but there are a number of ways to expose
+it. One can set <code class="docutils literal notranslate"><span class="pre">SINGULARITY_KOKKOSKERNELS_SUB_DIR</span></code> to tell
+<code class="docutils literal notranslate"><span class="pre">cmake</span></code> where to <code class="docutils literal notranslate"><span class="pre">add_subdirectory</span></code> to make it available. One
+can also simply let <code class="docutils literal notranslate"><span class="pre">cmake</span></code> find a pre-installed version of the
+library.</p></li>
+<li><p>A fortran compiler is required if fortran bindings are enabled.</p></li>
+</ul>
+<p>If you use spack, but would like to build <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> from
+source, you can install dependencies via, e.g.,</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>--recursive<span class="w"> </span>git@github.com:lanl/singularity-eos.git
+spack<span class="w"> </span>repo<span class="w"> </span>add<span class="w"> </span>singularity-eos/spack-repo
+spack<span class="w"> </span>install<span class="w"> </span>--only<span class="w"> </span>dependencies<span class="w"> </span>singularity-eos+cuda<span class="w"> </span><span class="nv">cuda_arch</span><span class="o">=</span><span class="m">70</span>
+</pre></div>
+</div>
+<p>which will install all the dependencies for the variant of <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> you’ve chosen.</p>
+<p>Spack can also be used to generate a cmake configuration file based on the
+package variants, so that your development environment and build configuration
+are consistent</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>spack<span class="w"> </span>install<span class="w"> </span>singularity-eos
+spack<span class="w"> </span>load<span class="w"> </span>singularity-eos
+<span class="nb">cd</span><span class="w"> </span>&lt;to/build/dir&gt;
+cmake<span class="w"> </span>-C<span class="w"> </span><span class="nv">$SINGULARITY_SPACK_CMAKE_CONFIG</span><span class="w"> </span>&lt;path/to/source/dir&gt;
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="philosophy.html" class="btn btn-neutral float-left" title="Design Philosophy" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="using-eos.html" class="btn btn-neutral float-right" title="The Equation of State API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2023. Triad National Security.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Other Versions</span>
+    v: jmm/sesame2spiner-library
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Tags</dt>
+      <dd><a href="../../../goldfiles-1.6.2/src/building.html">goldfiles-1.6.2</a></dd>
+      <dd><a href="../../../goldfiles-1.8.0/src/building.html">goldfiles-1.8.0</a></dd>
+      <dd><a href="../../../release-1.10.0/src/building.html">release-1.10.0</a></dd>
+      <dd><a href="../../../release-1.11.0/src/building.html">release-1.11.0</a></dd>
+      <dd><a href="../../../release-1.6.0/src/building.html">release-1.6.0</a></dd>
+      <dd><a href="../../../release-1.6.1/src/building.html">release-1.6.1</a></dd>
+      <dd><a href="../../../release-1.6.2/src/building.html">release-1.6.2</a></dd>
+      <dd><a href="../../../release-1.7.0/src/building.html">release-1.7.0</a></dd>
+      <dd><a href="../../../release-1.8.0/src/building.html">release-1.8.0</a></dd>
+      <dd><a href="../../../release-1.9.0/src/building.html">release-1.9.0</a></dd>
+      <dd><a href="../../../release-1.9.1/src/building.html">release-1.9.1</a></dd>
+      <dd><a href="../../../release-1.9.2/src/building.html">release-1.9.2</a></dd>
+    </dl>
+    <dl>
+      <dt>Branches</dt>
+      <dd><a href="../../../added_benchmark/src/building.html">added_benchmark</a></dd>
+      <dd><a href="../../../aemattssing/src/building.html">aemattssing</a></dd>
+      <dd><a href="../../../bgclayton_simple_macaw/src/building.html">bgclayton_simple_macaw</a></dd>
+      <dd><a href="../../../blb/python_entropy/src/building.html">blb/python_entropy</a></dd>
+      <dd><a href="../../../brryan/isothermal/src/building.html">brryan/isothermal</a></dd>
+      <dd><a href="../../../cmake_fixup_static_linking/src/building.html">cmake_fixup_static_linking</a></dd>
+      <dd><a href="../../../dempsey/mass_frac/src/building.html">dempsey/mass_frac</a></dd>
+      <dd><a href="../../../dholladay00/cleanup_variadic/src/building.html">dholladay00/cleanup_variadic</a></dd>
+      <dd><a href="../../../dholladay00/eap_debug/src/building.html">dholladay00/eap_debug</a></dd>
+      <dd><a href="../../../dholladay00/faster_ses2spin/src/building.html">dholladay00/faster_ses2spin</a></dd>
+      <dd><a href="../../../dholladay00/pt_solver/src/building.html">dholladay00/pt_solver</a></dd>
+      <dd><a href="../../../dholladay00/xl_cuda_eospac/src/building.html">dholladay00/xl_cuda_eospac</a></dd>
+      <dd><a href="../../../docs_spack_devworkflow/src/building.html">docs_spack_devworkflow</a></dd>
+      <dd><a href="../../../gopsub/crest/src/building.html">gopsub/crest</a></dd>
+      <dd><a href="../../../jdolence/default_shift/src/building.html">jdolence/default_shift</a></dd>
+      <dd><a href="../../../jdolence/new_pte/src/building.html">jdolence/new_pte</a></dd>
+      <dd><a href="../../../jhp/EAP_integration/src/building.html">jhp/EAP_integration</a></dd>
+      <dd><a href="../../../jhp/two_eos/src/building.html">jhp/two_eos</a></dd>
+      <dd><a href="../../../jhp/update_copyright/src/building.html">jhp/update_copyright</a></dd>
+      <dd><a href="../../../jhp/using_cleanup/src/building.html">jhp/using_cleanup</a></dd>
+      <dd><a href="../../hip-inline/src/building.html">jmm/hip-inline</a></dd>
+      <dd><a href="../../ports-testing/src/building.html">jmm/ports-testing</a></dd>
+      <dd><a href="../../rdc/src/building.html">jmm/rdc</a></dd>
+      <dd><a href="building.html">jmm/sesame2spiner-library</a></dd>
+      <dd><a href="../../sometimes-capture-by-reference/src/building.html">jmm/sometimes-capture-by-reference</a></dd>
+      <dd><a href="../../spiner-introspection/src/building.html">jmm/spiner-introspection</a></dd>
+      <dd><a href="../../svd/src/building.html">jmm/svd</a></dd>
+      <dd><a href="../../template-lambda-sfinae-edition/src/building.html">jmm/template-lambda-sfinae-edition</a></dd>
+      <dd><a href="../../test-pte-mem-tweak/src/building.html">jmm/test-pte-mem-tweak</a></dd>
+      <dd><a href="../../test-stellarcollapse-fast-logs/src/building.html">jmm/test-stellarcollapse-fast-logs</a></dd>
+      <dd><a href="../../units-fixes/src/building.html">jmm/units-fixes</a></dd>
+      <dd><a href="../../update-clang-format/src/building.html">jmm/update-clang-format</a></dd>
+      <dd><a href="../../update-kokkos-linalg/src/building.html">jmm/update-kokkos-linalg</a></dd>
+      <dd><a href="../../update-spackage-1.9.1/src/building.html">jmm/update-spackage-1.9.1</a></dd>
+      <dd><a href="../../../lroberts36/tilted-maxwell/src/building.html">lroberts36/tilted-maxwell</a></dd>
+      <dd><a href="../../../main/src/building.html">main</a></dd>
+      <dd><a href="../../../mauneyc/fix/CIcmake/src/building.html">mauneyc/fix/CIcmake</a></dd>
+      <dd><a href="../../../mauneyc/fix/checkOtherHDF5ParallelFlag/src/building.html">mauneyc/fix/checkOtherHDF5ParallelFlag</a></dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

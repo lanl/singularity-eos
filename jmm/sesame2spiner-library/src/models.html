@@ -1,0 +1,600 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EOS Models &mdash; Singularity-EOS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Mixed Cell Closures" href="using-closures.html" />
+    <link rel="prev" title="The Equation of State API" href="using-eos.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Singularity-EOS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="philosophy.html">Design Philosophy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building.html">Building Singularity-EOS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-eos.html">The Equation of State API</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">EOS Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#eos-primer">EOS Primer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-mie-gruneisen-form">The Mie-Gruneisen form</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#nomenclature">Nomenclature</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#disambiguation">Disambiguation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#gruneisen-parameter">Gruneisen Parameter</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#units-and-conversions">Units and conversions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#implemented-eos-models">Implemented EOS models</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#ideal-gas">Ideal Gas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gruneisen-eos">Gruneisen EOS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#jwl-eos">JWL EOS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#davis-eos">Davis EOS</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#davis-reactants-eos">Davis Reactants EOS</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#davis-products-eos">Davis Products EOS</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#spiner-eos">Spiner EOS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#stellar-collapse-eos">Stellar Collapse EOS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eospac-eos">EOSPAC EOS</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="using-closures.html">Mixed Cell Closures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sphinx-doc.html">How to Use Sphinx for Writing Docs</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Singularity-EOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">EOS Models</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/src/models.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="eos-models">
+<span id="models"></span><h1>EOS Models<a class="headerlink" href="#eos-models" title="Link to this heading"></a></h1>
+<p>The mathematical descriptions of these models are presented below while the
+details of using them is presented in the description of the
+<a class="reference internal" href="using-eos.html"><span class="doc">EOS API</span></a>.</p>
+<section id="eos-primer">
+<h2>EOS Primer<a class="headerlink" href="#eos-primer" title="Link to this heading"></a></h2>
+<p>An equation of state (EOS) is a constituitive model that generally relates
+thermodynamic quantities such as pressure, temperature, density, internal
+energy, free energy, and entropy consistent with the constraints of equillibrium
+thermodynamics.</p>
+<p><code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> contains a number of equations of state that are most useful
+in hydrodynamics codes. All of the equations of state presented here are
+considered “complete” equations of state in the sense that they contain all the
+information needed to derive a given thermodynamic quantity. However, not all
+variables are exposed since the emphasis is on only those that are needed for
+hydrodynamics codes. An incomplete equation of state is often sufficient for
+pure hydrodynamics since it can relate pressure to a given energy-density state,
+but it is missing information that relates the energy to temperature (which in
+turn provides a means to calculate entropy).</p>
+<p>An excellent resource on equations of state in the context of hydrodynamics is
+the seminal work from <a class="reference external" href="https://doi.org/10.1103/RevModPhys.61.75">Menikoff and Plohr</a>. In particular, Appendix A contains
+a number of thermodynamic relationships that can be useful for computing
+additional quantities from those output in <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code>.</p>
+<section id="the-mie-gruneisen-form">
+<h3>The Mie-Gruneisen form<a class="headerlink" href="#the-mie-gruneisen-form" title="Link to this heading"></a></h3>
+<p>Many of the following equations of state are considered to be of
+the “Mie-Gruneisen form”, which has many implications but for our purposes
+means that the general form of the EOS is</p>
+<div class="math notranslate nohighlight">
+\[P - P_\mathrm{ref} = \rho \Gamma(\rho) (e - e_\mathrm{ref})\]</div>
+<p>where ‘ref’ denotes quantities along some reference curve, <span class="math notranslate nohighlight">\(P\)</span> is the
+pressure, <span class="math notranslate nohighlight">\(\rho\)</span> is the density, <span class="math notranslate nohighlight">\(\Gamma\)</span> is the Gruneisen
+parameter, and <span class="math notranslate nohighlight">\(e\)</span> is the specific internal energy. In this sense, an EOS
+of this form uses the Gruneisen parameter to describe the pressure behavior of
+the EOS away from the reference curve. Coupled with a relationship between
+energy and temperature (sometimes as simple as a constant heat capacity), the
+complete equation of state can be constructed.</p>
+<p>To some degree it is the complexity of the reference state and the heat
+capacity that will determine an EOS’s ability to capture the complex behavior of
+a material. At the simplest level, the ideal gas EOS uses a reference state at
+zero pressure and energy, while more complex equations of state such as the
+Davis EOS use the material’s isentrope. In ths way, the reference curve
+indicates the conditions under which you can expect the EOS to represent the
+intended behavior.</p>
+</section>
+</section>
+<section id="nomenclature">
+<h2>Nomenclature<a class="headerlink" href="#nomenclature" title="Link to this heading"></a></h2>
+<p>The EOS models in <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> are defined for the following sets of
+dependent and independent variables through various member functions described
+in the <a class="reference internal" href="using-eos.html"><span class="doc">EOS API</span></a>.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Function</p></th>
+<th class="head"><p>Dependent Variable</p></th>
+<th class="head"><p>Independent Variables</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(T(\rho, e)\)</span></p></td>
+<td><p>Temperature</p></td>
+<td rowspan="2"><p>Density, Internal Energy</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(P(\rho, e)\)</span></p></td>
+<td><p>Pressure</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(e(\rho, T)\)</span></p></td>
+<td><p>Internal Energy</p></td>
+<td rowspan="2"><p>Density, Temperature</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(P(\rho, T)\)</span></p></td>
+<td><p>Pressure</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\rho(P, T)\)</span></p></td>
+<td><p>Density</p></td>
+<td rowspan="2"><p>Pressure, Temperature</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(e(P, T)\)</span></p></td>
+<td><p>Internal Energy</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(C_V(\rho, T)\)</span></p></td>
+<td rowspan="2"><p>Constant Volume
+Specific Heat
+Capacity</p></td>
+<td><p>Density, Temperature</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(C_V(\rho, e)\)</span></p></td>
+<td><p>Density, Internal Energy</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(B_S(\rho, T)\)</span></p></td>
+<td rowspan="2"><p>Isentropic Bulk
+Modulus</p></td>
+<td><p>Density, Temperature</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(B_S(\rho, e)\)</span></p></td>
+<td><p>Density, Internal Energy</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\Gamma(\rho, T)\)</span></p></td>
+<td rowspan="2"><p>Gruneisen Parameter</p></td>
+<td><p>Density, Temperature</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\Gamma(\rho, e)\)</span></p></td>
+<td><p>Density, Internal Energy</p></td>
+</tr>
+</tbody>
+</table>
+<p>A point of note is that “specific” implies that the quantity is intensive on a
+per unit mass basis. It should be assumed that the internal energy is <em>always</em>
+specific since we are working in terms of density (the inverse of specific
+volume).</p>
+<section id="disambiguation">
+<h3>Disambiguation<a class="headerlink" href="#disambiguation" title="Link to this heading"></a></h3>
+<section id="gruneisen-parameter">
+<h4>Gruneisen Parameter<a class="headerlink" href="#gruneisen-parameter" title="Link to this heading"></a></h4>
+<p>In this description of the EOS models, we use <span class="math notranslate nohighlight">\(\Gamma\)</span> to represent the
+Gruneisen coeficient since this is the most commonly-used symbol in the
+context of Mie-Gruneisen equations of state. This should be differentiated from</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\gamma := \frac{C_P}{C_V} = \frac{B_S}{B_T}\]</div>
+</div></blockquote>
+<p>though, which is the adiabatic exponent. Here <span class="math notranslate nohighlight">\(C_P\)</span> is the specific heat
+capacity at constant <em>pressure</em> and <span class="math notranslate nohighlight">\(B_T\)</span> is the <em>isothermal</em> bulk
+modulus.</p>
+</section>
+</section>
+</section>
+<section id="units-and-conversions">
+<h2>Units and conversions<a class="headerlink" href="#units-and-conversions" title="Link to this heading"></a></h2>
+<p>The default units for <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> are cgs which results in the following
+units for thermodynamic quantities:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Quantity</p></th>
+<th class="head"><p>Default Units</p></th>
+<th class="head"><p>cgµ conversion</p></th>
+<th class="head"><p>mm-mg-µs conversion</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(P\)</span></p></td>
+<td><p>µbar</p></td>
+<td><p>10<sup>-12</sup> Mbar</p></td>
+<td><p>10<sup>-10</sup> GPa</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\rho\)</span></p></td>
+<td><p>g/cm<sup>3</sup></p></td>
+<td><p>1</p></td>
+<td><p>1 mg/mm<sup>3</sup></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(e\)</span></p></td>
+<td><p>erg/g</p></td>
+<td><p>10<sup>-12</sup> Terg/g</p></td>
+<td><p>10<sup>-10</sup> J/mg</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(T\)</span></p></td>
+<td><p>K</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(C_V\)</span></p></td>
+<td><p>erg/g/K</p></td>
+<td><p>10<sup>-12</sup> Terg/g/K</p></td>
+<td><p>10<sup>-10</sup> J/mg/K</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(B_S\)</span></p></td>
+<td><p>µbar</p></td>
+<td><p>10<sup>-12</sup> Mbar</p></td>
+<td><p>10<sup>-10</sup> GPa</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\Gamma\)</span></p></td>
+<td><p>unitless</p></td>
+<td><p>–</p></td>
+<td><p>–</p></td>
+</tr>
+</tbody>
+</table>
+<p>Note: some temperatures are measured in eV for which the conversion is
+8.617333262e-05 eV/K.</p>
+<p>Sesame units are equivalent to the mm-mg-µs unit system.</p>
+</section>
+<section id="implemented-eos-models">
+<h2>Implemented EOS models<a class="headerlink" href="#implemented-eos-models" title="Link to this heading"></a></h2>
+<section id="ideal-gas">
+<h3>Ideal Gas<a class="headerlink" href="#ideal-gas" title="Link to this heading"></a></h3>
+<p>The ideal gas (aka perfect or gamma-law gas) model in <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> takes
+the form</p>
+<div class="math notranslate nohighlight">
+\[P = \Gamma \rho e\]</div>
+<div class="math notranslate nohighlight">
+\[e = C_V T,\]</div>
+<p>where quantities are defined in the <a class="reference internal" href="#nomenclature"><span class="std std-ref">nomenclature</span></a> section.</p>
+<p>The settable parameters are the Gruneisen parameter and specific heat capacity.</p>
+<p>Although this differs from the traditional representation of the ideal gas law
+as <span class="math notranslate nohighlight">\(P\tilde{V} = RT\)</span>, the forms are equivalent by recognizing that
+<span class="math notranslate nohighlight">\(\Gamma = \frac{R}{\tilde{C_V}}\)</span> where <span class="math notranslate nohighlight">\(R\)</span> is the ideal gas constant
+in units of energy per mole per Kelvin and <span class="math notranslate nohighlight">\(\tilde{C_\mathrm{V}}\)</span> is the
+<em>molar</em> heat capacity, relatable to the <em>specific</em> heat capacity through the
+molecular weight of the gas. Since <span class="math notranslate nohighlight">\(\tilde{C_\mathrm{V}} = \frac{5}{2} R\)</span>
+for a diatomic ideal gas, the corresponding Gruneisen parameter should be 0.4.</p>
+<p>A common point of confusion is <span class="math notranslate nohighlight">\(\Gamma\)</span> versus <span class="math notranslate nohighlight">\(\gamma\)</span> with the
+latter being the adiabatic exponent. For an ideal gas, they are related through</p>
+<div class="math notranslate nohighlight">
+\[\Gamma = \gamma - 1\]</div>
+</section>
+<section id="gruneisen-eos">
+<h3>Gruneisen EOS<a class="headerlink" href="#gruneisen-eos" title="Link to this heading"></a></h3>
+<p>One of the most commonly-used EOS to represent solids is the Steinberg variation
+of the Mie-Gruneisen EOS, often just shortened to “Gruneisen” EOS. This EOS
+uses the Hugoniot as the reference curve and thus is extremly powerful because
+the basic shock response of a material can be modeled using minimal parameters.</p>
+<p>The pressure follows the traditional Mie-Gruneisen form,</p>
+<div class="math notranslate nohighlight">
+\[P(\rho, e) = P_H(\rho) + \rho\Gamma(\rho) \left(e - e_H(\rho) \right),\]</div>
+<p>Here the subscript <span class="math notranslate nohighlight">\(H\)</span> is a reminder that the reference curve is a
+Hugoniot. Other quantities are defined in the <a class="reference internal" href="#nomenclature"><span class="std std-ref">nomenclature</span></a>
+section.</p>
+<p>The above is an incomplete equation of state because it only relates the
+pressure to the density and energy, the minimum required in a solution to the
+Euler equations. To complete the EOS and determine the temperature, a constant
+heat capacity is assumed so that</p>
+<div class="math notranslate nohighlight">
+\[T(\rho, e) = \frac{e}{C_V} + T_0\]</div>
+<p>The user should note that this implies that <span class="math notranslate nohighlight">\(e=0\)</span> at the reference
+temperature, <span class="math notranslate nohighlight">\(T_0\)</span>. Given this simple relationship, the user should
+treat the temperature from this EOS as only a rough estimate.</p>
+<p>The Grunesien parameter is given by</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\Gamma(\rho) =
+  \begin{cases}
+    \Gamma_0                                          &amp; \rho &lt; \rho_0 \\
+    \Gamma_0 \frac{\rho_0}{\rho}
+       + b(1 - \frac{\rho_0}{\rho})                   &amp; \rho &gt;= \rho_0
+  \end{cases}\end{split}\]</div>
+<p>and when the unitless user parameter <span class="math notranslate nohighlight">\(b=0\)</span>, this ensures the the Gruneisen
+parameter is of a form where <span class="math notranslate nohighlight">\(\rho\Gamma =\)</span> constant in compression.</p>
+<p>The reference pressure along the Hugoniot is determined by</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}P_H(\rho) = \rho_0 c_0^2 \mu
+  \begin{cases}
+    1                                                 &amp; \rho &lt; \rho_0 \\
+    \frac{1 + \left(1 - \frac{1}{2}\Gamma_0 \right)\mu - \frac{b}{2} \mu^2}
+      {\left(1 - (s_1 - 1)\mu + s_2 \frac{\mu^2}{1 + \mu}
+        - s_3 \frac{\mu^3}{(1+\mu)^2} \right)^2}      &amp; \rho &gt; \rho_0
+  \end{cases}\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(c_0\)</span>, <span class="math notranslate nohighlight">\(s_1\)</span>, <span class="math notranslate nohighlight">\(s_2\)</span>, and <span class="math notranslate nohighlight">\(s_3\)</span> are fitting
+paramters. The units of <span class="math notranslate nohighlight">\(c_0\)</span> are velocity while the rest are unitless.</p>
+<p>Note that similar implementations may have subtly different definitions for the
+<span class="math notranslate nohighlight">\(s_i\)</span> coefficients and care must be taken to use the correct values. Since
+<span class="math notranslate nohighlight">\(s_2\)</span> and <cite>s_3</cite> are unitless for example, these parameters would not
+directly correspond to coefficients in a polynomial fit of the shock velocity to
+the particle velocity.</p>
+</section>
+<section id="jwl-eos">
+<h3>JWL EOS<a class="headerlink" href="#jwl-eos" title="Link to this heading"></a></h3>
+<p>The Jones-Wilkins-Lee (JWL) EOS is used mainly for detonation products of high
+explosives. Similar to the other EOS here, the JWL EOS can be written in a
+Mie-Gruneisen form as</p>
+<div class="math notranslate nohighlight">
+\[P(\rho, e) = P_S(\rho) + \rho w (e - e_S(\rho))\]</div>
+<p>where the reference curve is an isentrope of the form</p>
+<div class="math notranslate nohighlight">
+\[P_S(\rho) = A \mathrm{e}^{-R_1 \eta} + B \mathrm{e}^{-R_2 \eta}\]</div>
+<div class="math notranslate nohighlight">
+\[e_S(\rho) = \frac{A}{\rho_0 R_1} \mathrm{e}^{-R_1 \eta}
+            + \frac{B}{\rho_0 R_2} \mathrm{e}^{-R_2 \eta}.\]</div>
+<p>Here <span class="math notranslate nohighlight">\(\eta = \frac{\rho_0}{\rho}\)</span> and <span class="math notranslate nohighlight">\(R_1\)</span>, <span class="math notranslate nohighlight">\(R_2\)</span>, <span class="math notranslate nohighlight">\(A\)</span>,
+<span class="math notranslate nohighlight">\(B\)</span>, and <span class="math notranslate nohighlight">\(w\)</span> are constants particular to the material. Note that the
+parameter <span class="math notranslate nohighlight">\(w\)</span> is simply the Gruneisen parameter and is assumed constant
+for the EOS (which is fairly reasonable since the detonation products are
+gasses).</p>
+<p>Finally, to complete the EOS the energy is related to the temperature by</p>
+<div class="math notranslate nohighlight">
+\[e = e_S(\rho) + C_V T\]</div>
+<p>where <span class="math notranslate nohighlight">\(C_V\)</span> is the constant volume specific heat capacity.</p>
+</section>
+<section id="davis-eos">
+<h3>Davis EOS<a class="headerlink" href="#davis-eos" title="Link to this heading"></a></h3>
+<p>The Davis reactants and products EOS are both of Mie-Gruneisen forms that use
+isentropes for the reference curves. The equations of state are typically used
+to represent high explosives and their detonation products and the reference
+curves are calibrated to several sets of experimental data.</p>
+<p>For both the reactants and products EOS, the pressure and energy take the forms</p>
+<div class="math notranslate nohighlight">
+\[P(\rho, e) = P_S(\rho) + \rho\Gamma(\rho) \left(e - e_S(\rho) \right)\]</div>
+<div class="math notranslate nohighlight">
+\[e(\rho, P) = e_S(\rho) + \frac{1}{\rho \Gamma(\rho)} \left(P - P_S(\rho)
+  \right),\]</div>
+<p>where the subscript <span class="math notranslate nohighlight">\(S\)</span> denotes quantities along the reference isentrope
+and other quantities are defined in the <a class="reference internal" href="#nomenclature"><span class="std std-ref">nomenclature</span></a>
+section.</p>
+<section id="davis-reactants-eos">
+<h4>Davis Reactants EOS<a class="headerlink" href="#davis-reactants-eos" title="Link to this heading"></a></h4>
+<p>The Davis reactants EOS uses an isentrope passing through a reference state
+and assumes that the heat capacity varies linearly with entropy such that</p>
+<div class="math notranslate nohighlight">
+\[C_V = C_{V,0} + \alpha(S - S_0),\]</div>
+<p>where subscript <span class="math notranslate nohighlight">\(0\)</span> refers to the reference state and <span class="math notranslate nohighlight">\(\alpha\)</span> is
+a dimensionless constant specified by the user.</p>
+<p>The <span class="math notranslate nohighlight">\(e(\rho, P)\)</span> lookup is quite awkward, so the energy is
+more-conveniently cast in terms of termperature such that</p>
+<div class="math notranslate nohighlight">
+\[e(\rho, T) = e_S(\rho) + \frac{C_{V,0} T_S(\rho)}{1 + \alpha}
+  \left( \left(\frac{T}{T_S(\rho)} \right)^{1 + \alpha} - 1 \right),\]</div>
+<p>which can easily be inverted to find <span class="math notranslate nohighlight">\(T(\rho, e)\)</span>.</p>
+<p>The Gruneisen parameter takes on a linear form such that</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\Gamma(\rho) = \Gamma_0 +
+  \begin{cases}
+    0                 &amp; \rho &lt; \rho_0 \\
+    Zy                &amp; \rho &gt;= \rho_0
+  \end{cases}\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(Z\)</span> and <span class="math notranslate nohighlight">\(y\)</span> are dimensionless parameters.</p>
+<p>Finally, the pressure, energy, and temperature along the isentrope are given by</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}P_S(\rho) = P_0 + \frac{\rho_0 A^2}{4B}
+  \begin{cases}
+    \mathrm{e} \left( 4By \right) -1   &amp; \rho &lt; \rho_0 \\
+    \sum\limits_{j=1}^3 \frac{(4By)^j}{j!} + C\frac{(4By)^4}{4!}
+        + \frac{y^2}{(1-y)^4}    &amp; \rho &gt;= \rho0
+  \end{cases}\end{split}\]</div>
+<div class="math notranslate nohighlight">
+\[e_S(\rho) = e_0 + \int\limits_{\rho_0}^{\rho}
+  \frac{P_S(\bar{\rho})}{\bar{\rho^2}}~\mathrm{d}\bar{\rho}\]</div>
+<div class="math notranslate nohighlight">
+\[\begin{split}T_S(\rho)  = T_0
+  \begin{cases}
+    \left(\frac{\rho}{\rho_0} \right)^{\Gamma_0}  &amp; \rho &lt; \rho_0 \\
+    \mathrm{e} \left( -Zy \right) \left(\frac{\rho}{\rho_0} \right)^{\Gamma_0 + Z}
+                                                  &amp; \rho &gt;= \rho_0
+  \end{cases}\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(A\)</span>, <span class="math notranslate nohighlight">\(B\)</span>, <span class="math notranslate nohighlight">\(C\)</span>, <span class="math notranslate nohighlight">\(y\)</span>, and <span class="math notranslate nohighlight">\(Z\)</span> are all
+user-settable parameters and again quantities with a subcript of <span class="math notranslate nohighlight">\(0\)</span>
+refer to the reference state. The variable <span class="math notranslate nohighlight">\(\bar{\rho}\)</span> is simply an
+integration variable. The parameter <span class="math notranslate nohighlight">\(C\)</span> is especially useful for ensuring
+that the high-pressure portion of the shock Hugoniot does not cross that of the
+products.</p>
+<p>The settable parameters are the dimensionless parameters listed above as well as
+the pressure, density, temperature, energy, Gruneisen parameter, and constant
+volume specific heat capacity at the reference state.</p>
+</section>
+<section id="davis-products-eos">
+<h4>Davis Products EOS<a class="headerlink" href="#davis-products-eos" title="Link to this heading"></a></h4>
+<p>The Davis products EOS is created from the reference isentrope passing through
+the CJ state of the high explosive along with a constant heat capacity. The
+constant heat capacity leads to the energy being a simple funciton of the
+temperature deviation from the reference isentrope such that</p>
+<div class="math notranslate nohighlight">
+\[e(\rho, T) = e_S(\rho) + C_{V,0} (T - T_S(\rho)).\]</div>
+<p>The Gruneisen parameter is given by</p>
+<div class="math notranslate nohighlight">
+\[\Gamma(\rho) = k - 1 + (1-b) F(\rho)\]</div>
+<p>where <span class="math notranslate nohighlight">\(b\)</span> is a user-settable dimensionless parameter and <span class="math notranslate nohighlight">\(F(\rho)\)</span>
+is given by</p>
+<div class="math notranslate nohighlight">
+\[F(\rho) = \frac{2a (\rho V_{\mathrm{C}})^n}{(\rho V_{\mathrm{C}})^{-n}
+  + (\rho V_{\mathrm{C}})^n}.\]</div>
+<p>Here the calibration parameters <span class="math notranslate nohighlight">\(a\)</span> and <span class="math notranslate nohighlight">\(n\)</span> are dimensionless while
+<span class="math notranslate nohighlight">\(V_{\mathrm{C}}\)</span> is given in units of specific volume.</p>
+<p>Finally, the pressure, energy, and temperature along the isentrope are given by</p>
+<div class="math notranslate nohighlight">
+\[P_S(\rho) = P_{\mathrm{C}} G(\rho) \frac{k - 1 + F(\rho)}{k - 1 + a}\]</div>
+<div class="math notranslate nohighlight">
+\[e_S(\rho) = e_{\mathrm{C}} G(\rho) \frac{1}{\rho V_{\mathrm{C}}}\]</div>
+<div class="math notranslate nohighlight">
+\[T_S(\rho) = T_{\mathrm{C}} G(\rho) \frac{1}{(\rho V_{\mathrm{C}})^{ba + 1}}\]</div>
+<p>where</p>
+<div class="math notranslate nohighlight">
+\[G(\rho) = \frac{
+  \left( \frac{1}{2}(\rho V_{\mathrm{C}})^{-n}
+    + \frac{1}{2}(\rho V_{\mathrm{C}})^n \right)^{a/n}}
+  {(\rho V_{\mathrm{C}})^{-(k+a)}}\]</div>
+<p>and</p>
+<div class="math notranslate nohighlight">
+\[e_{\mathrm{C}} = \frac{P_{\mathrm{C}} V_{\mathrm{C}}}{k - 1 + a}.\]</div>
+<p>Here, there are four dimensionless parameters that are settable by the user,
+<span class="math notranslate nohighlight">\(a\)</span>, <span class="math notranslate nohighlight">\(b\)</span>, <span class="math notranslate nohighlight">\(k\)</span>, and <span class="math notranslate nohighlight">\(n\)</span>, while <span class="math notranslate nohighlight">\(P_\mathrm{C}\)</span>,
+<span class="math notranslate nohighlight">\(e_\mathrm{C}\)</span>, <span class="math notranslate nohighlight">\(V_\mathrm{C}\)</span> and <span class="math notranslate nohighlight">\(T_\mathrm{C}\)</span> are tuning
+parameters with units related to their non-subscripted counterparts.</p>
+</section>
+</section>
+<section id="spiner-eos">
+<h3>Spiner EOS<a class="headerlink" href="#spiner-eos" title="Link to this heading"></a></h3>
+</section>
+<section id="stellar-collapse-eos">
+<h3>Stellar Collapse EOS<a class="headerlink" href="#stellar-collapse-eos" title="Link to this heading"></a></h3>
+</section>
+<section id="eospac-eos">
+<h3>EOSPAC EOS<a class="headerlink" href="#eospac-eos" title="Link to this heading"></a></h3>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="using-eos.html" class="btn btn-neutral float-left" title="The Equation of State API" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="using-closures.html" class="btn btn-neutral float-right" title="Mixed Cell Closures" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2023. Triad National Security.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Other Versions</span>
+    v: jmm/sesame2spiner-library
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Tags</dt>
+      <dd><a href="../../../goldfiles-1.6.2/src/models.html">goldfiles-1.6.2</a></dd>
+      <dd><a href="../../../goldfiles-1.8.0/src/models.html">goldfiles-1.8.0</a></dd>
+      <dd><a href="../../../release-1.10.0/src/models.html">release-1.10.0</a></dd>
+      <dd><a href="../../../release-1.11.0/src/models.html">release-1.11.0</a></dd>
+      <dd><a href="../../../release-1.6.0/src/models.html">release-1.6.0</a></dd>
+      <dd><a href="../../../release-1.6.1/src/models.html">release-1.6.1</a></dd>
+      <dd><a href="../../../release-1.6.2/src/models.html">release-1.6.2</a></dd>
+      <dd><a href="../../../release-1.7.0/src/models.html">release-1.7.0</a></dd>
+      <dd><a href="../../../release-1.8.0/src/models.html">release-1.8.0</a></dd>
+      <dd><a href="../../../release-1.9.0/src/models.html">release-1.9.0</a></dd>
+      <dd><a href="../../../release-1.9.1/src/models.html">release-1.9.1</a></dd>
+      <dd><a href="../../../release-1.9.2/src/models.html">release-1.9.2</a></dd>
+    </dl>
+    <dl>
+      <dt>Branches</dt>
+      <dd><a href="../../../added_benchmark/src/models.html">added_benchmark</a></dd>
+      <dd><a href="../../../aemattssing/src/models.html">aemattssing</a></dd>
+      <dd><a href="../../../bgclayton_simple_macaw/src/models.html">bgclayton_simple_macaw</a></dd>
+      <dd><a href="../../../blb/python_entropy/src/models.html">blb/python_entropy</a></dd>
+      <dd><a href="../../../brryan/isothermal/src/models.html">brryan/isothermal</a></dd>
+      <dd><a href="../../../cmake_fixup_static_linking/src/models.html">cmake_fixup_static_linking</a></dd>
+      <dd><a href="../../../dempsey/mass_frac/src/models.html">dempsey/mass_frac</a></dd>
+      <dd><a href="../../../dholladay00/cleanup_variadic/src/models.html">dholladay00/cleanup_variadic</a></dd>
+      <dd><a href="../../../dholladay00/eap_debug/src/models.html">dholladay00/eap_debug</a></dd>
+      <dd><a href="../../../dholladay00/faster_ses2spin/src/models.html">dholladay00/faster_ses2spin</a></dd>
+      <dd><a href="../../../dholladay00/pt_solver/src/models.html">dholladay00/pt_solver</a></dd>
+      <dd><a href="../../../dholladay00/xl_cuda_eospac/src/models.html">dholladay00/xl_cuda_eospac</a></dd>
+      <dd><a href="../../../docs_spack_devworkflow/src/models.html">docs_spack_devworkflow</a></dd>
+      <dd><a href="../../../gopsub/crest/src/models.html">gopsub/crest</a></dd>
+      <dd><a href="../../../jdolence/default_shift/src/models.html">jdolence/default_shift</a></dd>
+      <dd><a href="../../../jdolence/new_pte/src/models.html">jdolence/new_pte</a></dd>
+      <dd><a href="../../../jhp/EAP_integration/src/models.html">jhp/EAP_integration</a></dd>
+      <dd><a href="../../../jhp/two_eos/src/models.html">jhp/two_eos</a></dd>
+      <dd><a href="../../../jhp/update_copyright/src/models.html">jhp/update_copyright</a></dd>
+      <dd><a href="../../../jhp/using_cleanup/src/models.html">jhp/using_cleanup</a></dd>
+      <dd><a href="../../hip-inline/src/models.html">jmm/hip-inline</a></dd>
+      <dd><a href="../../ports-testing/src/models.html">jmm/ports-testing</a></dd>
+      <dd><a href="../../rdc/src/models.html">jmm/rdc</a></dd>
+      <dd><a href="models.html">jmm/sesame2spiner-library</a></dd>
+      <dd><a href="../../sometimes-capture-by-reference/src/models.html">jmm/sometimes-capture-by-reference</a></dd>
+      <dd><a href="../../spiner-introspection/src/models.html">jmm/spiner-introspection</a></dd>
+      <dd><a href="../../svd/src/models.html">jmm/svd</a></dd>
+      <dd><a href="../../template-lambda-sfinae-edition/src/models.html">jmm/template-lambda-sfinae-edition</a></dd>
+      <dd><a href="../../test-pte-mem-tweak/src/models.html">jmm/test-pte-mem-tweak</a></dd>
+      <dd><a href="../../test-stellarcollapse-fast-logs/src/models.html">jmm/test-stellarcollapse-fast-logs</a></dd>
+      <dd><a href="../../units-fixes/src/models.html">jmm/units-fixes</a></dd>
+      <dd><a href="../../update-clang-format/src/models.html">jmm/update-clang-format</a></dd>
+      <dd><a href="../../update-kokkos-linalg/src/models.html">jmm/update-kokkos-linalg</a></dd>
+      <dd><a href="../../update-spackage-1.9.1/src/models.html">jmm/update-spackage-1.9.1</a></dd>
+      <dd><a href="../../../lroberts36/tilted-maxwell/src/models.html">lroberts36/tilted-maxwell</a></dd>
+      <dd><a href="../../../main/src/models.html">main</a></dd>
+      <dd><a href="../../../mauneyc/fix/CIcmake/src/models.html">mauneyc/fix/CIcmake</a></dd>
+      <dd><a href="../../../mauneyc/fix/checkOtherHDF5ParallelFlag/src/models.html">mauneyc/fix/checkOtherHDF5ParallelFlag</a></dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

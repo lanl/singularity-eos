@@ -1,0 +1,1503 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Equation of State API &mdash; Singularity-EOS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="EOS Models" href="models.html" />
+    <link rel="prev" title="Integrating singularity-eos into a CMake project" href="integration.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Singularity-EOS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="philosophy.html">Design Philosophy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building.html">Building <cite>singularity-eos</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="integration.html">Integrating <cite>singularity-eos</cite> into a CMake project</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">The Equation of State API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#the-real-type">The <code class="docutils literal notranslate"><span class="pre">Real</span></code> Type</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-parallelism-model">The parallelism model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#serialization-and-shared-memory">Serialization and shared memory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv4NK3EOS21SerializedSizeInBytesEv"><code class="docutils literal notranslate"><span class="pre">SerializedSizeInBytes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv4NK3EOS23SharedMemorySizeInBytesEv"><code class="docutils literal notranslate"><span class="pre">SharedMemorySizeInBytes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv4N3EOS9SerializeEPc"><code class="docutils literal notranslate"><span class="pre">Serialize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv4N3EOS9SerializeEv"><code class="docutils literal notranslate"><span class="pre">Serialize()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#variants">Variants</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv47EosTypev"><code class="docutils literal notranslate"><span class="pre">EosType()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv4NK11PrintParamsEv"><code class="docutils literal notranslate"><span class="pre">PrintParams()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#reference-semantics-and-getondevice">Reference Semantics and <code class="docutils literal notranslate"><span class="pre">GetOnDevice</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv4N3EOS11GetOnDeviceEv"><code class="docutils literal notranslate"><span class="pre">GetOnDevice()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv4N3EOS8FinalizeEv"><code class="docutils literal notranslate"><span class="pre">Finalize()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#accessors-and-indexers">Accessors and Indexers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#vector-and-scalar-api">Vector and Scalar API</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#eospac-vector-functions">EOSPAC Vector Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-evaluate-methods">The Evaluate Methods</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#lambdas-and-optional-parameters">Lambdas and Optional Parameters</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv4N3EOS7nlambdaEv"><code class="docutils literal notranslate"><span class="pre">nlambda()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#named-arguments-to-lambda-indexers">Named Arguments to Lambda Indexers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#eos-modifiers">EOS Modifiers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv4NK10IsModifiedEv"><code class="docutils literal notranslate"><span class="pre">IsModified()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv419GetUnmodifiedObjectv"><code class="docutils literal notranslate"><span class="pre">GetUnmodifiedObject()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv412UnmodifyOncev"><code class="docutils literal notranslate"><span class="pre">UnmodifyOnce()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#modifiers-and-lambdas">Modifiers and Lambdas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#preferred-inputs">Preferred Inputs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv414PreferredInputv"><code class="docutils literal notranslate"><span class="pre">PreferredInput()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#eos-builder">EOS Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#checkparams">CheckParams</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv4NK11CheckParamsEv"><code class="docutils literal notranslate"><span class="pre">CheckParams()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#equation-of-state-methods-reference">Equation of State Methods Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#methods-used-for-mixed-cell-closures">Methods Used for Mixed Cell Closures</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv4NK14MinimumDensityEv"><code class="docutils literal notranslate"><span class="pre">MinimumDensity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv4NK18MinimumTemperatureEv"><code class="docutils literal notranslate"><span class="pre">MinimumTemperature()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv4NK14MaximumDensityEv"><code class="docutils literal notranslate"><span class="pre">MaximumDensity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv4NK7RhoPminEK4Real"><code class="docutils literal notranslate"><span class="pre">RhoPmin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv4NK15MinimumPressureEv"><code class="docutils literal notranslate"><span class="pre">MinimumPressure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv4NK28MaximumPressureAtTemperatureEK4Real"><code class="docutils literal notranslate"><span class="pre">MaximumPressureAtTemperature()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">EOS Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modifiers.html">Equation of State Modifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="customization.html">Customizing <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-closures.html">Mixed Cell Closures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-kpt.html">Kinetic Phase Transition Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python.html">Python Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fortran.html">Fortran Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sphinx-doc.html">How to Use Sphinx for Writing Docs</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Singularity-EOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">The Equation of State API</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/src/using-eos.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-equation-of-state-api">
+<span id="using-eos"></span><h1>The Equation of State API<a class="headerlink" href="#the-equation-of-state-api" title="Link to this heading"></a></h1>
+<p>This page describes the equation of state API in detail. For just the
+information needed to get started, check out the <a class="reference internal" href="getting-started.html#getting-started"><span class="std std-ref">getting started</span></a> page.</p>
+<section id="the-real-type">
+<h2>The <code class="docutils literal notranslate"><span class="pre">Real</span></code> Type<a class="headerlink" href="#the-real-type" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> defines the <code class="docutils literal notranslate"><span class="pre">singularity::Real</span></code> type as a proxy
+for the <code class="docutils literal notranslate"><span class="pre">float</span></code> and <code class="docutils literal notranslate"><span class="pre">double</span></code> types. We currently resolve <code class="docutils literal notranslate"><span class="pre">Real</span></code>
+to a double precision number, however we plan to have the option to
+select different precisions at compile time in the future.</p>
+</section>
+<section id="the-parallelism-model">
+<h2>The parallelism model<a class="headerlink" href="#the-parallelism-model" title="Link to this heading"></a></h2>
+<p>For the most part, <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> tries to be agnostic to how you
+parallelize your code on-node. It knows nothing at all about
+distributed memory parallelism, with one exception, discussed
+below. An <code class="docutils literal notranslate"><span class="pre">EOS</span></code> object can be copied into any parallel code block by
+value (see below) and scalar calls do not attempt any internal
+multi-threading, meaning <code class="docutils literal notranslate"><span class="pre">EOS</span></code> objects are not thread-safe, but are
+compatible with thread safety, assuming the user calls them
+appropriately. The main complication is <code class="docutils literal notranslate"><span class="pre">lambda</span></code> arrays, which are
+discussed below.</p>
+<p>The vector <code class="docutils literal notranslate"><span class="pre">EOS</span></code> method overloads are a bit different. These are
+thread-parallel operations launched by <code class="docutils literal notranslate"><span class="pre">singularity-EOS</span></code>. They run
+in parallel, and ordering between indices of vectors cannot be
+assumed. Therefore care must taken in memory layout to avoid race
+conditions. The type of parallelism used depends on how
+<code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> is compiled. If the <code class="docutils literal notranslate"><span class="pre">Kokkos</span></code> backend is used,
+any parallel dispatch supported by <code class="docutils literal notranslate"><span class="pre">Kokkos</span></code> is supported.</p>
+<p>A more generic version of the vector calls exists in the
+<code class="docutils literal notranslate"><span class="pre">EvaluateHost</span></code> and <code class="docutils literal notranslate"><span class="pre">EvaluateDevice</span></code> methods, which allow the user
+to specify arbitrary parallel dispatch models by writing their own
+loops. See the relevant section below.</p>
+</section>
+<section id="serialization-and-shared-memory">
+<h2>Serialization and shared memory<a class="headerlink" href="#serialization-and-shared-memory" title="Link to this heading"></a></h2>
+<p>While <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> makes a best effort to be agnostic to
+parallelism, it exposes several methods that are useful in a
+distributed memory environment. In particular, there are two use-cases
+the library seeks to support:</p>
+<ol class="arabic simple">
+<li><p>To avoid stressing a filesystem, it may desirable to load a table from one thread (e.g., MPI rank) and broadcast this data to all other ranks.</p></li>
+<li><p>To save memory it may be desirable to place tabulated data, which is read-only after it has been loaded from file, into shared memory on a given node, even if all other data is thread local in a distributed-memory environment. This is possible via, e.g., <a class="reference external" href="https://www.mpi-forum.org/docs/mpi-4.1/mpi41-report/node311.htm">MPI Windows</a>.</p></li>
+</ol>
+<p>Therefore <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> exposes several methods that can be used
+in this context. The function</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK3EOS21SerializedSizeInBytesEv">
+<span id="_CPPv3NK3EOS21SerializedSizeInBytesEv"></span><span id="_CPPv2NK3EOS21SerializedSizeInBytesEv"></span><span id="EOS::SerializedSizeInBytesC"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-prename descclassname"><span class="n"><span class="pre">EOS</span></span><span class="p"><span class="pre">::</span></span></span><span class="sig-name descname"><span class="n"><span class="pre">SerializedSizeInBytes</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="p"><span class="pre">;</span></span><a class="headerlink" href="#_CPPv4NK3EOS21SerializedSizeInBytesEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>returns the amount of memory required in bytes to hold a serialized
+EOS object. The return value will depend on the underlying equation of
+state model currently contained in the object. The function</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK3EOS23SharedMemorySizeInBytesEv">
+<span id="_CPPv3NK3EOS23SharedMemorySizeInBytesEv"></span><span id="_CPPv2NK3EOS23SharedMemorySizeInBytesEv"></span><span id="EOS::SharedMemorySizeInBytesC"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-prename descclassname"><span class="n"><span class="pre">EOS</span></span><span class="p"><span class="pre">::</span></span></span><span class="sig-name descname"><span class="n"><span class="pre">SharedMemorySizeInBytes</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="p"><span class="pre">;</span></span><a class="headerlink" href="#_CPPv4NK3EOS23SharedMemorySizeInBytesEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>returns the amount of data (in bytes) that a given object can place into shared memory. Again, the return value depends on the model the object currently represents.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Many models may not be able to utilize shared memory at all. This
+holds for most analytic models, for example. The <code class="docutils literal notranslate"><span class="pre">EOSPAC</span></code> backend
+will only utilize shared memory if the <code class="docutils literal notranslate"><span class="pre">EOSPAC</span></code> version is sufficiently recent
+to support it and if <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> is built with serialization
+support for <code class="docutils literal notranslate"><span class="pre">EOSPAC</span></code> (enabled with
+<code class="docutils literal notranslate"><span class="pre">-DSINGULARITY_EOSPAC_ENABLE_SHMEM=ON</span></code>).</p>
+</div>
+<p>The function</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N3EOS9SerializeEPc">
+<span id="_CPPv3N3EOS9SerializeEPc"></span><span id="_CPPv2N3EOS9SerializeEPc"></span><span id="EOS::Serialize__cP"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-prename descclassname"><span class="n"><span class="pre">EOS</span></span><span class="p"><span class="pre">::</span></span></span><span class="sig-name descname"><span class="n"><span class="pre">Serialize</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dst</span></span><span class="sig-paren">)</span><span class="p"><span class="pre">;</span></span><a class="headerlink" href="#_CPPv4N3EOS9SerializeEPc" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>fills the <code class="docutils literal notranslate"><span class="pre">dst</span></code> pointer with the memory required for serialization
+and returns the number of bytes written to <code class="docutils literal notranslate"><span class="pre">dst</span></code>. The function</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N3EOS9SerializeEv">
+<span id="_CPPv3N3EOS9SerializeEv"></span><span id="_CPPv2N3EOS9SerializeEv"></span><span id="EOS::Serialize"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">pair</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">size_t</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">shared_ptr</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">char</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-prename descclassname"><span class="n"><span class="pre">EOS</span></span><span class="p"><span class="pre">::</span></span></span><span class="sig-name descname"><span class="n"><span class="pre">Serialize</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="p"><span class="pre">;</span></span><a class="headerlink" href="#_CPPv4N3EOS9SerializeEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>allocates a <code class="docutils literal notranslate"><span class="pre">std::shared_ptr&lt;char[]&gt;</span></code> to contain serialized data and fills
+it.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">Serialize()</span></code> uses a smart pointer while most other
+<code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> machinery works with unmanaged pointers. This
+means the pointer returned by <code class="docutils literal notranslate"><span class="pre">Serialize()</span></code> does not need to be
+freed. However it is the responsiblity of the host code to manage
+the memory for other pointers that the serialization machinery may
+utilize or interact with.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Serialization and de-serialization may only be performed on objects
+that live in host memory, before you have called
+<code class="docutils literal notranslate"><span class="pre">eos.GetOnDevice()</span></code>. Attempting to serialize device-initialized
+objects is undefined behavior, but will likely result in a
+segmentation fault.</p>
+</div>
+<p>The pair is the pointer and its size. The function</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="kt">size_t</span><span class="w"> </span><span class="n">EOS</span><span class="o">::</span><span class="n">DeSerialize</span><span class="p">(</span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">src</span><span class="p">,</span>
+<span class="w">              </span><span class="k">const</span><span class="w"> </span><span class="n">SharedMemSettings</span><span class="w"> </span><span class="o">&amp;</span><span class="n">stngs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">DEFAULT_SHMEM_STNGS</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Sets an EOS object based on the serialized representation contained in
+<code class="docutils literal notranslate"><span class="pre">src</span></code>. It returns the number of bytes read from <code class="docutils literal notranslate"><span class="pre">src</span></code>. Optionally,
+<code class="docutils literal notranslate"><span class="pre">DeSerialize</span></code> may also write the data that can be shared to a
+pointer contained in <code class="docutils literal notranslate"><span class="pre">SharedMemSettings</span></code>. If you do this, you must
+pass this pointer in, but designate only one thread per shared memory
+domain (frequently a node or socket) to actually write to this
+data. <code class="docutils literal notranslate"><span class="pre">SharedMemSettings</span></code> is a struct containing a <code class="docutils literal notranslate"><span class="pre">data</span></code> pointer
+and a <code class="docutils literal notranslate"><span class="pre">is_domain_root</span></code> boolean:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">SharedMemSettings</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">SharedMemSettings</span><span class="p">();</span>
+<span class="w">  </span><span class="n">SharedMemSettings</span><span class="p">(</span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">data_</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">is_domain_root_</span><span class="p">)</span>
+<span class="w">      </span><span class="o">:</span><span class="w"> </span><span class="n">data</span><span class="p">(</span><span class="n">data_</span><span class="p">),</span><span class="w"> </span><span class="n">is_domain_root</span><span class="p">(</span><span class="n">is_domain_root_</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<span class="w">  </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">;</span><span class="w"> </span><span class="c1">// defaults</span>
+<span class="w">  </span><span class="kt">bool</span><span class="w"> </span><span class="n">is_domain_root</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">data</span></code> pointer should point to a shared memory allocation. The
+<code class="docutils literal notranslate"><span class="pre">is_domain_root</span></code> boolean should be true for exactly one thread per
+shared memory domain.</p>
+<p>For example you might call <code class="docutils literal notranslate"><span class="pre">DeSerialize</span></code> as</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="kt">size_t</span><span class="w"> </span><span class="n">read_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eos</span><span class="p">.</span><span class="n">DeSerialize</span><span class="p">(</span><span class="n">packed_data</span><span class="p">,</span>
+<span class="w">              </span><span class="n">singularity</span><span class="o">::</span><span class="n">SharedMemSettings</span><span class="p">(</span><span class="n">shared_data</span><span class="p">,</span>
+<span class="w">                                             </span><span class="n">my_rank</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="n">NTHREADS</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">));</span>
+<span class="n">assert</span><span class="p">(</span><span class="n">read_size</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">write_size</span><span class="p">);</span><span class="w"> </span><span class="c1">// for safety</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Note that for equation of state models that have dynamically
+allocated memory, <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> reserves the right to point
+directly at data in <code class="docutils literal notranslate"><span class="pre">src</span></code>, so it <strong>cannot</strong> be freed until you
+would call <code class="docutils literal notranslate"><span class="pre">eos.Finalize()</span></code>. If the <code class="docutils literal notranslate"><span class="pre">SharedMemSettings</span></code> are
+utilized to request data be written to a shared memory pointer,
+however, you can free the <code class="docutils literal notranslate"><span class="pre">src</span></code> pointer, so long as you don’t free
+the shared memory pointer. This means you must manage these pointers
+externally and not let them go out of scope, especially if you use
+smart pointers.</p>
+</div>
+<p>Putting everything together, a full sequence with MPI might look like this:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">singularity</span><span class="o">::</span><span class="n">EOS</span><span class="w"> </span><span class="n">eos</span><span class="p">;</span>
+<span class="n">std</span><span class="o">::</span><span class="kt">size_t</span><span class="w"> </span><span class="n">packed_size</span><span class="p">,</span><span class="w"> </span><span class="n">shared_size</span><span class="p">;</span>
+<span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">packed_data</span><span class="p">;</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">rank</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c1">// load eos object</span>
+<span class="w">  </span><span class="n">eos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">singularity</span><span class="o">::</span><span class="n">StellarCollapse</span><span class="p">(</span><span class="n">filename</span><span class="p">);</span>
+<span class="w">  </span><span class="n">packed_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eos</span><span class="p">.</span><span class="n">SerializedSizeInBytes</span><span class="p">();</span>
+<span class="w">  </span><span class="n">shared_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eos</span><span class="p">.</span><span class="n">SharedMemorySizeInBytes</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="c1">// Send sizes</span>
+<span class="n">MPI_Bcast</span><span class="p">(</span><span class="o">&amp;</span><span class="n">packed_size</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">MPI_UNSIGNED_LONG</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">MPI_COMM_WORLD</span><span class="p">);</span>
+<span class="n">MPI_Bcast</span><span class="p">(</span><span class="o">&amp;</span><span class="n">spacked_size</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">MPI_UNSIGNED_LONG</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">MPI_COMM_WORLD</span><span class="p">);</span>
+
+<span class="c1">// Allocate data needed</span>
+<span class="n">packed_data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">char</span><span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">packed_size</span><span class="p">);</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">rank</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">eos</span><span class="p">.</span><span class="n">Serialize</span><span class="p">(</span><span class="n">packed_data</span><span class="p">);</span>
+<span class="w">  </span><span class="n">eos</span><span class="p">.</span><span class="n">Finalize</span><span class="p">();</span><span class="w"> </span><span class="c1">// Clean up this EOS object so it can be reused.</span>
+<span class="p">}</span>
+<span class="n">MPI_Bcast</span><span class="p">(</span><span class="n">packed_data</span><span class="p">,</span><span class="w"> </span><span class="n">packed_size</span><span class="p">,</span><span class="w"> </span><span class="n">MPI_BYTE</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">MPI_COMM_WORLD</span><span class="p">);</span>
+
+<span class="c1">// the default doesn&#39;t do shared memory.</span>
+<span class="c1">// we will change it below if shared memory is enabled.</span>
+<span class="n">singularity</span><span class="o">::</span><span class="n">SharedMemSettings</span><span class="w"> </span><span class="n">settings</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">singularity</span><span class="o">::</span><span class="n">DEFAULT_SHMEM_STNGS</span><span class="p">;</span>
+
+<span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">shared_data</span><span class="p">;</span>
+<span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">mpi_base_pointer</span><span class="p">;</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">mpi_unit</span><span class="p">;</span>
+<span class="n">MPI_Aint</span><span class="w"> </span><span class="n">query_size</span><span class="p">;</span>
+<span class="n">MPI_Win</span><span class="w"> </span><span class="n">window</span><span class="p">;</span>
+<span class="n">MPI_Comm</span><span class="w"> </span><span class="n">shared_memory_comm</span><span class="p">;</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">island_rank</span><span class="p">,</span><span class="w"> </span><span class="n">island_size</span><span class="p">;</span><span class="w"> </span><span class="c1">// rank in, size of shared memory region</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">use_mpi_shared_memory</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Generate shared memory comms</span>
+<span class="w">  </span><span class="n">MPI_Comm_split_type</span><span class="p">(</span><span class="n">MPI_COMM_WORLD</span><span class="p">,</span><span class="w"> </span><span class="n">MPI_COMM_TYPE_SHARED</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">MPI_INFO_NULL</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">shared_memory_comm</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// rank on a region that shares memory</span>
+<span class="w">  </span><span class="n">MPI_Comm_rank</span><span class="p">(</span><span class="n">shared_memory_comm</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">island_rank</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// size on a region that shares memory</span>
+<span class="w">  </span><span class="n">MPI_COMM_size</span><span class="p">(</span><span class="n">shared_memory_comm</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">island_size</span><span class="p">);</span>
+
+<span class="w">  </span><span class="c1">// Create the MPI shared memory object and get a pointer to shared data</span>
+<span class="w">  </span><span class="c1">// this allocation is a collective and must be called on every rank.</span>
+<span class="w">  </span><span class="c1">// the total size of the allocation is the sum over ranks in the shared memory comm</span>
+<span class="w">  </span><span class="c1">// of requested memory. So it&#39;s valid to request all you want on rank 0 and nothing</span>
+<span class="w">  </span><span class="c1">// on the remaining ranks.</span>
+<span class="w">  </span><span class="n">MPI_Win_allocate_shared</span><span class="p">((</span><span class="n">island_rank</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">shared_size</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">                          </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">MPI_INFO_NULL</span><span class="p">,</span><span class="w"> </span><span class="n">shared_memory_comm</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">mpi_base_pointer</span><span class="p">,</span>
+<span class="w">                          </span><span class="o">&amp;</span><span class="n">window</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// This gets a pointer to the shared memory allocation valid in local address space</span>
+<span class="w">  </span><span class="c1">// on every rank</span>
+<span class="w">  </span><span class="n">MPI_Win_shared_query</span><span class="p">(</span><span class="n">window</span><span class="p">,</span><span class="w"> </span><span class="n">MPI_PROC_NULL</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">query_size</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">mpi_unit</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">shared_data</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// Mutex for MPI window. Writing to shared memory currently allowed.</span>
+<span class="w">  </span><span class="n">MPI_Win_lock_all</span><span class="p">(</span><span class="n">MPI_MODE_NOCHECK</span><span class="p">,</span><span class="w"> </span><span class="n">window</span><span class="p">);</span>
+<span class="w">  </span><span class="c1">// Set SharedMemSettings</span>
+<span class="w">  </span><span class="n">settings</span><span class="p">.</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">shared_data</span><span class="p">;</span>
+<span class="w">  </span><span class="n">settings</span><span class="p">.</span><span class="n">is_domain_root</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">island_rank</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="n">eos</span><span class="p">.</span><span class="n">DeSerialize</span><span class="p">(</span><span class="n">packed_data</span><span class="p">,</span><span class="w"> </span><span class="n">settings</span><span class="p">);</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">use_mpi_shared_memory</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">MPI_Win_unlock_all</span><span class="p">(</span><span class="n">window</span><span class="p">);</span><span class="w"> </span><span class="c1">// Writing to shared memory disabled.</span>
+<span class="w">  </span><span class="n">MPI_Barrier</span><span class="p">(</span><span class="n">shared_memory_comm</span><span class="p">);</span>
+<span class="w">  </span><span class="n">free</span><span class="p">(</span><span class="n">packed_data</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>In the case where many EOS objects may be active at once, you can
+combine serialization and comm steps. You may wish to, for example,
+have a single pointer containing all serialized EOS’s. Same for the
+shared memory. <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> provides machinery to do this in
+the <code class="docutils literal notranslate"><span class="pre">singularity-eos/base/serialization_utils.hpp</span></code> header. This
+provides a helper struct, <code class="docutils literal notranslate"><span class="pre">BulkSerializer</span></code>:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Container_t</span><span class="p">,</span><span class="w"> </span><span class="n">Resizer_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MemberResizer</span><span class="o">&gt;</span>
+<span class="n">singularity</span><span class="o">::</span><span class="n">BulkSerializer</span>
+</pre></div>
+</div>
+<p>which may be initialized by a collection of <code class="docutils literal notranslate"><span class="pre">EOS</span></code> objects or by
+simply assigning (or constructing) its member field, <code class="docutils literal notranslate"><span class="pre">eos_objects</span></code>
+appropriately. An example <code class="docutils literal notranslate"><span class="pre">Container_t</span></code> might be
+<code class="docutils literal notranslate"><span class="pre">std::vector&lt;EOS&gt;</span></code>. A specialization for <code class="docutils literal notranslate"><span class="pre">vector</span></code> is provided as
+<code class="docutils literal notranslate"><span class="pre">VectorSerializer</span></code>. The <code class="docutils literal notranslate"><span class="pre">Resizer_t</span></code> is a functor that knows how to
+resize a collection. For example, the <code class="docutils literal notranslate"><span class="pre">MemberResizor</span></code> functor used
+for <a href="#id1"><span class="problematic" id="id2">``</span></a>std::vector``s</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">MemberResizer</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">template</span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Collection_t</span><span class="o">&gt;</span>
+<span class="w">  </span><span class="kt">void</span><span class="w"> </span><span class="k">operator</span><span class="p">()(</span><span class="n">Collection_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">collection</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="kt">size_t</span><span class="w"> </span><span class="n">count</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">collection</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">count</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>which will work for any <code class="docutils literal notranslate"><span class="pre">stl</span></code> container with a <code class="docutils literal notranslate"><span class="pre">resize</span></code> method.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">BulkSerializer</span></code> provides all the above-described serialization
+functions for <code class="docutils literal notranslate"><span class="pre">EOS</span></code> objects: <code class="docutils literal notranslate"><span class="pre">SerializedSizeInBytes</span></code>,
+<code class="docutils literal notranslate"><span class="pre">SharedMemorySizeInBytes</span></code>, <code class="docutils literal notranslate"><span class="pre">Serialize</span></code>, and <code class="docutils literal notranslate"><span class="pre">DeSerialize</span></code>, but
+it operates on all <code class="docutils literal notranslate"><span class="pre">EOS</span></code> objects contained in the container it
+wraps, not just one. Example usage might look like this:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="n">packed_size</span><span class="p">,</span><span class="w"> </span><span class="n">shared_size</span><span class="p">;</span>
+<span class="n">singularity</span><span class="o">::</span><span class="n">VectorSerializer</span><span class="o">&lt;</span><span class="n">EOS</span><span class="o">&gt;</span><span class="w"> </span><span class="n">serializer</span><span class="p">;</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">rank</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c1">// load eos object</span>
+<span class="w">  </span><span class="c1">// Code to initialize a bunch of EOS objects into a std::vector&lt;EOS&gt;</span>
+<span class="w">  </span><span class="cm">/*</span>
+<span class="cm">     Initialization code goes here</span>
+<span class="cm">   */</span>
+<span class="w">  </span><span class="n">serializer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">singularity</span><span class="o">::</span><span class="n">VectorSerializer</span><span class="o">&lt;</span><span class="n">EOS</span><span class="o">&gt;</span><span class="p">(</span><span class="n">eos_vec</span><span class="p">);</span>
+<span class="w">  </span><span class="n">packed_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">serializer</span><span class="p">.</span><span class="n">SerializedSizeInBytes</span><span class="p">();</span>
+<span class="w">  </span><span class="n">shared_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">serializer</span><span class="p">.</span><span class="n">SharedMemorySizeInBytes</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="c1">// Send sizes</span>
+<span class="n">MPI_Bcast</span><span class="p">(</span><span class="o">&amp;</span><span class="n">packed_size</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">MPI_UNSIGNED_LONG</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">MPI_COMM_WORLD</span><span class="p">);</span>
+<span class="n">MPI_Bcast</span><span class="p">(</span><span class="o">&amp;</span><span class="n">packed_size</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">MPI_UNSIGNED_LONG</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">MPI_COMM_WORLD</span><span class="p">);</span>
+
+<span class="c1">// Allocate data needed</span>
+<span class="n">packed_data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">char</span><span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">packed_size</span><span class="p">);</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">rank</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">serializer</span><span class="p">.</span><span class="n">Serialize</span><span class="p">(</span><span class="n">packed_data</span><span class="p">);</span>
+<span class="w">  </span><span class="n">serializer</span><span class="p">.</span><span class="n">Finalize</span><span class="p">();</span><span class="w"> </span><span class="c1">// Clean up all EOSs owned by the serializer</span>
+<span class="p">}</span>
+<span class="n">MPI_Bcast</span><span class="p">(</span><span class="n">packed_data</span><span class="p">,</span><span class="w"> </span><span class="n">packed_size</span><span class="p">,</span><span class="w"> </span><span class="n">MPI_BYTE</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">MPI_COMM_WORLD</span><span class="p">);</span>
+
+<span class="n">singularity</span><span class="o">::</span><span class="n">SharedMemSettings</span><span class="w"> </span><span class="n">settings</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">singularity</span><span class="o">::</span><span class="n">DEFAULT_SHMEM_STNGS</span><span class="p">;</span>
+<span class="c1">// same MPI declarations as above</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">use_mpi_shared_memory</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// same MPI code as above including setting the settings</span>
+<span class="w">  </span><span class="n">settings</span><span class="p">.</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">shared_data</span><span class="p">;</span>
+<span class="w">  </span><span class="n">settings</span><span class="p">.</span><span class="n">is_domain_root</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">island_rank</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="n">singularity</span><span class="o">::</span><span class="n">VectorSerializer</span><span class="o">&lt;</span><span class="n">EOS</span><span class="o">&gt;</span><span class="w"> </span><span class="n">deserializer</span><span class="p">;</span>
+<span class="n">deserializer</span><span class="p">.</span><span class="n">DeSerialize</span><span class="p">(</span><span class="n">packed_data</span><span class="p">,</span><span class="w"> </span><span class="n">settings</span><span class="p">);</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">use_mpi_shared_memory</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// same MPI code as above</span>
+<span class="p">}</span>
+<span class="c1">// extract each individual EOS and do something with it</span>
+<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">EOS</span><span class="o">&gt;</span><span class="w"> </span><span class="n">eos_host_vec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">deserializer</span><span class="p">.</span><span class="n">eos_objects</span><span class="p">;</span>
+<span class="c1">// get on device if you want</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">EOS</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">eos_host_vec</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">EOS</span><span class="w"> </span><span class="n">eos_device</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eos</span><span class="p">.</span><span class="n">GetOnDevice</span><span class="p">();</span>
+<span class="w">  </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>It is also possible to (with care) mix serializers… i.e., you might
+serialize with a <code class="docutils literal notranslate"><span class="pre">VectorSerializer</span></code> and de-serialize with a
+different container, as all that is required is that a container have
+a <code class="docutils literal notranslate"><span class="pre">size</span></code>, provide iterators, and be capable of being resized.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Since EOSPAC is a library, DeSerialization is destructive for EOSPAC
+and may have side-effects.</p>
+</div>
+</section>
+<section id="variants">
+<span id="variant-section"></span><h2>Variants<a class="headerlink" href="#variants" title="Link to this heading"></a></h2>
+<p>The equation of state library is object oriented, and uses a kind of
+type erasure called a <a class="reference external" href="https://en.cppreference.com/w/cpp/utility/variant">Variant</a>. (Technically we use a backport of
+this C++ feture to C++11, see: <a class="reference external" href="https://en.cppreference.com/w/cpp/utility/variant">mpark variant</a>.) The salient detail
+is that a variant is a kind of compile-time polymorphism.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">singularity::EOS</span></code> class is generic and can be initialized as
+any equation of state model listed in <a class="reference internal" href="models.html#models"><span class="std std-ref">the models section</span></a>. Unlike with standard polymorphism, you don’t need to
+initialize your equation of state as a pointer. Rather, just use the
+assignment operator. For example:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">singularity</span><span class="o">::</span><span class="n">EOS</span><span class="w"> </span><span class="n">my_eos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">singularity</span><span class="o">::</span><span class="n">IdealGas</span><span class="p">(</span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>To make this machinery work, there’s an underlying variatic class,
+<code class="docutils literal notranslate"><span class="pre">singularity::Variant</span></code>, defined in
+<code class="docutils literal notranslate"><span class="pre">singularity-eos/eos/eos_variant.hpp</span></code>. Only methods defined for the
+<code class="docutils literal notranslate"><span class="pre">singularity::Variant</span></code> class are available for the equation of state
+models. Moreover, any new equation of state model must define all
+methods defined in the <code class="docutils literal notranslate"><span class="pre">singularity::Variant</span></code> class that call the <code class="docutils literal notranslate"><span class="pre">visit</span></code>
+function, or compile errors may occur.</p>
+<p>If you wish to extract an underlying EOS model as an independent type,
+undoing the type erasure, you can do so with the <code class="docutils literal notranslate"><span class="pre">get</span></code>
+method. <code class="docutils literal notranslate"><span class="pre">get</span></code> is templated and type deduction is not possible. You
+must specify the type of the class you’re pulling out of the
+variant. For example:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">my_ideal_gas</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">my_eos</span><span class="p">.</span><span class="n">get</span><span class="o">&lt;</span><span class="n">singularity</span><span class="o">::</span><span class="n">IdealGas</span><span class="o">&gt;</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>This will give you access to methods and fields which may be unique to
+a class but not shared by the <code class="docutils literal notranslate"><span class="pre">Variant</span></code>.</p>
+<p>The EOS model also allows some host-side introspection. The method</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv47EosTypev">
+<span id="_CPPv37EosTypev"></span><span id="_CPPv27EosTypev"></span><span id="EosType"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">EosType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="p"><span class="pre">;</span></span><a class="headerlink" href="#_CPPv47EosTypev" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>returns a string representing the equation of state an <code class="docutils literal notranslate"><span class="pre">EOS</span></code> object
+currently is. For example:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">tpe_str</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">my_ideal_gas</span><span class="p">.</span><span class="n">EosType</span><span class="p">();</span>
+<span class="c1">// prints &quot;IdealGas&quot;</span>
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">tpe_str</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Similarly the method</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK11PrintParamsEv">
+<span id="_CPPv3NK11PrintParamsEv"></span><span id="_CPPv2NK11PrintParamsEv"></span><span id="PrintParamsC"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PrintParams</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="p"><span class="pre">;</span></span><a class="headerlink" href="#_CPPv4NK11PrintParamsEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>prints relevant parameters that the EOS object was created with, such
+as the Gruneisen coefficient and specific heat for an ideal gas model.</p>
+<p>If you would like to create your own custom variant with additional
+models (or a subset of models), you may do so by using the
+<code class="docutils literal notranslate"><span class="pre">eos_variant</span></code> class. For example,</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;singularity-eos/eos.hpp&gt;</span>
+<span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">singularity</span><span class="p">;</span>
+
+<span class="k">using</span><span class="w"> </span><span class="n">MyEOS_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eos_variant</span><span class="o">&lt;</span><span class="n">IdealGas</span><span class="p">,</span><span class="w"> </span><span class="n">Gruneisen</span><span class="o">&gt;</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>This will create a new type, <code class="docutils literal notranslate"><span class="pre">MyEOS_t</span></code> which contains only the
+<code class="docutils literal notranslate"><span class="pre">IdealGas</span></code> and <code class="docutils literal notranslate"><span class="pre">Gruneisen</span></code> classes. (All of these live under the
+<code class="docutils literal notranslate"><span class="pre">singularity</span></code> namespace.)</p>
+</section>
+<section id="reference-semantics-and-getondevice">
+<h2>Reference Semantics and <code class="docutils literal notranslate"><span class="pre">GetOnDevice</span></code><a class="headerlink" href="#reference-semantics-and-getondevice" title="Link to this heading"></a></h2>
+<p>Equation of state objects in <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> have so-called
+<em>reference-semantics</em>. This means that when a variable is copied or
+assigned, the copy is <em>shallow</em>, and underlying data is not moved,
+only metadata. For analytic models this is essentially irrelevant, the
+only data they contain is metadata, which is copied. For tabulated
+models such as <code class="docutils literal notranslate"><span class="pre">SpinerEOS</span></code>, this matters more.</p>
+<p>In a heterogenous environment, e.g., where both a CPU and an GPU are
+available, data is allocated on the host by default. It can be copied
+to device via</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N3EOS11GetOnDeviceEv">
+<span id="_CPPv3N3EOS11GetOnDeviceEv"></span><span id="_CPPv2N3EOS11GetOnDeviceEv"></span><span id="EOS::GetOnDevice"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-prename descclassname"><span class="n"><span class="pre">EOS</span></span><span class="p"><span class="pre">::</span></span></span><span class="sig-name descname"><span class="n"><span class="pre">GetOnDevice</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N3EOS11GetOnDeviceEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>which can be called as, e.g.,</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">eos</span><span class="p">.</span><span class="n">GetOnDevice</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>Once data is on device, <code class="docutils literal notranslate"><span class="pre">EOS</span></code> objects can be trivially copied into
+device kernels by value. The copy will be shallow, but the data will
+be available on device. In Cuda, this may mean passing the EOS in as a
+function parameter into a kernel. In a higher-level abstraction like
+Kokkos, simply capture the object into a device lambda by value.</p>
+<p>Underlying data is <strong>not</strong> reference-counted, and must be freed by
+hand. This can be achieved via the</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N3EOS8FinalizeEv">
+<span id="_CPPv3N3EOS8FinalizeEv"></span><span id="_CPPv2N3EOS8FinalizeEv"></span><span id="EOS::Finalize"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-prename descclassname"><span class="n"><span class="pre">EOS</span></span><span class="p"><span class="pre">::</span></span></span><span class="sig-name descname"><span class="n"><span class="pre">Finalize</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N3EOS8FinalizeEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>method, which can be called as, e.g.,</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">eos</span><span class="p">.</span><span class="n">Finalize</span><span class="p">();</span>
+</pre></div>
+</div>
+</section>
+<section id="accessors-and-indexers">
+<h2>Accessors and Indexers<a class="headerlink" href="#accessors-and-indexers" title="Link to this heading"></a></h2>
+<p>Many functions in <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> accept <strong>accessors</strong>, also
+called <strong>indexers</strong>. An accessor is any object with a square bracket
+operator. One-dimensional arrays, pointers, and
+<code class="docutils literal notranslate"><span class="pre">std::vector&lt;double&gt;</span></code> are all examples of what we call an
+accessor. However, the value of an accessor is it doesn’t have to be
+an array. You can create an accessor class that wraps your preferred
+memory layout, and <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> will handle it
+appropriately. An accessor that indexes into an array with some stride
+might look like this:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">Indexer</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">Indexer</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">stride</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">array</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">stride_</span><span class="p">(</span><span class="n">stride</span><span class="p">),</span><span class="w"> </span><span class="n">A_</span><span class="p">(</span><span class="n">array</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<span class="w">  </span><span class="kt">double</span><span class="w"> </span><span class="o">&amp;</span><span class="k">operator</span><span class="p">[](</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">A_</span><span class="p">[</span><span class="n">stride</span><span class="o">*</span><span class="n">i</span><span class="p">];</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">A_</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">stride_</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>The Vector API and the <code class="docutils literal notranslate"><span class="pre">lambda</span></code> optional arguments all use
+accessors, as discussed below.</p>
+</section>
+<section id="vector-and-scalar-api">
+<h2>Vector and Scalar API<a class="headerlink" href="#vector-and-scalar-api" title="Link to this heading"></a></h2>
+<p>Most <code class="docutils literal notranslate"><span class="pre">EOS</span></code> methods have both scalar and vector overloads, where the
+scalar version returns a value, and the vector version modifies an
+array. By default the vector version is called from host on device (if
+<code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> was compiled for device).</p>
+<p>The vector API is templated to accept accessors. We do note, however,
+that vectorization may suffer if your underlying data structure is not
+contiguous in memory.</p>
+<section id="eospac-vector-functions">
+<span id="eospac-vector"></span><h3>EOSPAC Vector Functions<a class="headerlink" href="#eospac-vector-functions" title="Link to this heading"></a></h3>
+<p>For performance reasons EOSPAC vector calls only support contiguous memory
+buffers as input and output. They also require an additional scratch buffer.</p>
+<p>These changes are needed to allow passing buffers directly into EOSPAC, taking
+advantage of EOSPAC options, and avoiding unnecessary copies.</p>
+<p>The size of the needed scratch buffer depends on which EOS function is called
+and the number of elements in the vector. Use the <code class="docutils literal notranslate"><span class="pre">scratch_size(func_name,</span> <span class="pre">num_elements)</span></code>
+static member function to determine the size needed for an individual function
+or <code class="docutils literal notranslate"><span class="pre">max_scratch_size(num_elements)</span></code> to retrieve the maximum needed by any
+available member function.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// std::vector&lt;double&gt; density = ...;</span>
+<span class="c1">// std::vector&lt;double&gt; energy = ...;</span>
+<span class="c1">// std::vector&lt;double&gt; temperature = ...;</span>
+
+<span class="c1">// determine size and allocate needed scratch buffer</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">sz</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">EOSPAC</span><span class="o">::</span><span class="n">scratch_size</span><span class="p">(</span><span class="s">&quot;TemperatureFromDensityInternalEnergy&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">density</span><span class="p">.</span><span class="n">size</span><span class="p">());</span>
+<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="n">scratch</span><span class="p">(</span><span class="n">sz</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">double</span><span class="p">));</span>
+
+<span class="c1">// call EOSPAC eos vector function with scratch buffer</span>
+<span class="n">eos</span><span class="p">.</span><span class="n">TemperatureFromDensityInternalEnergy</span><span class="p">(</span><span class="n">density</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span><span class="w"> </span><span class="n">energy</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span><span class="w"> </span><span class="n">temperature</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span>
+<span class="w">                                         </span><span class="n">scratch</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span><span class="w"> </span><span class="n">density</span><span class="p">.</span><span class="n">size</span><span class="p">());</span>
+</pre></div>
+</div>
+</section>
+<section id="the-evaluate-methods">
+<h3>The Evaluate Methods<a class="headerlink" href="#the-evaluate-methods" title="Link to this heading"></a></h3>
+<p>A pair of special call related to the vector calls are the
+<code class="docutils literal notranslate"><span class="pre">EvaluateHost</span></code> and <code class="docutils literal notranslate"><span class="pre">EvaluateDevice</span></code> methods. These methods request
+the EOS object to evaluate almost arbitrary code, but in a way where
+the type of the underlying EOS object is resolved <em>before</em> this
+arbitrary code is evaluated. This means the code required to resolve
+the type of the variant is only executed <em>once</em> per <code class="docutils literal notranslate"><span class="pre">Evaluate</span></code>
+call. This can enable composite EOS calls, non-standard vector calls,
+and vector calls with non-standard loop structure.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">EvaluateHost</span></code> call has the signature</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Functor_t</span><span class="o">&gt;</span>
+<span class="kt">void</span><span class="w"> </span><span class="n">Evaluate</span><span class="p">(</span><span class="n">Functor_t</span><span class="w"> </span><span class="n">f</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>and the <code class="docutils literal notranslate"><span class="pre">EvaluateDevice</span></code> method has the signature</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Functor_t</span><span class="o">&gt;</span>
+<span class="n">PORTABLE_INLINE_FUNCTION</span>
+<span class="kt">void</span><span class="w"> </span><span class="n">Evaluate</span><span class="p">(</span><span class="n">Functor_t</span><span class="w"> </span><span class="n">f</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>where a <code class="docutils literal notranslate"><span class="pre">Functor_t</span></code> is a class that <em>must</em> provide a <code class="docutils literal notranslate"><span class="pre">void</span>
+<span class="pre">operator()</span> <span class="pre">const</span></code> method templated on EOS type. Alternatively, you
+may use an anonymous function with an <cite>auto</cite> argument as the input,
+e.g.,</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// equivalent to [=], but with device markings</span>
+<span class="n">eos</span><span class="p">.</span><span class="n">Evaluate</span><span class="p">(</span><span class="n">PORTABLE_LAMBDA</span><span class="p">(</span><span class="k">auto</span><span class="w"> </span><span class="n">eos</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* my code snippet */</span><span class="w"> </span><span class="p">});</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>It can be dangerous to use functors with side-effects. Especially
+with GPUs it can produce very unintuitive behaviour. We recommend
+you only make the <code class="docutils literal notranslate"><span class="pre">operator()</span></code> non-const if you really know what
+you’re doing. And in the anonymous function case, we recommend you
+capture by value, not reference. <code class="docutils literal notranslate"><span class="pre">EvaluateDevice</span></code> does not support
+side effects at all and you must pass your functors in by value in
+that case.</p>
+</div>
+<p>To see the utlity of the <code class="docutils literal notranslate"><span class="pre">Evaluate</span></code> function, it’s probably just
+easiest to provide an example. The following code evaluates the EOS on
+device and compares against a tabulated pressure. The total difference
+is summed using the <code class="docutils literal notranslate"><span class="pre">Kokkos::parallel_reduce</span></code> functionality in the
+<code class="docutils literal notranslate"><span class="pre">Kokkos</span></code> performance portability library.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// The functor we use is defined here.</span>
+<span class="c1">// This class definition needs to be of appropriately global scope.</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CheckPofRE</span><span class="w"> </span><span class="p">{</span>
+<span class="w"> </span><span class="k">public</span><span class="o">:</span>
+<span class="w">  </span><span class="n">CheckPofRE</span><span class="p">(</span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">P</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">sie</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">N</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">P_</span><span class="p">(</span><span class="n">P</span><span class="p">),</span><span class="w"> </span><span class="n">rho_</span><span class="p">(</span><span class="n">rho</span><span class="p">),</span><span class="w"> </span><span class="n">sie_</span><span class="p">(</span><span class="n">sie</span><span class="p">),</span><span class="w"> </span><span class="n">N_</span><span class="p">(</span><span class="n">N</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<span class="w">  </span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span>
+<span class="w">  </span><span class="c1">// this is a host-only call, but if you wanted to write</span>
+<span class="w">  </span><span class="c1">// a function that you wanted to evaluate on device</span>
+<span class="w">  </span><span class="c1">// you could add the</span>
+<span class="w">  </span><span class="c1">// PORTABLE_INLINE_FUNCTION</span>
+<span class="w">  </span><span class="c1">// decorator here.</span>
+<span class="w">  </span><span class="kt">void</span><span class="w"> </span><span class="k">operator</span><span class="p">()(</span><span class="k">const</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="o">&amp;</span><span class="n">eos</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Capturing member functions of a class in a lambda typically causes problems</span>
+<span class="w">    </span><span class="c1">// when launching a GPU kernel.</span>
+<span class="w">    </span><span class="c1">// Better to pull out new variables to capture before launching a kernel.</span>
+<span class="w">    </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">P</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">P_</span><span class="p">;</span>
+<span class="w">    </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">rho</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rho_</span><span class="p">;</span>
+<span class="w">    </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">sie</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sie_</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">// reduction target</span>
+<span class="w">    </span><span class="n">Real</span><span class="w"> </span><span class="n">tot_diff</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">// reduction op</span>
+<span class="w">    </span><span class="n">Kokkos</span><span class="o">::</span><span class="n">parallel_reduce</span><span class="p">(</span>
+<span class="w">        </span><span class="s">&quot;MyCheckPofRE&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">N_</span><span class="p">,</span>
+<span class="w">        </span><span class="n">KOKKOS_LAMBDA</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="n">diff</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="n">diff</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">abs</span><span class="p">(</span><span class="n">P</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">eos</span><span class="p">.</span><span class="n">PressureFromDensityInternalEnergy</span><span class="p">(</span><span class="n">rho</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">sie</span><span class="p">[</span><span class="n">i</span><span class="p">]));</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="n">tot_diff</span><span class="p">);</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Total difference = &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">tot_diff</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w"> </span><span class="k">private</span><span class="o">:</span>
+<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">N_</span><span class="p">;</span>
+<span class="w">  </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">P_</span><span class="p">;</span>
+<span class="w">  </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">rho_</span><span class="p">;</span>
+<span class="w">  </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">sie_</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// Here we construct our functor</span>
+<span class="c1">// it is assumed the pointers to device memory P, rho, sie, are defined elsewhere.</span>
+<span class="n">CheckPofRE</span><span class="w"> </span><span class="nf">my_op</span><span class="p">(</span><span class="n">P</span><span class="p">,</span><span class="w"> </span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="n">sie</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">);</span>
+
+<span class="c1">// Here we call the evaluate function</span>
+<span class="n">eos</span><span class="p">.</span><span class="n">EvaluateHost</span><span class="p">(</span><span class="n">my_op</span><span class="p">);</span>
+
+<span class="c1">// The above two lines could have been called &quot;in-one&quot; with:</span>
+<span class="c1">// eos.EvaluateHost(CheckPofRE(P, rho, sie, N));</span>
+</pre></div>
+</div>
+<p>Alternatively, you could eliminate the functor and use an anonymous
+function with:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">eos</span><span class="p">.</span><span class="n">EvaluateHost</span><span class="p">([</span><span class="o">=</span><span class="p">](</span><span class="k">auto</span><span class="w"> </span><span class="n">eos</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">Real</span><span class="w"> </span><span class="n">tot_diff</span><span class="p">;</span>
+<span class="w">  </span><span class="n">Kokkos</span><span class="o">::</span><span class="n">parallel_reduce</span><span class="p">(</span>
+<span class="w">      </span><span class="s">&quot;MyCheckPofRE&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">N_</span><span class="p">,</span>
+<span class="w">      </span><span class="n">KOKKOS_LAMBDA</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="n">diff</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">diff</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">abs</span><span class="p">(</span><span class="n">P</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">eos</span><span class="p">.</span><span class="n">PressureFromDensityInternalEnergy</span><span class="p">(</span><span class="n">rho</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">sie</span><span class="p">[</span><span class="n">i</span><span class="p">]));</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="n">tot_diff</span><span class="p">);</span>
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Total difference = &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">tot_diff</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<span class="p">});</span>
+</pre></div>
+</div>
+<p>This is not functionality that would be available with the standard
+vector calls provided by <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code>, at least not without
+chaining multiple parallel dispatch calls. Here we can do it in a
+single call.</p>
+</section>
+</section>
+<section id="lambdas-and-optional-parameters">
+<h2>Lambdas and Optional Parameters<a class="headerlink" href="#lambdas-and-optional-parameters" title="Link to this heading"></a></h2>
+<p>Most methods for <code class="docutils literal notranslate"><span class="pre">EOS</span></code> objects accept an optional <code class="docutils literal notranslate"><span class="pre">lambda</span></code>
+parameter, which is an accessor as discussed above. <code class="docutils literal notranslate"><span class="pre">lambda[i]</span></code>
+should return a real number unless <code class="docutils literal notranslate"><span class="pre">lambda==nullptr</span></code>. Unless
+specified in <a class="reference internal" href="models.html#models"><span class="std std-ref">the models section</span></a>, this parameter does
+nothing, and the default type is <code class="docutils literal notranslate"><span class="pre">Real*</span></code> with a default value of
+<code class="docutils literal notranslate"><span class="pre">nullptr</span></code></p>
+<p>However, some models require or benefit from additional
+information. For example models with internal root finds can leverage
+initial guesses and models with composition mixing parameters may need
+additional input to return a meaningful state.</p>
+<p><code class="docutils literal notranslate"><span class="pre">EOS</span></code> models are introspective and can provide the desired/required
+size of the lambda array with:</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N3EOS7nlambdaEv">
+<span id="_CPPv3N3EOS7nlambdaEv"></span><span id="_CPPv2N3EOS7nlambdaEv"></span><span id="EOS::nlambda"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-prename descclassname"><span class="n"><span class="pre">EOS</span></span><span class="p"><span class="pre">::</span></span></span><span class="sig-name descname"><span class="n"><span class="pre">nlambda</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N3EOS7nlambdaEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>which is the desired size of the <code class="docutils literal notranslate"><span class="pre">lambda</span></code> array per scalar call. For
+vector calls, there should be one such accessor per grid point. A
+vector accessor for <code class="docutils literal notranslate"><span class="pre">lambda</span></code> should return an accessor at each
+index. A trivial example of such an indexer for <code class="docutils literal notranslate"><span class="pre">lambda</span></code> might be
+the null indexer:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">NullIndexer</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="k">operator</span><span class="p">[](</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="k">nullptr</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>As a general rule, to avoid race conditions, you will want at least
+one <code class="docutils literal notranslate"><span class="pre">lambda</span></code> array (or subview of a larger memory allocation) per
+thread. You may want one array per point you are evaluating
+on. Ideally these arrays are persistent between <code class="docutils literal notranslate"><span class="pre">EOS</span></code> calls, to
+minimize latency due to <code class="docutils literal notranslate"><span class="pre">malloc</span></code> and <code class="docutils literal notranslate"><span class="pre">free</span></code>. Several models, such
+as <code class="docutils literal notranslate"><span class="pre">SpinerEOS</span></code> also use the persistency of these arrays to cache
+useful quantities for a performance boost.</p>
+</section>
+<section id="named-arguments-to-lambda-indexers">
+<h2>Named Arguments to Lambda Indexers<a class="headerlink" href="#named-arguments-to-lambda-indexers" title="Link to this heading"></a></h2>
+<p>Lambdas support a more free-form kind of indexer. In particular, you
+may define indexers that take <strong>names</strong> via a type system. For
+example, you can write code such as:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">Lambda_t</span><span class="w"> </span><span class="n">lambda</span><span class="p">;</span>
+<span class="n">lambda</span><span class="p">[</span><span class="n">MeanIonizationState</span><span class="p">()]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zbar</span><span class="p">;</span>
+<span class="n">Real</span><span class="w"> </span><span class="n">P</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eos</span><span class="p">.</span><span class="n">PressureFromDensityTemperature</span><span class="p">(</span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="n">T</span><span class="p">,</span><span class="w"> </span><span class="n">lambda</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The available types currently supported by default are:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">singularity</span><span class="o">::</span><span class="n">IndexableTypes</span><span class="o">::</span><span class="n">MeanIonizationState</span><span class="p">;</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">singularity</span><span class="o">::</span><span class="n">IndexableTypes</span><span class="o">::</span><span class="n">LogDensity</span><span class="p">;</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">singularity</span><span class="o">::</span><span class="n">IndexableTypes</span><span class="o">::</span><span class="n">LogTemperature</span><span class="p">;</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">singularity</span><span class="o">::</span><span class="n">IndexableTypes</span><span class="o">::</span><span class="n">MeanAtomicMass</span><span class="p">;</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">singularity</span><span class="o">::</span><span class="n">IndexableTypes</span><span class="o">::</span><span class="n">MeanAtomicNumber</span><span class="p">;</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">singularity</span><span class="o">::</span><span class="n">IndexableTypes</span><span class="o">::</span><span class="n">ElectronFraction</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>However if you are not limited to these types. Any type will do and
+you can define your own as you like. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">namespace</span> <span class="n">IndexableTypes</span> <span class="p">{</span>
+<span class="n">struct</span> <span class="n">MyLambdaParameter</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>To use an indexable type, you must define an indexer with an overload
+of the <code class="docutils literal notranslate"><span class="pre">[]</span></code> operator that takes your type. For example:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyLambda_t</span><span class="w"> </span><span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+<span class="w">  </span><span class="c1">// Enable recognition that this is type-indexable</span>
+<span class="w">  </span><span class="k">constexpr</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">is_type_indexable</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<span class="w">  </span><span class="n">MyLambda_t</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="p">;</span>
+<span class="w">  </span><span class="n">PORTABLE_FORCEINLINE_FUNCTION</span>
+<span class="w">  </span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="k">operator</span><span class="p">[](</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="kt">size_t</span><span class="w"> </span><span class="n">idx</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">data_</span><span class="p">[</span><span class="n">idx</span><span class="p">];</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="n">PORTABLE_FORCEINLINE_FUNCTION</span>
+<span class="w">  </span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="k">operator</span><span class="p">[](</span><span class="k">const</span><span class="w"> </span><span class="n">MeanIonizationState</span><span class="w"> </span><span class="o">&amp;</span><span class="n">zbar</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">data_</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="k">private</span><span class="o">:</span>
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="n">Real</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">data_</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>which might be used as</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">MyLambda_t</span><span class="w"> </span><span class="n">lambda</span><span class="p">;</span>
+<span class="n">lambda</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lRho</span><span class="p">;</span>
+<span class="n">lambda</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lT</span><span class="p">;</span>
+<span class="n">lambda</span><span class="p">[</span><span class="n">MeanIonizationState</span><span class="p">()]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Z</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">MeanIonizationState</span></code> is shorthand for index 2, since you
+defined that overload. Note that the <code class="docutils literal notranslate"><span class="pre">operator[]</span></code> must be marked
+<code class="docutils literal notranslate"><span class="pre">const</span></code>. To more easily enable mixing and matching integer-based
+indexing with type-based indexing, the functions</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="o">&gt;</span>
+<span class="n">PORTABLE_FORCEINLINE_FUNCTION</span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">SafeGet</span><span class="p">(</span><span class="n">Indexer_t</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">&amp;</span><span class="n">lambda</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="kt">size_t</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">idx</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="n">out</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="o">&gt;</span>
+<span class="n">PORTABLE_FORCEINLINE_FUNCTION</span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">SafeGet</span><span class="p">(</span><span class="n">Indexer_t</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">&amp;</span><span class="n">lambda</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="n">out</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="o">&gt;</span>
+<span class="n">PORTABLE_FORCEINLINE_FUNCTION</span>
+<span class="n">Real</span><span class="w"> </span><span class="n">SafeMustGet</span><span class="p">(</span><span class="n">Indexer_t</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">&amp;</span><span class="n">lambda</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="kt">size_t</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">idx</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="o">&gt;</span>
+<span class="n">PORTABLE_FORCEINLINE_FUNCTION</span>
+<span class="n">Real</span><span class="w"> </span><span class="n">SafeMustGet</span><span class="p">(</span><span class="n">Indexer_t</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">&amp;</span><span class="n">lambda</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>will update the value of <code class="docutils literal notranslate"><span class="pre">out</span></code> with the value at either the appropriate
+type-based index, <code class="docutils literal notranslate"><span class="pre">T</span></code>, or the numerical index, <code class="docutils literal notranslate"><span class="pre">idx</span></code>, if the <code class="docutils literal notranslate"><span class="pre">Indexer_t</span></code>
+doesn’t accept type-based indexing. If the <code class="docutils literal notranslate"><span class="pre">Indexer_t</span></code> <strong>does</strong> accept
+type-based indexing but <strong>doesn’t</strong> have the requested index, then the
+<code class="docutils literal notranslate"><span class="pre">out</span></code> value is not updated. The same is true for when <code class="docutils literal notranslate"><span class="pre">Indexer_t</span></code> is the
+<code class="docutils literal notranslate"><span class="pre">nullptr</span></code>. The overload that doesn’t take a numerical index will <em>only</em>
+return the value at a type-based index.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">SafeMustGet()</span></code> version is intended to generate errors if a value can’t be
+retrieved with four types of errors that can occur:</p>
+<ol class="arabic simple">
+<li><p>If a null pointer is passed as the indexer, a runtime abort or exception will
+occur</p></li>
+<li><p>If a type-based indexer is passed (i.e. one with the <code class="docutils literal notranslate"><span class="pre">constexpr</span> <span class="pre">static</span> <span class="pre">bool</span></code>
+member <code class="docutils literal notranslate"><span class="pre">is_type_indexable</span> <span class="pre">=</span> <span class="pre">true</span></code>), but the type doesn’t exist then a <strong>static</strong>
+assertion will fail</p></li>
+<li><p>If one of the overloads is used where a <code class="docutils literal notranslate"><span class="pre">std::size_t</span></code> index is provided, but
+the indexer can’t accept integer indexing, then a <strong>static</strong> assertion will fail</p></li>
+<li><p>If the indexer can’t use type-based indexing but an <code class="docutils literal notranslate"><span class="pre">std::size_t</span></code> index
+wasn’t provided, then a <strong>static</strong> assertion will fail</p></li>
+</ol>
+<p>Similarly, the functions</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="o">&gt;</span>
+<span class="n">PORTABLE_FORCEINLINE_FUNCTION</span>
+<span class="kr">inline</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">SafeSet</span><span class="p">(</span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">lambda</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="kt">size_t</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">idx</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">in</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="o">&gt;</span>
+<span class="n">PORTABLE_FORCEINLINE_FUNCTION</span>
+<span class="kr">inline</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">SafeSet</span><span class="p">(</span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">lambda</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">in</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="o">&gt;</span>
+<span class="n">PORTABLE_FORCEINLINE_FUNCTION</span>
+<span class="kr">inline</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">SafeMustSet</span><span class="p">(</span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">lambda</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="kt">size_t</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">idx</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">in</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="o">&gt;</span>
+<span class="n">PORTABLE_FORCEINLINE_FUNCTION</span>
+<span class="kr">inline</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">SafeMustSet</span><span class="p">(</span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;</span><span class="n">lambda</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">in</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>can modify the values in the <code class="docutils literal notranslate"><span class="pre">Indexer_t</span></code> and behave the same way. In this way,
+if a type-based index isn’t present in the container, then a different index won’t
+be overwritten. Again, the <code class="docutils literal notranslate"><span class="pre">SafeMustSet()</span></code> version will compile-time fail
+or runtime abort if the lambda value can’t be modified for the same reasons as
+<code class="docutils literal notranslate"><span class="pre">SafeMustGet()</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Previous versions defined a <code class="docutils literal notranslate"><span class="pre">Get()</span></code> function that was “unsafe” in the
+sense that it would fall back on the numerical index even if a type-based
+indexer was used. This could result in retrieving and overwriting incorrect
+values in the indexer. We recommend not using this function and instead using
+the “safe” versions.</p>
+</div>
+<p>As a convenience tool, the struct</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="o">&lt;</span><span class="k">typename</span><span class="p">...</span><span class="w"> </span><span class="n">Ts</span><span class="o">&gt;</span>
+<span class="n">singularity</span><span class="o">::</span><span class="n">IndexableTypes</span><span class="o">::</span><span class="n">VariadicIndexer</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>automatically defines an indexer that accepts all named indices in the
+variadic list <code class="docutils literal notranslate"><span class="pre">Ts...</span></code> and also integer indexing. It’s a fixed-size
+array under the hood.</p>
+<p>You can check if an equation of state is compatible with a given named
+index type by calling</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">eos</span><span class="p">.</span><span class="n">NeedsLambda</span><span class="p">(</span><span class="n">NamedIndex</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>which returns <code class="docutils literal notranslate"><span class="pre">true</span></code> if the EOS is compatible with <code class="docutils literal notranslate"><span class="pre">NamedIndex</span></code>
+and <code class="docutils literal notranslate"><span class="pre">false</span></code> otherwise.</p>
+<p>All of the above functionality is available in
+the header file <code class="docutils literal notranslate"><span class="pre">singularity-eos/base/indexable_types.hpp</span></code>.</p>
+</section>
+<section id="eos-modifiers">
+<h2>EOS Modifiers<a class="headerlink" href="#eos-modifiers" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">EOS</span></code> models can be <em>modified</em> by templated classes we call
+<em>modifiers</em>. A modifier has exactly the same API as an <code class="docutils literal notranslate"><span class="pre">EOS</span></code>, but
+provides some internal transformation on inputs and outputs. For
+example the <code class="docutils literal notranslate"><span class="pre">ShiftedEOS</span></code> modifier changes the reference energy of a
+given EOS model by shifting all energies up or down. Modifiers can be
+used to, for example, production-harden a model. Only certain
+combinations of <code class="docutils literal notranslate"><span class="pre">EOS</span></code> and <code class="docutils literal notranslate"><span class="pre">modifier</span></code> are permitted by the default
+<code class="docutils literal notranslate"><span class="pre">Variant</span></code>. For example, only <code class="docutils literal notranslate"><span class="pre">IdealGas</span></code>, <code class="docutils literal notranslate"><span class="pre">SpinerEOS</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">StellarCollapse</span></code> support the <code class="docutils literal notranslate"><span class="pre">RelativisticEOS</span></code> and <code class="docutils literal notranslate"><span class="pre">UnitSystem</span></code>
+modifiers. All models support the <code class="docutils literal notranslate"><span class="pre">ShiftedEOS</span></code> and <code class="docutils literal notranslate"><span class="pre">ScaledEOS</span></code>
+modifiers. However, note that modifiers do not commute, and only one
+order is supported. The ordering, inside-out, is <code class="docutils literal notranslate"><span class="pre">UnitSystem</span></code> or
+<code class="docutils literal notranslate"><span class="pre">RelativisticEOS</span></code>, then <code class="docutils literal notranslate"><span class="pre">ScaledEOS</span></code>, then <code class="docutils literal notranslate"><span class="pre">ShiftedEOS</span></code>.</p>
+<p>A modified equation of state can be built up iteratively. To check if
+the equation of state currently stored in the variant can modified,
+you may call</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="n">ModifiedInVariant</span><span class="o">&lt;</span><span class="n">Mod</span><span class="o">&gt;</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">Mod</span></code> is the type of the modifier you want to apply, for
+example <code class="docutils literal notranslate"><span class="pre">ShiftedEOS</span></code>. If this function returns true, then you can
+apply a modifier with the function</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">Variant</span><span class="w"> </span><span class="n">Modify</span><span class="o">&lt;</span><span class="n">Mod</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Args</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="p">..</span><span class="n">args</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>where again <code class="docutils literal notranslate"><span class="pre">Mod</span></code> is the modifier you wish to apply, and <code class="docutils literal notranslate"><span class="pre">args</span></code>
+are the arguments to the constructor for that modifier, e.g., the
+shift. For example, one might build up a shifted or scaled eos with a
+code block like this:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">singularity</span><span class="p">;</span>
+<span class="n">EOS</span><span class="w"> </span><span class="n">eos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IdealGas</span><span class="p">(</span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">cv</span><span class="p">);</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">do_shift</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">eos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eos</span><span class="p">.</span><span class="k">template</span><span class="w"> </span><span class="n">Modify</span><span class="o">&lt;</span><span class="n">ShiftedEOS</span><span class="o">&gt;</span><span class="p">(</span><span class="n">shift</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">do_scale</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">eos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eos</span><span class="p">.</span><span class="k">template</span><span class="w"> </span><span class="n">Modify</span><span class="o">&lt;</span><span class="n">ScaledEOS</span><span class="o">&gt;</span><span class="p">(</span><span class="n">scale</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Relevant to the broad <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> API, EOS models provide
+introspection. To check if an EOS is modified, call</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK10IsModifiedEv">
+<span id="_CPPv3NK10IsModifiedEv"></span><span id="_CPPv2NK10IsModifiedEv"></span><span id="IsModifiedC"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">IsModified</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="p"><span class="pre">;</span></span><a class="headerlink" href="#_CPPv4NK10IsModifiedEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>This will return <code class="docutils literal notranslate"><span class="pre">true</span></code> for a modified model and <code class="docutils literal notranslate"><span class="pre">false</span></code>
+otherwise. Modifiers can also be undone. To get a completely
+unmodified EOS model, call</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv419GetUnmodifiedObjectv">
+<span id="_CPPv319GetUnmodifiedObjectv"></span><span id="_CPPv219GetUnmodifiedObjectv"></span><span id="GetUnmodifiedObject"></span><span class="kt"><span class="pre">auto</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">GetUnmodifiedObject</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="p"><span class="pre">;</span></span><a class="headerlink" href="#_CPPv419GetUnmodifiedObjectv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>The return value here will be either the type of the <code class="docutils literal notranslate"><span class="pre">EOS</span></code> variant
+type or the unmodified model (for example <code class="docutils literal notranslate"><span class="pre">IdealGas</span></code>), depending
+on whether this method was called within a variant or on a standalone
+model outside a variant.</p>
+<p>If you have chained modifiers, e.g.,
+<code class="docutils literal notranslate"><span class="pre">ShifedEOS&lt;ScaledEOS&lt;IdealGas&gt;</span></code>, you can undo only one of the
+modifiers with the</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv412UnmodifyOncev">
+<span id="_CPPv312UnmodifyOncev"></span><span id="_CPPv212UnmodifyOncev"></span><span id="UnmodifyOnce"></span><span class="kt"><span class="pre">auto</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">UnmodifyOnce</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="p"><span class="pre">;</span></span><a class="headerlink" href="#_CPPv412UnmodifyOncev" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>method, which has the same return type pattern as above, but only
+undoes one level of modification.</p>
+<p>For more details on modifiers, see the <a class="reference internal" href="python.html#modifiers"><span class="std std-ref">modifiers</span></a>
+section. If you need a combination of modifiers not supported by
+default, we recommend building a custom variant as described above.</p>
+</section>
+<section id="modifiers-and-lambdas">
+<h2>Modifiers and Lambdas<a class="headerlink" href="#modifiers-and-lambdas" title="Link to this heading"></a></h2>
+<p>Modifiers may require lambdas. When this is the case, the lambda
+required by the modifier is appended to the end of the lambda
+indexer. For example, the <code class="docutils literal notranslate"><span class="pre">StellarCollapse</span></code> EOS model requires
+<code class="docutils literal notranslate"><span class="pre">nlambda=2</span></code>. The <code class="docutils literal notranslate"><span class="pre">ZSplitI</span></code> modifier rquires
+<code class="docutils literal notranslate"><span class="pre">nlambda=1</span></code>. Together, <code class="docutils literal notranslate"><span class="pre">ZSplitI&lt;StellarCollapse&gt;</span></code> requires a
+lambda indexer of length 3, and the ordering is two parameters for
+<code class="docutils literal notranslate"><span class="pre">StellarCollapse</span></code> first, and then the parameter required by
+<code class="docutils literal notranslate"><span class="pre">ZSplitI</span></code>.</p>
+</section>
+<section id="preferred-inputs">
+<h2>Preferred Inputs<a class="headerlink" href="#preferred-inputs" title="Link to this heading"></a></h2>
+<p>Some equations of state, such as those built on tabulated data, are
+most performant when quantities, e.g., pressure, are requested in
+terms of density and temperature. Others may be most performant for
+density and specific internal energy.</p>
+<p>Most fluid codes work in terms of density and energy. However, for a
+model that prefers density and temperature inputs, it may be better
+compute temperature first, then compute other quantities given density
+and temperature, rather than computing everything from density and
+energy.</p>
+<p><code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> offers some introspection to enable users to
+determine what the right sequence of calls to make is:</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv414PreferredInputv">
+<span id="_CPPv314PreferredInputv"></span><span id="_CPPv214PreferredInputv"></span><span id="PreferredInputCE"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">constexpr</span></span><span class="w"> </span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">long</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PreferredInput</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="p"><span class="pre">;</span></span><a class="headerlink" href="#_CPPv414PreferredInputv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>The return value is a bit field, represented as a number, where each
+nonzero bit in the field represents some thermodynamic quantity like
+density or temperature. You can check whether or not an eos prefers
+energy or temperature as an input via code like this:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">singularity</span><span class="p">;</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">preferred_input</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">my_eos</span><span class="p">.</span><span class="n">PreferredInput</span><span class="p">();</span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">en_preferred</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">preferred_input</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">thermalqs</span><span class="o">::</span><span class="n">specific_internal_energy</span><span class="p">;</span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">temp_preferred</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">preferred_input</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">thermalqs</span><span class="o">::</span><span class="n">temperature</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Here the bitwise and operator masks out a specific flag, allowing one
+to check whether or not the bitfield contains that flag.</p>
+<p>The available flags in the <code class="docutils literal notranslate"><span class="pre">singulartiy::thermalqs</span></code> namespace are
+currently:
+* <code class="docutils literal notranslate"><span class="pre">thermalqs::none</span></code>
+* <code class="docutils literal notranslate"><span class="pre">thermalqs::density</span></code>
+* <code class="docutils literal notranslate"><span class="pre">thermalqs::specific_internal_energy</span></code>
+* <code class="docutils literal notranslate"><span class="pre">thermalqs::pressure</span></code>
+* <code class="docutils literal notranslate"><span class="pre">thermalqs::temperature</span></code>
+* <code class="docutils literal notranslate"><span class="pre">thermalqs::specific_heat</span></code>
+* <code class="docutils literal notranslate"><span class="pre">thermalqs::bulk_modulus</span></code>
+* <code class="docutils literal notranslate"><span class="pre">thermalqs::do_lambda</span></code>
+* <code class="docutils literal notranslate"><span class="pre">thermalqs::all_values</span></code></p>
+<p>however, most EOS models only specify that they prefer density and
+temperature or density and specific internal energy.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">thermalqs::do_lambda</span></code> flag is a bit special. It specifies that
+eos-specific operations are to be performed on the additional
+quantities passed in through the <code class="docutils literal notranslate"><span class="pre">lambda</span></code> variable.</p>
+</div>
+</section>
+<section id="eos-builder">
+<span id="eos-builder-section"></span><h2>EOS Builder<a class="headerlink" href="#eos-builder" title="Link to this heading"></a></h2>
+<p>The iterative construction of modifiers described above and in the
+<a class="reference internal" href="python.html#modifiers"><span class="std std-ref">modifiers</span></a> section is object oriented. For
+convenience, we also provide a procedural, dispatch-based approach in
+the <code class="docutils literal notranslate"><span class="pre">EOSBuilder</span></code> namespace and header. The key function is</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">class</span><span class="o">&gt;</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">Mod</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="p">...</span><span class="w"> </span><span class="n">Ts</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="p">...</span><span class="w"> </span><span class="n">Args</span><span class="o">&gt;</span>
+<span class="n">singularity</span><span class="o">::</span><span class="n">Variant</span><span class="o">&lt;</span><span class="n">Ts</span><span class="p">...</span><span class="o">&gt;</span><span class="w"> </span><span class="n">Modify</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Variant</span><span class="o">&lt;</span><span class="n">Ts</span><span class="p">...</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;</span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">Args</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="p">...</span><span class="n">args</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">Mod</span></code> is an EOS modifier, <code class="docutils literal notranslate"><span class="pre">Variant</span></code> is either your
+user-defined custom EOS variant type, or the pre-defined <code class="docutils literal notranslate"><span class="pre">EOS</span></code> type,
+the <code class="docutils literal notranslate"><span class="pre">eos</span></code> object is an EOS you’d like to modify (stored as a
+variant), and <code class="docutils literal notranslate"><span class="pre">args</span></code> are the additional arguments to the constructor
+of <code class="docutils literal notranslate"><span class="pre">Mod</span></code> beyond the object to modify. For example, initializing an
+<code class="docutils literal notranslate"><span class="pre">IdealGas</span></code> equation of state that is optionally shifted and scaled
+might look something like this:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">singularity</span><span class="p">;</span>
+<span class="n">EOS</span><span class="w"> </span><span class="n">eos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IdealGas</span><span class="p">(</span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">cv</span><span class="p">);</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">do_shift</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">eos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">EOSBuilder</span><span class="o">::</span><span class="n">Modify</span><span class="o">&lt;</span><span class="n">ShiftedEOS</span><span class="o">&gt;</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">shift</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">do_scale</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">eos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">EOSBuilder</span><span class="o">::</span><span class="n">Modify</span><span class="o">&lt;</span><span class="n">ScaledEOS</span><span class="o">&gt;</span><span class="p">(</span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">scale</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="checkparams">
+<span id="eos-methods-reference-section"></span><h2>CheckParams<a class="headerlink" href="#checkparams" title="Link to this heading"></a></h2>
+<p>You may check whether or not an equation of state object is
+constructed self-consistently and ready for use by calling</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK11CheckParamsEv">
+<span id="_CPPv3NK11CheckParamsEv"></span><span id="_CPPv2NK11CheckParamsEv"></span><span id="CheckParamsC"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">CheckParams</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="p"><span class="pre">;</span></span><a class="headerlink" href="#_CPPv4NK11CheckParamsEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>which raise an error and/or print an equation of state specific error
+message if something has gone wrong. Most EOS constructors and ways of
+building an EOS call <code class="docutils literal notranslate"><span class="pre">CheckParams</span></code> by default.</p>
+</section>
+<section id="equation-of-state-methods-reference">
+<h2>Equation of State Methods Reference<a class="headerlink" href="#equation-of-state-methods-reference" title="Link to this heading"></a></h2>
+<p>Below the scalar functions are listed. In general, a vector version of
+each of these functions exists, which returns void and takes indexers
+of each input followed by each output. All of these functions are
+available on both host and device (if compiled for a system with a
+discrete accelerator).</p>
+<p>Functions are named descriptively, and therefore the method names
+should be self explanatory. Unless specified, all units are in
+cgs. Unless specified, all functions work on device, if the code is
+compiled appropriately. The exceptions are constructors,
+<code class="docutils literal notranslate"><span class="pre">GetOnDevice</span></code>, and <code class="docutils literal notranslate"><span class="pre">Finalize</span></code>, all of which are host-only.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Real</span><span class="o">*&gt;</span>
+<span class="n">Real</span><span class="w"> </span><span class="n">TemperatureFromDensityInternalEnergy</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">sie</span><span class="p">,</span>
+<span class="w">                                          </span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Returns temperature in Kelvin. Inputs are density in <span class="math notranslate nohighlight">\(g/cm^3\)</span>
+and specific internal energy in <span class="math notranslate nohighlight">\(erg/g\)</span>. The vector equivalent
+of this function is</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">RealIndexer</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">ConstRealIndexer</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">LambdaIndexer</span><span class="o">&gt;</span>
+<span class="kr">inline</span><span class="w"> </span><span class="kt">void</span>
+<span class="n">TemperatureFromDensityInternalEnergy</span><span class="p">(</span><span class="n">ConstRealIndexer</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">rhos</span><span class="p">,</span><span class="w"> </span><span class="n">ConstRealIndexer</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">sies</span><span class="p">,</span>
+<span class="w">                                     </span><span class="n">RealIndexer</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">temperatures</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">num</span><span class="p">,</span>
+<span class="w">                                     </span><span class="n">LambdaIndexer</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambdas</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">rhos</span></code> and <code class="docutils literal notranslate"><span class="pre">sies</span></code> are input arrays and <code class="docutils literal notranslate"><span class="pre">temperatures</span></code> is
+an output array. <code class="docutils literal notranslate"><span class="pre">num</span></code> is the size of those arrays and <code class="docutils literal notranslate"><span class="pre">lambdas</span></code>
+is an optional array of <code class="docutils literal notranslate"><span class="pre">lambda</span></code> arrays. In general, every scalar
+function that returns a real number given a thermodynamic state has a
+vector function with analogous signature. The optional <code class="docutils literal notranslate"><span class="pre">lambda</span></code>
+parameter is always last in the function signature. As they are all
+almost exactly analogous to their scalar counterparts, we will mostly
+not list the vector functions here.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Real</span><span class="o">*&gt;</span>
+<span class="n">Real</span><span class="w"> </span><span class="n">InternalEnergyFromDensityTemperature</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">temperature</span><span class="p">,</span>
+<span class="w">                                          </span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>returns specific internal energy in <span class="math notranslate nohighlight">\(erg/g\)</span> given a density in
+<span class="math notranslate nohighlight">\(g/cm^3\)</span> and a temperature in Kelvin.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Real</span><span class="o">*&gt;</span>
+<span class="n">Real</span><span class="w"> </span><span class="n">PressureFromDensityTemperature</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">temperature</span><span class="p">,</span>
+<span class="w">                                    </span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>returns pressure in Barye given density in <span class="math notranslate nohighlight">\(g/cm^3\)</span> and temperature in Kelvin.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Real</span><span class="o">*&gt;</span>
+<span class="n">Real</span><span class="w"> </span><span class="n">PressureFromDensityInternalEnergy</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">temperature</span><span class="p">,</span>
+<span class="w">                                       </span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>returns pressure in Barye given density in <span class="math notranslate nohighlight">\(g/cm^3\)</span> and specific
+internal energy in <span class="math notranslate nohighlight">\(erg/g\)</span>.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Real</span><span class="o">*&gt;</span>
+<span class="n">Real</span><span class="w"> </span><span class="n">SpecificHeatFromDensityTemperature</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">temperature</span><span class="p">,</span>
+<span class="w">                                        </span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>returns specific heat capacity at constant volume, in units of
+<span class="math notranslate nohighlight">\(erg/(g K)\)</span> in terms of density in <span class="math notranslate nohighlight">\(g/cm^3\)</span> and
+temperature in Kelvin.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Real</span><span class="o">*&gt;</span>
+<span class="n">Real</span><span class="w"> </span><span class="n">SpecificHeatFromDensityInternalEnergy</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">sie</span><span class="p">,</span>
+<span class="w">                                           </span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>returns specific heat capacity at constant volume, in units of
+<span class="math notranslate nohighlight">\(erg/(g K)\)</span> in terms of density in <span class="math notranslate nohighlight">\(g/cm^3\)</span> and specific
+internal energy in <span class="math notranslate nohighlight">\(erg/g\)</span>.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Real</span><span class="o">*&gt;</span>
+<span class="n">Real</span><span class="w"> </span><span class="n">BulkModulusFromDensityTemperature</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">temperature</span><span class="p">,</span>
+<span class="w">                                       </span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>returns the the bulk modulus</p>
+<div class="math notranslate nohighlight">
+\[B_s = \rho (\partial P/\partial \rho)_s\]</div>
+<p>in units of <span class="math notranslate nohighlight">\(g cm^2/s^2\)</span> given density in <span class="math notranslate nohighlight">\(g/cm^3\)</span> and
+temperature in Kelvin. For most material models, the square of the
+sound speed is given by</p>
+<div class="math notranslate nohighlight">
+\[c_s^2 = \frac{B_S}{\rho}\]</div>
+<p>Note that for relativistic models,</p>
+<div class="math notranslate nohighlight">
+\[c_s^2 = \frac{B_S}{w}\]</div>
+<p>where <span class="math notranslate nohighlight">\(w = \rho h\)</span> for specific enthalpy <span class="math notranslate nohighlight">\(h\)</span> is the
+enthalpy by volume. The sound speed may also differ for, e.g., porous
+models, where the pressure is less directly correlated with the
+density.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Real</span><span class="o">*&gt;</span>
+<span class="n">Real</span><span class="w"> </span><span class="n">BulkModulusFromDensityInternalEnergy</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">sie</span><span class="p">,</span>
+<span class="w">                                          </span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>returns the bulk modulus in units of <span class="math notranslate nohighlight">\(g cm^2/s^2\)</span> given density
+in <span class="math notranslate nohighlight">\(g/cm^3\)</span> and specific internal energy in <span class="math notranslate nohighlight">\(erg/g\)</span>.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Real</span><span class="o">*&gt;</span>
+<span class="n">Real</span><span class="w"> </span><span class="n">GruneisenParamFromDensityTemperature</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">temperature</span><span class="p">,</span>
+<span class="w">                                          </span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>returns the unitless Gruneisen parameter</p>
+<div class="math notranslate nohighlight">
+\[\Gamma = \frac{1}{\rho}\left(\frac{\partial P}{\partial \varepsilon}\right)_\rho\]</div>
+<p>given density in <span class="math notranslate nohighlight">\(g/cm^3\)</span> and temperature in Kelvin.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Real</span><span class="o">*&gt;</span>
+<span class="n">Real</span><span class="w"> </span><span class="n">GruneisenParamFromDensityInternalEnergy</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">sie</span><span class="p">,</span>
+<span class="w">                                             </span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>returns the unitless Gruneisen parameter given density in
+<span class="math notranslate nohighlight">\(g/cm^3\)</span> and specific internal energy in <span class="math notranslate nohighlight">\(erg/g\)</span>.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Real</span><span class="o">*&gt;</span>
+<span class="n">Real</span><span class="w"> </span><span class="n">InternalEnergyFromDensityPressure</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">P</span><span class="p">,</span>
+<span class="w">                                       </span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>returns the specific internal energy in <span class="math notranslate nohighlight">\(erg/g\)</span> given a density
+in <span class="math notranslate nohighlight">\(g/cm^3\)</span> and a pressure in Barye. This call is often a root
+find, and thus an alternative signature allows an initial guess to be
+passed in by reference:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Real</span><span class="o">*&gt;</span>
+<span class="kt">void</span><span class="w"> </span><span class="n">InternalEnergyFromDensityPressure</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">P</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="n">sie</span><span class="p">,</span>
+<span class="w">                                       </span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>In this case, the guess will be set to the new value by the function.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Real</span><span class="o">*&gt;</span>
+<span class="n">Real</span><span class="w"> </span><span class="n">EntropyFromDensityTemperature</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">temperature</span><span class="p">,</span>
+<span class="w">                                   </span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>returns the entropy as a function of density in <span class="math notranslate nohighlight">\(g/cm^3\)</span> and
+temperature in Kelvin.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Real</span><span class="o">*&gt;</span>
+<span class="n">Real</span><span class="w"> </span><span class="n">EntropyFromDensityInternalEnergy</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">sie</span><span class="p">,</span>
+<span class="w">                                      </span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>returns the entropy as a function of density in <span class="math notranslate nohighlight">\(g/cm^3\)</span> and
+specific internal energy in <span class="math notranslate nohighlight">\(erg/g\)</span>.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Real</span><span class="o">*&gt;</span>
+<span class="n">Real</span><span class="w"> </span><span class="n">GibssFreeEnergyFromDensityTemperature</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">temperature</span><span class="p">,</span>
+<span class="w">                                           </span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>returns the Gibbs free energy as a function of density in <span class="math notranslate nohighlight">\(g/cm^3\)</span> and
+temperature in Kelvin.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Real</span><span class="o">*&gt;</span>
+<span class="n">Real</span><span class="w"> </span><span class="n">GibbsFreeEnergyFromDensityInternalEnergy</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">sie</span><span class="p">,</span>
+<span class="w">                                              </span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>returns the Gibbs free energy as a function of density in <span class="math notranslate nohighlight">\(g/cm^3\)</span> and
+specific internal energy in <span class="math notranslate nohighlight">\(erg/g\)</span>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Not all equations of state provide entropy and Gibbs free
+energy. These are coupled, however, so if one is provided, the other
+will be too. If you call an entropy for a model that does not
+provide it, <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> will return an error.</p>
+</div>
+<p>The function</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="w"> </span><span class="n">Real</span><span class="o">*&gt;</span>
+<span class="kt">void</span><span class="w"> </span><span class="n">MeanAtomicMassFromDensityTemperature</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">T</span><span class="p">,</span>
+<span class="w">                                          </span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nullpter</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>returns the mean atomic mass (i.e., the number of nucleons) of a
+material given density in <span class="math notranslate nohighlight">\(g/cm^3\)</span> and temperature in
+Kelvin. The reason this is allowed to vary with density and
+temperature is that some equations of state, such as the Stellar
+Collapse and Helmholtz equations of state encapsulate reactive flows
+where the average nucleus may depend on thermodynamic variables. For
+most materials, however, this is not the case and a convenience
+function that drops the dependence is available:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">Real</span><span class="w"> </span><span class="nf">MeanAtomicMass</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>The function</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="w"> </span><span class="n">Real</span><span class="o">*&gt;</span>
+<span class="kt">void</span><span class="w"> </span><span class="n">MeanAtomicNumberFromDensityTemperature</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">T</span><span class="p">,</span>
+<span class="w">                                            </span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nullpter</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>returns the mean atomic number (i.e., the number of protons in the
+nucleus) of a material given density in <span class="math notranslate nohighlight">\(g/cm^3\)</span> and temperature
+in Kelvin. The reason this is allowed to vary with density and
+temperature is that some equations of state, such as the Stellar
+Collapse and Helmholtz equations of state encapsulate reactive flows
+where the average nucleus may depend on thermodynamic variables. For
+most materials, however, this is not the case and a convenience
+function that drops the dependence is available:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">Real</span><span class="w"> </span><span class="nf">MeanAtomicNumber</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>For materials where the mean atomic mass and number <strong>do</strong> vary with
+density and temperature, the convenience call without this
+dependence will produce an error.</p>
+</div>
+<p>The method</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Container_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">set</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;&gt;</span>
+<span class="k">static</span><span class="w"> </span><span class="kr">inline</span><span class="w"> </span><span class="n">Container_t</span><span class="w"> </span><span class="n">AvailableEOSs</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>returns a container of strings representing all equation of state models available in the variant. By default, returns a <code class="docutils literal notranslate"><span class="pre">std::set&lt;std::string&gt;</span></code>.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="kr">inline</span><span class="w"> </span><span class="k">constexpr</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">AvailableEOSTypes</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>returns a compile-time type list containing all the equation of state types available in the variant as a <code class="docutils literal notranslate"><span class="pre">variadic_utils::type_list&lt;EOSs...&gt;</span></code>.</p>
+<p>The function</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Real</span><span class="o">*&gt;</span>
+<span class="kt">void</span><span class="w"> </span><span class="n">ValuesAtReferenceState</span><span class="p">(</span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="n">temp</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="n">sie</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="n">press</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="n">cv</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="n">bmod</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="n">dpde</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="n">dvdt</span><span class="p">,</span>
+<span class="w">                            </span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>fills the density, temperature, specific internal energy, pressure,
+and thermodynamic derivatives a specifically chosen characteristic
+“reference” state. For terrestrial equations of state, this reference
+state is probably close to standard density and pressure. For
+astrophysical models, it will be chosen to be close to a
+representative energy and density scale.</p>
+<p>The function</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Real</span><span class="o">*&gt;</span>
+<span class="kt">void</span><span class="w"> </span><span class="n">FillEos</span><span class="p">(</span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="n">temp</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="n">energy</span><span class="p">,</span>
+<span class="w">             </span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="n">press</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="n">cv</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="n">bmod</span><span class="p">,</span>
+<span class="w">             </span><span class="k">const</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">output</span><span class="p">,</span>
+<span class="w">             </span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">nullptr</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>is a bit of a special case. <code class="docutils literal notranslate"><span class="pre">output</span></code> is a bitfield represented as
+an unsigned 64 bit number. Quantities such <code class="docutils literal notranslate"><span class="pre">pressure</span></code> and
+<code class="docutils literal notranslate"><span class="pre">specific_internal_energy</span></code> can be represented in the <code class="docutils literal notranslate"><span class="pre">output</span></code>
+field by flipping the appropriate bits. There is one bit per
+quantity. <code class="docutils literal notranslate"><span class="pre">FillEos</span></code> sets all parameters (passed in by reference)
+requested in the <code class="docutils literal notranslate"><span class="pre">output</span></code> field utilizing all parameters not
+requested in the <code class="docutils literal notranslate"><span class="pre">output</span></code> flag, which are assumed to be input.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">output</span></code> variable uses the same <code class="docutils literal notranslate"><span class="pre">thermalqs</span></code> flags as the
+<code class="docutils literal notranslate"><span class="pre">PreferredInput</span></code> method. If an insufficient number of variables are
+passed in as input, or if the input is not a combination supported by
+a given model, the function is expected to raise an error. The exact
+combinations of inputs and outputs supported is model
+dependent. However, the user will always be able to use density and
+temperature or internal energy as inputs and get all other
+quantities as outputs.</p>
+</section>
+<section id="methods-used-for-mixed-cell-closures">
+<h2>Methods Used for Mixed Cell Closures<a class="headerlink" href="#methods-used-for-mixed-cell-closures" title="Link to this heading"></a></h2>
+<p>Several methods were developed in support of mixed cell closures. In particular the function</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14MinimumDensityEv">
+<span id="_CPPv3NK14MinimumDensityEv"></span><span id="_CPPv2NK14MinimumDensityEv"></span><span id="MinimumDensityC"></span><span class="n"><span class="pre">Real</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">MinimumDensity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="p"><span class="pre">;</span></span><a class="headerlink" href="#_CPPv4NK14MinimumDensityEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>the function</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18MinimumTemperatureEv">
+<span id="_CPPv3NK18MinimumTemperatureEv"></span><span id="_CPPv2NK18MinimumTemperatureEv"></span><span id="MinimumTemperatureC"></span><span class="n"><span class="pre">Real</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">MinimumTemperature</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="p"><span class="pre">;</span></span><a class="headerlink" href="#_CPPv4NK18MinimumTemperatureEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>and the function</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14MaximumDensityEv">
+<span id="_CPPv3NK14MaximumDensityEv"></span><span id="_CPPv2NK14MaximumDensityEv"></span><span id="MaximumDensityC"></span><span class="n"><span class="pre">Real</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">MaximumDensity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="p"><span class="pre">;</span></span><a class="headerlink" href="#_CPPv4NK14MaximumDensityEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>provide bounds for valid inputs into a table, which can be used by a
+root finder to meaningful bound the root search.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>For unbounded equations of state, <code class="docutils literal notranslate"><span class="pre">MinimumDensity</span></code> and
+<code class="docutils literal notranslate"><span class="pre">MinimumTemperature</span></code> will return zero, while <code class="docutils literal notranslate"><span class="pre">MaximumDensity</span></code>
+will return a very large finite number. Which number you get,
+however, is not guaranteed. You may wish to apply more sensible
+bounds in your own code.</p>
+</div>
+<p>Similarly,</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK7RhoPminEK4Real">
+<span id="_CPPv3NK7RhoPminEK4Real"></span><span id="_CPPv2NK7RhoPminEK4Real"></span><span id="RhoPmin__RealCC"></span><span class="n"><span class="pre">Real</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RhoPmin</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">Real</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">temp</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="p"><span class="pre">;</span></span><a class="headerlink" href="#_CPPv4NK7RhoPminEK4Real" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>returns the density at which pressure is minimized for a given
+temperature. The function</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15MinimumPressureEv">
+<span id="_CPPv3NK15MinimumPressureEv"></span><span id="_CPPv2NK15MinimumPressureEv"></span><span id="MinimumPressureC"></span><span class="n"><span class="pre">Real</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">MinimumPressure</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="p"><span class="pre">;</span></span><a class="headerlink" href="#_CPPv4NK15MinimumPressureEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>provides the minimum pressure an equation of state supports, which may
+be the most negative tension state. The function</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK28MaximumPressureAtTemperatureEK4Real">
+<span id="_CPPv3NK28MaximumPressureAtTemperatureEK4Real"></span><span id="_CPPv2NK28MaximumPressureAtTemperatureEK4Real"></span><span id="MaximumPressureAtTemperature__RealCC"></span><span class="n"><span class="pre">Real</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">MaximumPressureAtTemperature</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">Real</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">temp</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="p"><span class="pre">;</span></span><a class="headerlink" href="#_CPPv4NK28MaximumPressureAtTemperatureEK4Real" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>provides a maximum possible pressure an equation of state supports at
+a given temperature. (Most models are unbounded in pressure.) This is
+again useful for root finds.</p>
+<p>The function</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">Indexer_t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Real</span><span class="o">*&gt;</span>
+<span class="kt">void</span><span class="w"> </span><span class="n">DensityEnergyFromPressureTemperature</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">press</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">temp</span><span class="p">,</span>
+<span class="w">                                          </span><span class="n">Indexer_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">&amp;</span><span class="n">sie</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>is designed for working in Pressure-Temperature space. Given a
+pressure <code class="docutils literal notranslate"><span class="pre">press</span></code> and temperature <code class="docutils literal notranslate"><span class="pre">temp</span></code>, it sets a density <code class="docutils literal notranslate"><span class="pre">rho</span></code>
+and specific internal energy <code class="docutils literal notranslate"><span class="pre">sie</span></code>. The <code class="docutils literal notranslate"><span class="pre">lambda</span></code> is optional and
+defaults to a <code class="docutils literal notranslate"><span class="pre">nullptr</span></code>.</p>
+<p>Typically this operation requires a root find. You may pass in an
+initial guess for the density <code class="docutils literal notranslate"><span class="pre">rho</span></code> in-place and most EOS models
+will use it.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Pressure is not necessarily monotone in density and it may be double
+valued. Thus you are not guaranteed to find the correct root and the
+value of your initial guess may determine correctness. The fact that
+<code class="docutils literal notranslate"><span class="pre">rho</span></code> may be used as an initial guess means you <strong>must</strong> pass in
+an initialized variable, even if it is zero-initialized. Do not pass
+uninitialized memory into this function!</p>
+</div>
+<p>This file was made in part with generative AI.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="integration.html" class="btn btn-neutral float-left" title="Integrating singularity-eos into a CMake project" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="models.html" class="btn btn-neutral float-right" title="EOS Models" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2023. Triad National Security.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Other Versions</span>
+    v: main
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Tags</dt>
+      <dd><a href="../../goldfiles-1.6.2/src/using-eos.html">goldfiles-1.6.2</a></dd>
+      <dd><a href="../../goldfiles-1.8.0/src/using-eos.html">goldfiles-1.8.0</a></dd>
+      <dd><a href="../../release-1.10.0/src/using-eos.html">release-1.10.0</a></dd>
+      <dd><a href="../../release-1.11.0/src/using-eos.html">release-1.11.0</a></dd>
+      <dd><a href="../../release-1.6.0/src/using-eos.html">release-1.6.0</a></dd>
+      <dd><a href="../../release-1.6.1/src/using-eos.html">release-1.6.1</a></dd>
+      <dd><a href="../../release-1.6.2/src/using-eos.html">release-1.6.2</a></dd>
+      <dd><a href="../../release-1.7.0/src/using-eos.html">release-1.7.0</a></dd>
+      <dd><a href="../../release-1.8.0/src/using-eos.html">release-1.8.0</a></dd>
+      <dd><a href="../../release-1.9.0/src/using-eos.html">release-1.9.0</a></dd>
+      <dd><a href="../../release-1.9.1/src/using-eos.html">release-1.9.1</a></dd>
+      <dd><a href="../../release-1.9.2/src/using-eos.html">release-1.9.2</a></dd>
+    </dl>
+    <dl>
+      <dt>Branches</dt>
+      <dd><a href="../../added_benchmark/src/using-eos.html">added_benchmark</a></dd>
+      <dd><a href="../../aemattssing/src/using-eos.html">aemattssing</a></dd>
+      <dd><a href="../../bgclayton_simple_macaw/src/using-eos.html">bgclayton_simple_macaw</a></dd>
+      <dd><a href="../../blb/python_entropy/src/using-eos.html">blb/python_entropy</a></dd>
+      <dd><a href="../../brryan/isothermal/src/using-eos.html">brryan/isothermal</a></dd>
+      <dd><a href="../../cmake_fixup_static_linking/src/using-eos.html">cmake_fixup_static_linking</a></dd>
+      <dd><a href="../../dempsey/mass_frac/src/using-eos.html">dempsey/mass_frac</a></dd>
+      <dd><a href="../../dholladay00/cleanup_variadic/src/using-eos.html">dholladay00/cleanup_variadic</a></dd>
+      <dd><a href="../../dholladay00/eap_debug/src/using-eos.html">dholladay00/eap_debug</a></dd>
+      <dd><a href="../../dholladay00/faster_ses2spin/src/using-eos.html">dholladay00/faster_ses2spin</a></dd>
+      <dd><a href="../../dholladay00/pt_solver/src/using-eos.html">dholladay00/pt_solver</a></dd>
+      <dd><a href="../../dholladay00/xl_cuda_eospac/src/using-eos.html">dholladay00/xl_cuda_eospac</a></dd>
+      <dd><a href="../../docs_spack_devworkflow/src/using-eos.html">docs_spack_devworkflow</a></dd>
+      <dd><a href="../../gopsub/crest/src/using-eos.html">gopsub/crest</a></dd>
+      <dd><a href="../../jdolence/default_shift/src/using-eos.html">jdolence/default_shift</a></dd>
+      <dd><a href="../../jdolence/new_pte/src/using-eos.html">jdolence/new_pte</a></dd>
+      <dd><a href="../../jhp/EAP_integration/src/using-eos.html">jhp/EAP_integration</a></dd>
+      <dd><a href="../../jhp/two_eos/src/using-eos.html">jhp/two_eos</a></dd>
+      <dd><a href="../../jhp/update_copyright/src/using-eos.html">jhp/update_copyright</a></dd>
+      <dd><a href="../../jhp/using_cleanup/src/using-eos.html">jhp/using_cleanup</a></dd>
+      <dd><a href="../../jmm/hip-inline/src/using-eos.html">jmm/hip-inline</a></dd>
+      <dd><a href="../../jmm/ports-testing/src/using-eos.html">jmm/ports-testing</a></dd>
+      <dd><a href="../../jmm/rdc/src/using-eos.html">jmm/rdc</a></dd>
+      <dd><a href="../../jmm/sesame2spiner-library/src/using-eos.html">jmm/sesame2spiner-library</a></dd>
+      <dd><a href="../../jmm/sometimes-capture-by-reference/src/using-eos.html">jmm/sometimes-capture-by-reference</a></dd>
+      <dd><a href="../../jmm/spiner-introspection/src/using-eos.html">jmm/spiner-introspection</a></dd>
+      <dd><a href="../../jmm/svd/src/using-eos.html">jmm/svd</a></dd>
+      <dd><a href="../../jmm/template-lambda-sfinae-edition/src/using-eos.html">jmm/template-lambda-sfinae-edition</a></dd>
+      <dd><a href="../../jmm/test-pte-mem-tweak/src/using-eos.html">jmm/test-pte-mem-tweak</a></dd>
+      <dd><a href="../../jmm/test-stellarcollapse-fast-logs/src/using-eos.html">jmm/test-stellarcollapse-fast-logs</a></dd>
+      <dd><a href="../../jmm/units-fixes/src/using-eos.html">jmm/units-fixes</a></dd>
+      <dd><a href="../../jmm/update-clang-format/src/using-eos.html">jmm/update-clang-format</a></dd>
+      <dd><a href="../../jmm/update-kokkos-linalg/src/using-eos.html">jmm/update-kokkos-linalg</a></dd>
+      <dd><a href="../../jmm/update-spackage-1.9.1/src/using-eos.html">jmm/update-spackage-1.9.1</a></dd>
+      <dd><a href="../../lroberts36/tilted-maxwell/src/using-eos.html">lroberts36/tilted-maxwell</a></dd>
+      <dd><a href="using-eos.html">main</a></dd>
+      <dd><a href="../../mauneyc/fix/CIcmake/src/using-eos.html">mauneyc/fix/CIcmake</a></dd>
+      <dd><a href="../../mauneyc/fix/checkOtherHDF5ParallelFlag/src/using-eos.html">mauneyc/fix/checkOtherHDF5ParallelFlag</a></dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

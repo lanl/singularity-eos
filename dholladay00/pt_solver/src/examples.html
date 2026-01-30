@@ -1,0 +1,242 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Examples &mdash; Singularity-EOS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Design Philosophy" href="philosophy.html" />
+    <link rel="prev" title="Getting Started" href="getting-started.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Singularity-EOS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#get-sound-speed-and-pressure">Get Sound Speed and Pressure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#get-sesame-state">Get SESAME State</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#plugins">Plugins</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="philosophy.html">Design Philosophy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building.html">Building <cite>singularity-eos</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="integration.html">Integrating <cite>singularity-eos</cite> into a CMake project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-eos.html">The Equation of State API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">EOS Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modifiers.html">Equation of State Modifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="customization.html">Customizing <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-closures.html">Mixed Cell Closures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-kpt.html">Kinetic Phase Transition Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python.html">Python Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sphinx-doc.html">How to Use Sphinx for Writing Docs</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Singularity-EOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Examples</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/src/examples.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="examples">
+<span id="id1"></span><h1>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">example</span></code> directory of <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> contains several
+examples of using the code. You can build the examples by setting
+<code class="docutils literal notranslate"><span class="pre">-DSINGULARITY_BUILD_EXAMPLES=ON</span></code> at <code class="docutils literal notranslate"><span class="pre">CMake</span></code> configuration
+time. For example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># from singularity-eos repo</span>
+mkdir<span class="w"> </span>-p<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build
+cmake<span class="w"> </span>..<span class="w"> </span>-DSINGULARITY_BUILD_EXAMPLES<span class="o">=</span>ON<span class="w"> </span>..
+make<span class="w"> </span>-j
+</pre></div>
+</div>
+<p>The available examples are listed below.</p>
+<section id="get-sound-speed-and-pressure">
+<h2>Get Sound Speed and Pressure<a class="headerlink" href="#get-sound-speed-and-pressure" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">examples/get_sound_speed_press.cpp</span></code> file implements a call go
+<code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> that computes pressure and sound speed from
+density and energy for an ideal gas equation of state. It demonstrates
+how to make this call both through individual calls to pressure and
+bulk modulus, as well as by calling the in-one <code class="docutils literal notranslate"><span class="pre">FillEos</span></code> API. The
+former looks something like this:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Loop through the cells and use the two function calls</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">Ncells</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kt">double</span><span class="w"> </span><span class="n">sie</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">robust</span><span class="o">::</span><span class="n">ratio</span><span class="p">(</span><span class="n">uu</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">rho</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span><span class="w"> </span><span class="c1">// convert to specific internal energy</span>
+<span class="w">  </span><span class="n">P</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eos</span><span class="p">.</span><span class="n">PressureFromDensityInternalEnergy</span><span class="p">(</span><span class="n">rho</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">sie</span><span class="p">,</span><span class="w"> </span><span class="n">lambda</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
+<span class="w">  </span><span class="kt">double</span><span class="w"> </span><span class="n">bmod</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eos</span><span class="p">.</span><span class="n">BulkModulusFromDensityInternalEnergy</span><span class="p">(</span><span class="n">rho</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">sie</span><span class="p">,</span><span class="w"> </span><span class="n">lambda</span><span class="p">.</span><span class="n">data</span><span class="p">());</span>
+<span class="w">  </span><span class="n">cs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">sqrt</span><span class="p">(</span><span class="n">robust</span><span class="o">::</span><span class="n">ratio</span><span class="p">(</span><span class="n">bmod</span><span class="p">,</span><span class="w"> </span><span class="n">rho</span><span class="p">[</span><span class="n">i</span><span class="p">]));</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The exact same code is implemented via the python bindings in <code class="docutils literal notranslate"><span class="pre">get_sound_speed_press.py</span></code>.</p>
+</section>
+<section id="get-sesame-state">
+<h2>Get SESAME State<a class="headerlink" href="#get-sesame-state" title="Link to this heading"></a></h2>
+<p>If you build with both <code class="docutils literal notranslate"><span class="pre">SpinerEOS</span></code> and <code class="docutils literal notranslate"><span class="pre">EOSPAC</span></code> backends for
+tabulated data, you can compare tabulated interpolations by calling
+the <code class="docutils literal notranslate"><span class="pre">get_sesame_state</span></code> executable built via the
+<code class="docutils literal notranslate"><span class="pre">get_sesame_state.cpp</span></code> example file. You can call it as</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>get_sesame_state<span class="w"> </span>matid<span class="w"> </span>sp5_file_name<span class="w"> </span>rho<span class="w"> </span>T<span class="w"> </span>sie
+</pre></div>
+</div>
+<p>for some <code class="docutils literal notranslate"><span class="pre">SESAME</span></code> material index <code class="docutils literal notranslate"><span class="pre">matid</span></code> and some tabulated spiner
+file <code class="docutils literal notranslate"><span class="pre">sp5_file_name</span></code>, and a density, temperature and specific
+internal energy to evaluate at.</p>
+<p>The example demonstrates how to call the pressure, energy, and
+thermodynamic derivatives of a table at that point in phase space.</p>
+</section>
+<section id="plugins">
+<h2>Plugins<a class="headerlink" href="#plugins" title="Link to this heading"></a></h2>
+<p>The example directory also contains an example plugin that can be
+included via the plugin infrastructure, as described in <a class="reference internal" href="customization.html#customization"><span class="std std-ref">our customization section</span></a>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="getting-started.html" class="btn btn-neutral float-left" title="Getting Started" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="philosophy.html" class="btn btn-neutral float-right" title="Design Philosophy" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2023. Triad National Security.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Other Versions</span>
+    v: dholladay00/pt_solver
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Tags</dt>
+      <dd><a href="../../../goldfiles-1.6.2/index.html">goldfiles-1.6.2</a></dd>
+      <dd><a href="../../../goldfiles-1.8.0/index.html">goldfiles-1.8.0</a></dd>
+      <dd><a href="../../../release-1.10.0/src/examples.html">release-1.10.0</a></dd>
+      <dd><a href="../../../release-1.11.0/src/examples.html">release-1.11.0</a></dd>
+      <dd><a href="../../../release-1.6.0/index.html">release-1.6.0</a></dd>
+      <dd><a href="../../../release-1.6.1/index.html">release-1.6.1</a></dd>
+      <dd><a href="../../../release-1.6.2/index.html">release-1.6.2</a></dd>
+      <dd><a href="../../../release-1.7.0/index.html">release-1.7.0</a></dd>
+      <dd><a href="../../../release-1.8.0/index.html">release-1.8.0</a></dd>
+      <dd><a href="../../../release-1.9.0/src/examples.html">release-1.9.0</a></dd>
+      <dd><a href="../../../release-1.9.1/src/examples.html">release-1.9.1</a></dd>
+      <dd><a href="../../../release-1.9.2/src/examples.html">release-1.9.2</a></dd>
+    </dl>
+    <dl>
+      <dt>Branches</dt>
+      <dd><a href="../../../added_benchmark/src/examples.html">added_benchmark</a></dd>
+      <dd><a href="../../../aemattssing/src/examples.html">aemattssing</a></dd>
+      <dd><a href="../../../bgclayton_simple_macaw/src/examples.html">bgclayton_simple_macaw</a></dd>
+      <dd><a href="../../../blb/python_entropy/index.html">blb/python_entropy</a></dd>
+      <dd><a href="../../../brryan/isothermal/index.html">brryan/isothermal</a></dd>
+      <dd><a href="../../../cmake_fixup_static_linking/index.html">cmake_fixup_static_linking</a></dd>
+      <dd><a href="../../../dempsey/mass_frac/src/examples.html">dempsey/mass_frac</a></dd>
+      <dd><a href="../../cleanup_variadic/index.html">dholladay00/cleanup_variadic</a></dd>
+      <dd><a href="../../eap_debug/index.html">dholladay00/eap_debug</a></dd>
+      <dd><a href="../../faster_ses2spin/index.html">dholladay00/faster_ses2spin</a></dd>
+      <dd><a href="examples.html">dholladay00/pt_solver</a></dd>
+      <dd><a href="../../xl_cuda_eospac/index.html">dholladay00/xl_cuda_eospac</a></dd>
+      <dd><a href="../../../docs_spack_devworkflow/src/examples.html">docs_spack_devworkflow</a></dd>
+      <dd><a href="../../../gopsub/crest/index.html">gopsub/crest</a></dd>
+      <dd><a href="../../../jdolence/default_shift/index.html">jdolence/default_shift</a></dd>
+      <dd><a href="../../../jdolence/new_pte/index.html">jdolence/new_pte</a></dd>
+      <dd><a href="../../../jhp/EAP_integration/index.html">jhp/EAP_integration</a></dd>
+      <dd><a href="../../../jhp/two_eos/src/examples.html">jhp/two_eos</a></dd>
+      <dd><a href="../../../jhp/update_copyright/index.html">jhp/update_copyright</a></dd>
+      <dd><a href="../../../jhp/using_cleanup/index.html">jhp/using_cleanup</a></dd>
+      <dd><a href="../../../jmm/hip-inline/src/examples.html">jmm/hip-inline</a></dd>
+      <dd><a href="../../../jmm/ports-testing/src/examples.html">jmm/ports-testing</a></dd>
+      <dd><a href="../../../jmm/rdc/src/examples.html">jmm/rdc</a></dd>
+      <dd><a href="../../../jmm/sesame2spiner-library/index.html">jmm/sesame2spiner-library</a></dd>
+      <dd><a href="../../../jmm/sometimes-capture-by-reference/src/examples.html">jmm/sometimes-capture-by-reference</a></dd>
+      <dd><a href="../../../jmm/spiner-introspection/src/examples.html">jmm/spiner-introspection</a></dd>
+      <dd><a href="../../../jmm/svd/src/examples.html">jmm/svd</a></dd>
+      <dd><a href="../../../jmm/template-lambda-sfinae-edition/index.html">jmm/template-lambda-sfinae-edition</a></dd>
+      <dd><a href="../../../jmm/test-pte-mem-tweak/src/examples.html">jmm/test-pte-mem-tweak</a></dd>
+      <dd><a href="../../../jmm/test-stellarcollapse-fast-logs/src/examples.html">jmm/test-stellarcollapse-fast-logs</a></dd>
+      <dd><a href="../../../jmm/units-fixes/src/examples.html">jmm/units-fixes</a></dd>
+      <dd><a href="../../../jmm/update-clang-format/src/examples.html">jmm/update-clang-format</a></dd>
+      <dd><a href="../../../jmm/update-kokkos-linalg/src/examples.html">jmm/update-kokkos-linalg</a></dd>
+      <dd><a href="../../../jmm/update-spackage-1.9.1/src/examples.html">jmm/update-spackage-1.9.1</a></dd>
+      <dd><a href="../../../lroberts36/tilted-maxwell/index.html">lroberts36/tilted-maxwell</a></dd>
+      <dd><a href="../../../main/src/examples.html">main</a></dd>
+      <dd><a href="../../../mauneyc/fix/CIcmake/index.html">mauneyc/fix/CIcmake</a></dd>
+      <dd><a href="../../../mauneyc/fix/checkOtherHDF5ParallelFlag/index.html">mauneyc/fix/checkOtherHDF5ParallelFlag</a></dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

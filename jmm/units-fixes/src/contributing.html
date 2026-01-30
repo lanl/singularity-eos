@@ -1,0 +1,929 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contributing &mdash; Singularity-EOS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How to Use Sphinx for Writing Docs" href="sphinx-doc.html" />
+    <link rel="prev" title="Fortran Interface" href="fortran.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Singularity-EOS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="philosophy.html">Design Philosophy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building.html">Building <cite>singularity-eos</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="integration.html">Integrating <cite>singularity-eos</cite> into a CMake project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-eos.html">The Equation of State API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">EOS Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modifiers.html">Equation of State Modifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="customization.html">Customizing <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-closures.html">Mixed Cell Closures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-kpt.html">Kinetic Phase Transition Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python.html">Python Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fortran.html">Fortran Interface</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#pull-request-protocol">Pull request protocol</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#expectations-for-code-review">Expectations for code review</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#from-the-perspective-of-the-contributor">From the perspective of the contributor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#expectations-of-code-reviewers">Expectations of code reviewers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#general-principle-for-everyone">General principle for everyone</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#interwoven-dependencies">Interwoven Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#process-for-adding-a-new-eos">Process for adding a new EOS</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#step-1-create-a-new-header-file-for-your-eos">Step 1: Create a new header file for your EOS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-2-add-the-eos-to-the-full-eos-list-list-of-eos-in-eos-hpp">Step 2: Add the EOS to the <code class="docutils literal notranslate"><span class="pre">full_eos_list</span></code> list of EOS in <code class="docutils literal notranslate"><span class="pre">eos.hpp</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-3-create-tests-for-your-eos">Step 3: Create tests for your EOS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-4-fortran-interface">Step 4: Fortran interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#a-note-on-the-eos-builder">A Note on the EOS Builder</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#notes-for-contributors-on-navigating-developing-code-features">Notes for Contributors on navigating/developing code features</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#on-generative-ai">On generative AI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#some-notes-on-style-and-code-architecture">Some notes on style and code architecture</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#performance-portability-concerns">Performance portability concerns</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-crtp-slass-structure-and-static-polymorphism">The CRTP slass structure and static polymorphism</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#fast-logs-and-approximate-log-gridding">Fast Logs and Approximate Log Gridding</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#how-to-make-a-release">How to Make a Release</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#continuous-integration">Continuous Integration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#reproducing-a-gitlab-ci-run">Reproducing a GitLab CI run</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sphinx-doc.html">How to Use Sphinx for Writing Docs</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Singularity-EOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Contributing</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/src/contributing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="contributing">
+<h1>Contributing<a class="headerlink" href="#contributing" title="Link to this heading"></a></h1>
+<p>If you have any trouble with the project, or are interested in
+participating, please contact us by creating an issue on the GitHub
+repository, or submit a pull request!</p>
+<section id="pull-request-protocol">
+<h2>Pull request protocol<a class="headerlink" href="#pull-request-protocol" title="Link to this heading"></a></h2>
+<p>There is a pull reuqest template that will be auto-populated when you
+submit a pull request. A pull request should have a summary of
+changes. You should also add tests for bugs fixed or new features you
+add.</p>
+<p>We have a changelog file, <code class="docutils literal notranslate"><span class="pre">CHANGELOG.md</span></code>. After creating your pull
+request, add the relevant change and a link to the PR in the
+changelog.</p>
+<p>Before a pull request will be merged, the code should be formatted. We
+use clang-format for this, pinned to version 12. You can automatically
+trigger <code class="docutils literal notranslate"><span class="pre">clang-format</span></code> in two ways: first you can run the script
+<code class="docutils literal notranslate"><span class="pre">utils/scripts/format.sh</span></code>; second you can type <code class="docutils literal notranslate"><span class="pre">make</span>
+<span class="pre">format_singularity</span></code> after configuring the code with <code class="docutils literal notranslate"><span class="pre">clang-format</span></code>
+discoverable by <code class="docutils literal notranslate"><span class="pre">cmake</span></code>. The former script takes two CLI arguments
+that may be useful, <code class="docutils literal notranslate"><span class="pre">CFM</span></code>, which can be set to the path for your
+clang-format binary, and <code class="docutils literal notranslate"><span class="pre">VERBOSE</span></code>, which if set to <code class="docutils literal notranslate"><span class="pre">1</span></code> adds
+useful output. For example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">CFM</span><span class="o">=</span>clang-format-12<span class="w"> </span><span class="nv">VERBOSE</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>./util/scripts/format.sh
+</pre></div>
+</div>
+<p>Several sets of tests are triggered on a pull request: a static format
+check, a docs buld, and unit tests of analytic models and the stellar
+collapse model. These are run through GitHub’s CPU infrastructure. We
+have a second set of tests run on a wider set of architectures that
+also access the Sesame library, which we are not able to make public.</p>
+<p>The docs are built but not deployed on PRs from forks, and the
+internal tests will not be run automatically. So when the code is
+ready for merge, you must ask a project maintainer to trigger the
+remaining tests for you.</p>
+</section>
+<section id="expectations-for-code-review">
+<h2>Expectations for code review<a class="headerlink" href="#expectations-for-code-review" title="Link to this heading"></a></h2>
+<section id="from-the-perspective-of-the-contributor">
+<h3>From the perspective of the contributor<a class="headerlink" href="#from-the-perspective-of-the-contributor" title="Link to this heading"></a></h3>
+<p>Code review is an integral part of the development process
+for <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code>. You can expect at least one, perhaps many,
+core developers to read your code and offer suggestions.
+You should treat this much like scientific or academic peer review.
+You should listen to suggestions but also feel entitled to push back
+if you believe the suggestions or comments are incorrect or
+are requesting too much effort.</p>
+<p>Reviewers may offer conflicting advice, if this is the case, it’s an
+opportunity to open a discussion and communally arrive at a good
+approach. You should feel empowered to argue for which of the
+conflicting solutions you prefer or to suggest a compromise. If you
+don’t feel strongly, that’s fine too, but it’s best to say so to keep
+the lines of communication open.</p>
+<p>Big contributions may be difficult to review in one piece and you may
+be requested to split your pull request into two or more separate
+contributions. You may also receive many “nitpicky” comments about
+code style or structure. These comments help keep a broad codebase,
+with many contributors uniform in style and maintainable with
+consistent expectations accross the code base. While there is no
+formal style guide for now, the regular contributors have a sense for
+the broad style of the project. You should take these stylistic and
+“nitpicky” suggestions seriously, but you should also feel free to
+push back.</p>
+<p>As with any creative endeavor, we put a lot of ourselves into our
+code. It can be painful to receive criticism on your contribution and
+easy to take it personally. While you should resist the urge to take
+offense, it is also partly code reviewer’s responsiblity to create a
+constructive environment, as discussed below.</p>
+</section>
+<section id="expectations-of-code-reviewers">
+<h3>Expectations of code reviewers<a class="headerlink" href="#expectations-of-code-reviewers" title="Link to this heading"></a></h3>
+<p>A good code review builds a contribution up, rather than tearing it
+down. Here are a few rules to keep code reviews constructive and
+congenial:</p>
+<ul class="simple">
+<li><p>You should take the time needed to review a contribution and offer
+meaningful advice. Unless a contribution is very small, limit
+the times you simply click “approve” with a “looks good to me.”</p></li>
+<li><p>You should keep your comments constructive. For example, rather than
+saying “this pattern is bad,” try saying “at this point, you may
+want to try this other pattern.”</p></li>
+<li><p>Avoid language that can be misconstrued, even if it’s common
+notation in the commnunity. For example, avoid phrases like “code
+smell.”</p></li>
+<li><p>Explain why you make a suggestion. In addition to saying “try X
+instead of Y” explain why you like pattern X more than pattern Y.</p></li>
+<li><p>A contributor may push back on your suggestion. Be open to the
+possibility that you’re either asking too much or are incorrect in
+this instance. Code review is an opportunity for everyone to learn.</p></li>
+<li><p>Don’t just highlight what you don’t like. Also highlight the parts
+of the pull request you do like and thank the contributor for their
+effort.</p></li>
+</ul>
+</section>
+<section id="general-principle-for-everyone">
+<h3>General principle for everyone<a class="headerlink" href="#general-principle-for-everyone" title="Link to this heading"></a></h3>
+<p>It’s hard to convey tone in text correspondance. Try to read what
+others write favorably and try to write in such a way that your tone
+can’t be mis-interpreted as malicious.</p>
+</section>
+</section>
+<section id="interwoven-dependencies">
+<h2>Interwoven Dependencies<a class="headerlink" href="#interwoven-dependencies" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> depends on several other open-source, Los Alamos
+maintained, projects. In particular, <code class="docutils literal notranslate"><span class="pre">spiner</span></code> and
+<code class="docutils literal notranslate"><span class="pre">ports-of-call</span></code>. If you have issues with these projects, ideally
+submit issues on the relevant GitHub pages. However, if you can’t
+figure out where an issue belongs, no big deal. Submit where you can
+and we’ll engage with you to figure out how to proceed.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>There are scheduled workflows triggered by GitHub actions that will
+automatically check <code class="docutils literal notranslate"><span class="pre">spiner</span></code> and <code class="docutils literal notranslate"><span class="pre">ports-of-call</span></code> for Spack updates.  If
+detected, the GitHub action bot will create a PR with the necessary changes.</p>
+</div>
+</section>
+<section id="process-for-adding-a-new-eos">
+<h2>Process for adding a new EOS<a class="headerlink" href="#process-for-adding-a-new-eos" title="Link to this heading"></a></h2>
+<p>The basic process for adding a new EOS can be summarized as</p>
+<ol class="arabic simple">
+<li><p>Create a new header file for your EOS</p></li>
+<li><p>Add the EOS to the <code class="docutils literal notranslate"><span class="pre">full_eos_list</span></code> list of EOS in <code class="docutils literal notranslate"><span class="pre">eos.hpp</span></code></p></li>
+<li><p>Create tests for your EOS</p></li>
+<li><p>Create a Fortran interface to initialize your EOS into an array of EOS</p></li>
+</ol>
+<p>In addition to these main steps, there are a couple more that are required if
+you would like your EOS to work with our fortran interface, which will be
+discussed below.</p>
+<section id="step-1-create-a-new-header-file-for-your-eos">
+<h3>Step 1: Create a new header file for your EOS<a class="headerlink" href="#step-1-create-a-new-header-file-for-your-eos" title="Link to this heading"></a></h3>
+<p>In general, the best practice is to simply copy an existing EOS file and modify
+it for the new EOS. However, there are some subtleties here that are important.</p>
+<ul class="simple">
+<li><p>Parameters for the EOS can be initialzed via an initializer list, and
+additional parameter checking can be done in the constructor.</p></li>
+<li><p>Any EOS must have a set of member functions that conform to the general
+<a class="reference internal" href="using-eos.html#eos-methods-reference-section"><span class="std std-ref">EOS API</span></a>. In essence, these functions are
+<a class="reference internal" href="using-eos.html#variant-section"><span class="std std-ref">defined by the</span></a> <code class="docutils literal notranslate"><span class="pre">Variant</span></code> <a class="reference internal" href="using-eos.html#variant-section"><span class="std std-ref">class</span></a> as a <code class="docutils literal notranslate"><span class="pre">visit</span></code> on the underlying member of the specific EOS type
+contained in the <code class="docutils literal notranslate"><span class="pre">variant</span></code>. If a new EOS doesn’t have an appropriate
+member, a compilation error will be thrown when the <code class="docutils literal notranslate"><span class="pre">EOS</span></code> type is used to
+instantiate an instance of the new EOS. This will be discussed more in the
+testing section.</p></li>
+<li><p>You may find it useful to define other functions that are specific to that EOS
+but won’t be available to the general <code class="docutils literal notranslate"><span class="pre">EOS</span></code> type. These can be internal
+checking functions or common calculations that need to be performed for
+multiple types of lookups.</p></li>
+<li><p>An analytic EOS needs to be “trivially copiable” in order to use the standard
+<code class="docutils literal notranslate"><span class="pre">GetOnDevice()</span></code> function that we use for analytic EOS. In general, analytic
+EOS should only need parameters whose size is known at compile time, so this
+should be fairly straight-forward. Any EOS that needs dynamic memory (e.g.
+a tabular EOS) will need more effort in order to ensure that memory is copied
+correctly over to the device.</p></li>
+</ul>
+</section>
+<section id="step-2-add-the-eos-to-the-full-eos-list-list-of-eos-in-eos-hpp">
+<h3>Step 2: Add the EOS to the <code class="docutils literal notranslate"><span class="pre">full_eos_list</span></code> list of EOS in <code class="docutils literal notranslate"><span class="pre">eos.hpp</span></code><a class="headerlink" href="#step-2-add-the-eos-to-the-full-eos-list-list-of-eos-in-eos-hpp" title="Link to this heading"></a></h3>
+<p>As was mentioned previously, we use the <code class="docutils literal notranslate"><span class="pre">Variant</span></code> class and a <code class="docutils literal notranslate"><span class="pre">visit</span></code>
+pattern to achieve compile-time polymorphism on a closed set of types. For
+convenience, we provide this closed set in the <code class="docutils literal notranslate"><span class="pre">eos.hpp</span></code> file through the
+type list, <code class="docutils literal notranslate"><span class="pre">full_eos_list</span></code>.</p>
+<p>For most new EOS, you can simply add the EOS to the <code class="docutils literal notranslate"><span class="pre">full_eos_list</span></code> and this
+will enable all of the modifiers (with certain exceptions) to instantly work
+with your EOS. This would effectively look like</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="k">constexpr</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">full_eos_list</span><span class="w"> </span><span class="o">=</span>
+<span class="w">    </span><span class="n">tl</span><span class="o">&lt;</span><span class="n">IdealGas</span><span class="p">,</span><span class="w"> </span><span class="n">Gruneisen</span><span class="p">,</span><span class="w"> </span><span class="n">JWL</span><span class="p">,</span><span class="w"> </span><span class="n">DavisReactants</span><span class="p">,</span><span class="w"> </span><span class="n">DavisProducts</span><span class="p">,</span><span class="w"> </span><span class="n">MyNewEOS</span>
+</pre></div>
+</div>
+<p>Note the lack of a trailing comma or closing angle bracket.</p>
+<p>If your EOS introduces new dependencies to <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code>, then you will
+need to create a new flag that enables these dependencies. Then you will need to
+wrap the inclusion of your EOS in the <code class="docutils literal notranslate"><span class="pre">full_eos_list</span></code> with an appropriate
+<code class="docutils literal notranslate"><span class="pre">#ifdef</span> <span class="pre">&lt;my_dependency_flag&gt;</span></code> preprocessor directive. For example, the EOSPAC
+EOS needs the <code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_EOSPAC</span></code> flag so the inclusion in the list is
+wrapped with <code class="docutils literal notranslate"><span class="pre">#ifdef</span> <span class="pre">SINGULARITY_USE_EOSPAC</span></code>. This might look something like</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="k">constexpr</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">full_eos_list</span><span class="w"> </span><span class="o">=</span>
+<span class="w">    </span><span class="n">tl</span><span class="o">&lt;</span><span class="n">IdealGas</span><span class="p">,</span><span class="w"> </span><span class="n">Gruneisen</span><span class="p">,</span><span class="w"> </span><span class="n">JWL</span><span class="p">,</span><span class="w"> </span><span class="n">DavisReactants</span><span class="p">,</span><span class="w"> </span><span class="n">DavisProducts</span>
+<span class="c1">//</span>
+<span class="c1">// ...the other EOS that have dependencies</span>
+<span class="c1">//</span>
+<span class="cp">#ifdef MY_NEW_DEP_FLAG</span>
+<span class="w">       </span><span class="p">,</span>
+<span class="w">       </span><span class="n">MyNewEOS</span>
+<span class="cp">#endif</span>
+<span class="w">       </span><span class="o">&gt;</span><span class="p">{};</span>
+</pre></div>
+</div>
+<p>Note the placement of commas and angle brackets. This example excludes</p>
+</section>
+<section id="step-3-create-tests-for-your-eos">
+<h3>Step 3: Create tests for your EOS<a class="headerlink" href="#step-3-create-tests-for-your-eos" title="Link to this heading"></a></h3>
+<p>The first step is to create a new <code class="docutils literal notranslate"><span class="pre">.cpp</span></code> file for testing your new EOS using
+the <a class="reference external" href="https://github.com/catchorg/Catch2/blob/devel/docs/tutorial.md">Catch2</a> framework to design your test. We make use of the
+Behavior Driven Development (BDD) style for Catch2, so we recommend you do the
+same. In general, we recommend you copy the general structure of one of the
+existing EOS-specific unit tests.</p>
+<p>After creating your tests, you will need to include the <code class="docutils literal notranslate"><span class="pre">.cpp</span></code> for your new
+test in the <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file,</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">add_executable</span><span class="p">(</span><span class="s">eos_analytic_unit_tests</span>
+<span class="w">    </span><span class="s">catch2_define.cpp</span>
+<span class="w">    </span><span class="s">eos_unit_test_helpers.hpp</span>
+<span class="w">    </span><span class="s">test_eos_gruneisen.cpp</span>
+<span class="w">    </span><span class="s">test_eos_vinet.cpp</span>
+<span class="w">    </span><span class="s">test_my_new_eos.cpp</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>in order for the test to be compiled. If your EOS requires any special
+dependencies, be sure to block off the test using <code class="docutils literal notranslate"><span class="pre">#IFDEF</span></code> blocks.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Note that there are three executables, <code class="docutils literal notranslate"><span class="pre">eos_analytic_unit_tests</span></code>,
+<code class="docutils literal notranslate"><span class="pre">eos_infrastructure_tests</span></code> and <code class="docutils literal notranslate"><span class="pre">eos_tabulated_unit_tests</span></code>. Pick
+the executable that most closely matches what your model is.</p>
+</div>
+<p><strong>Important:</strong> Since our library is header only, the unit
+tests are often the only place where a specific EOS may be
+instantiated when <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> is compiled.  Therefore to
+exercise all code paths, it is best to create an <code class="docutils literal notranslate"><span class="pre">EOS</span></code> type
+instantiated as</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;singularity-eos/eos/eos.hpp&gt;</span>
+<span class="k">using</span><span class="w"> </span><span class="n">EOS</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">singularity</span><span class="o">::</span><span class="n">Variant</span><span class="o">&lt;</span><span class="n">MyNewEOS</span><span class="p">,</span><span class="w"> </span><span class="p">...</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="n">EOS</span><span class="w"> </span><span class="n">my_eos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MyNewEOS</span><span class="p">(</span><span class="n">parameter1</span><span class="p">,</span><span class="w"> </span><span class="n">parameter2</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span>
+</pre></div>
+</div>
+<p>in order to properly test the functionality of a new EOS. Simply using the
+new class as the type such as</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;singularity-eos/eos/eos.hpp&gt;</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">my_eos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">my_new_eos</span><span class="p">(</span><span class="n">parameter1</span><span class="p">,</span><span class="w"> </span><span class="n">parameter2</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span>
+</pre></div>
+</div>
+<p>won’t ensure that the new EOS is working correctly in singularity with the
+static polymorphism of the <code class="docutils literal notranslate"><span class="pre">EOS</span></code> type.</p>
+<p>You may wish to also design tests that operate on member functions or member
+data that is particular to the EOS you have developed, and only for those
+specific tests should you instantiate an object whose type is your specific
+EOS. Otherwise, use the <code class="docutils literal notranslate"><span class="pre">EOS</span></code> object.</p>
+<p>If you wish to test error handling in your EOS, you may use the macro
+<code class="docutils literal notranslate"><span class="pre">REQUIRE_MAYBE_THROWS</span></code>, which is defined in the <code class="docutils literal notranslate"><span class="pre">eos_unit_test_helpers.hpp</span></code>
+header file. This macro will check if your code throws an exception if
+compiled for CPU only and otherwise is a no-op. This is intended to combine with
+the <code class="docutils literal notranslate"><span class="pre">PORTABLE_THROW_OR_ABORT`</span> <span class="pre">macro</span> <span class="pre">defined</span> <span class="pre">in</span> <span class="pre">``ports-of-call</span></code>.</p>
+</section>
+<section id="step-4-fortran-interface">
+<h3>Step 4: Fortran interface<a class="headerlink" href="#step-4-fortran-interface" title="Link to this heading"></a></h3>
+<p>At this point your new EOS should be usable to any host code written in C++. To
+allow the EOS to work with Fortran, an initializer wrapper function needs to be
+defined and interfaced with Fortran.</p>
+<p>First, the C++ intialization function needs to be named soas to avoid namespace
+conflicts. We typically name the initialization functions <code class="docutils literal notranslate"><span class="pre">init_sg_&lt;EOSName&gt;</span></code>.
+For example, the function for initialing an ideal gas looks like</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">init_sg_IdealGas</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="n">EOS</span><span class="w"> </span><span class="o">*</span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">gm1</span><span class="p">,</span>
+<span class="w">                     </span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">Cv</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">*</span><span class="k">const</span><span class="w"> </span><span class="n">enabled</span><span class="p">,</span>
+<span class="w">                     </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="k">const</span><span class="w"> </span><span class="n">vals</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">assert</span><span class="p">(</span><span class="n">matindex</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">  </span><span class="n">EOS</span><span class="w"> </span><span class="n">eosi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SGAPPLYMODSIMPLE</span><span class="p">(</span><span class="n">IdealGas</span><span class="p">(</span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span><span class="p">));</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">enabled</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">singularity</span><span class="o">::</span><span class="n">pAlpha2BilinearRampParams</span><span class="p">(</span><span class="n">eosi</span><span class="p">,</span><span class="w"> </span><span class="n">vals</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="w"> </span><span class="n">vals</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span><span class="w"> </span><span class="n">vals</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span><span class="w"> </span><span class="n">vals</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+<span class="w">                                           </span><span class="n">vals</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span><span class="w"> </span><span class="n">vals</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span><span class="w"> </span><span class="n">vals</span><span class="p">[</span><span class="mi">5</span><span class="p">]);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="n">EOS</span><span class="w"> </span><span class="n">eos_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SGAPPLYMOD</span><span class="p">(</span><span class="n">IdealGas</span><span class="p">(</span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span><span class="p">));</span>
+<span class="w">  </span><span class="n">eos</span><span class="p">[</span><span class="n">matindex</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eos_</span><span class="p">.</span><span class="n">GetOnDevice</span><span class="p">();</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Here the <code class="docutils literal notranslate"><span class="pre">*eos</span></code> is a pointer to a container of <code class="docutils literal notranslate"><span class="pre">EOS</span></code> objects and the
+<code class="docutils literal notranslate"><span class="pre">matindex</span></code> integer indicates the index at which this EOS will reside in that
+container. The <code class="docutils literal notranslate"><span class="pre">gm1</span></code> and <code class="docutils literal notranslate"><span class="pre">Cv</span></code> inputs are all of the required parameters to
+initialize the EOS, while the <code class="docutils literal notranslate"><span class="pre">enabled</span></code> and <code class="docutils literal notranslate"><span class="pre">vals</span></code> variables are used by
+the <code class="docutils literal notranslate"><span class="pre">SGAPPLYMOD</span></code> and <code class="docutils literal notranslate"><span class="pre">SGAPPLYMODSIMPLE</span></code> macros to apply specific modifiers
+to the EOS. The return value of the function is an integer error code that may
+or may not be relevant to all EOS.</p>
+<p>We also overload the initialization function to make the <code class="docutils literal notranslate"><span class="pre">enabled</span></code> and
+<code class="docutils literal notranslate"><span class="pre">vals</span></code> variables effectively optional.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">init_sg_IdealGas</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="n">EOS</span><span class="w"> </span><span class="o">*</span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">gm1</span><span class="p">,</span>
+<span class="w">                     </span><span class="k">const</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">Cv</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">init_sg_IdealGas</span><span class="p">(</span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span><span class="p">,</span><span class="w"> </span><span class="n">def_en</span><span class="p">,</span><span class="w"> </span><span class="n">def_v</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Finally the fortran side, we then define a fortran interface to the C++
+initialization function,</p>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="k">interface</span>
+<span class="k">  </span><span class="kt">integer</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_int</span><span class="p">)</span><span class="w"> </span><span class="k">function</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">    </span><span class="n">init_sg_IdealGas</span><span class="p">(</span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span><span class="p">,</span><span class="w"> </span><span class="n">sg_mods_enabled</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                     </span><span class="n">sg_mods_values</span><span class="p">)</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">    </span><span class="k">bind</span><span class="p">(</span><span class="n">C</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;init_sg_IdealGas&#39;</span><span class="p">)</span>
+<span class="w">    </span><span class="k">import</span>
+<span class="k">    </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">      </span><span class="kd">::</span><span class="w"> </span><span class="n">matindex</span>
+<span class="w">    </span><span class="k">type</span><span class="p">(</span><span class="kt">c_ptr</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">         </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="w">    </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_double</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span>
+<span class="w">    </span><span class="k">type</span><span class="p">(</span><span class="kt">c_ptr</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">         </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_enabled</span><span class="p">,</span><span class="w"> </span><span class="n">sg_mods_values</span>
+<span class="w">  </span><span class="k">end function </span><span class="n">init_sg_IdealGas</span>
+<span class="k">end interface</span>
+</pre></div>
+</div>
+<p>and a fortran wrapper function to call the C++ function:</p>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="kt">integer </span><span class="k">function </span><span class="n">init_sg_IdealGas_f</span><span class="p">(</span><span class="n">matindex</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                                    </span><span class="n">sg_mods_enabled</span><span class="p">,</span><span class="w"> </span><span class="n">sg_mods_values</span><span class="p">)</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">  </span><span class="k">result</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">matindex</span>
+<span class="w">  </span><span class="k">type</span><span class="p">(</span><span class="n">sg_eos_ary_t</span><span class="p">),</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">    </span><span class="kd">::</span><span class="w"> </span><span class="n">eos</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">value</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">in</span><span class="p">)</span><span class="w">   </span><span class="kd">::</span><span class="w"> </span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span>
+<span class="w">  </span><span class="kt">integer</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="kt">c_int</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w"> </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_enabled</span>
+<span class="w">  </span><span class="kt">real</span><span class="p">(</span><span class="nb">kind</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span><span class="w"> </span><span class="k">dimension</span><span class="p">(:),</span><span class="w"> </span><span class="k">target</span><span class="p">,</span><span class="w"> </span><span class="k">intent</span><span class="p">(</span><span class="n">inout</span><span class="p">)</span><span class="w">        </span><span class="kd">::</span><span class="w"> </span><span class="n">sg_mods_values</span>
+<span class="w">  </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">init_sg_IdealGas</span><span class="p">(</span><span class="n">matindex</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">%</span><span class="n">ptr</span><span class="p">,</span><span class="w"> </span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span><span class="p">,</span><span class="w"> </span><span class="p">&amp;</span>
+<span class="w">                         </span><span class="nb">c_loc</span><span class="p">(</span><span class="n">sg_mods_enabled</span><span class="p">),</span><span class="w"> </span><span class="nb">c_loc</span><span class="p">(</span><span class="n">sg_mods_values</span><span class="p">))</span>
+<span class="k">end function </span><span class="n">init_sg_IdealGas_f</span>
+</pre></div>
+</div>
+<p>Note that the <code class="docutils literal notranslate"><span class="pre">eos</span></code> variable of type <code class="docutils literal notranslate"><span class="pre">sg_eos_ary_t</span></code> is just a simple wrapper
+for the C pointer to the actual EOS object.</p>
+</section>
+<section id="a-note-on-the-eos-builder">
+<h3>A Note on the EOS Builder<a class="headerlink" href="#a-note-on-the-eos-builder" title="Link to this heading"></a></h3>
+<p>The <a class="reference internal" href="using-eos.html#eos-builder-section"><span class="std std-ref">EOS Builder</span></a> is a tool that eliminates the need
+for chaining together an EOS with a series of modifiers by instead specifing
+the parameters and modifications in one function. This convenience comes at the
+cost of added development complexity though, and so we do not require a new EOS
+to be available for the EOS Builder.</p>
+<p>At a basic level though, the EOS needs to be declared in the <code class="docutils literal notranslate"><span class="pre">EOSType</span></code> enum
+and logic needs to be added to initialze the EOS parameters. More effort may be
+needed to make the EOS compatible with modifiers and we point the interested
+contributor to the existing EOS as examples.</p>
+</section>
+</section>
+<section id="notes-for-contributors-on-navigating-developing-code-features">
+<h2>Notes for Contributors on navigating/developing code features<a class="headerlink" href="#notes-for-contributors-on-navigating-developing-code-features" title="Link to this heading"></a></h2>
+<section id="on-generative-ai">
+<h3>On generative AI<a class="headerlink" href="#on-generative-ai" title="Link to this heading"></a></h3>
+<p>We require that any file that was modified with the assistance of
+generative AI should have some text indicating that such a tool was
+used. For example, you might add a comment like this one:</p>
+<p>..code-block:: c++</p>
+<blockquote>
+<div><p>// This file was made in part with generative AI.</p>
+</div></blockquote>
+</section>
+<section id="some-notes-on-style-and-code-architecture">
+<h3>Some notes on style and code architecture<a class="headerlink" href="#some-notes-on-style-and-code-architecture" title="Link to this heading"></a></h3>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> is primarily designed to provide needed equation
+of state functionality to continuum dynamics codes. It isn’t
+supposed to provide the most accurate or complete picture of thermal
+or statistical physics. As such the project tries to limit
+capabilities to this scope.</p></li>
+<li><p>A major influence on code style and architecture is the
+<a class="reference external" href="http://web.eecs.umich.edu/~imarkov/10rules.pdf">ten rules for developing safety-critical code</a>, by Gerard Holzmann.
+Safety critical code is code that exists in a context where failure
+implies serious harm. A flight controler on an airplane or
+spacecraft or the microcontroller in a car are examples of
+safety-critical contexts. <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> is not safety-critical
+but many of the coding habits advocated for by Holzmann produce
+long-lived, easy to understand, easy to parse, and easy to maintain code.
+And we take many of the rules to heart. Here are a few that are most
+relevant to <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code>. They have been adapted slightly to
+our context.</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>Avoid complex flow constructs such as gotos.</p></li>
+<li><p>All loops must have fixed bounds. This prevents runaway
+code. (Note this implies that as a general rule, one should use
+<code class="docutils literal notranslate"><span class="pre">for</span></code> loops, not <code class="docutils literal notranslate"><span class="pre">while</span></code> loops. It also implies one should
+keep recursion to a minimum.)</p></li>
+<li><p>Heap memory allocation should only be performed at
+initialization. Heap memory de-allocation should only be
+performed at cleanup.</p></li>
+<li><p>Restrict the length of functions to a single printed page.</p></li>
+<li><p>Restrict the scope of data to the smallest possible.</p></li>
+<li><p>Use the preprocessor sparingly.</p></li>
+<li><p>Limit pointer use to a single dereference. Avoid pointers of
+pointers when possible.</p></li>
+<li><p>Be compiler warning aware. Try to address compiler warnings as
+they come up.</p></li>
+</ol>
+</div></blockquote>
+</li>
+</ul>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> is a modern C++ code
+and both standard template library capabilities and template
+metaprogramming are leveraged frequently. This can sometimes make
+parsing the code difficult. If you see something you don’t
+understand, ask. It may be it can be refactored to be more simple or
+better documented.</p></li>
+<li><p>As a general rule, to avoid accidental division by zero, use the
+<code class="docutils literal notranslate"><span class="pre">robust::ratio(x,</span> <span class="pre">y)</span></code> function provided in
+<code class="docutils literal notranslate"><span class="pre">singularity-eos/base/robust_utils.hpp</span></code> instead of writing <code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">/</span>
+<span class="pre">y</span></code>.</p></li>
+</ul>
+</section>
+<section id="performance-portability-concerns">
+<h3>Performance portability concerns<a class="headerlink" href="#performance-portability-concerns" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> is performance portable, meaning it is designed to
+run not only on CPUs, but GPUs from a variety of manufacturers,
+powered by a variety of device-side development tools such as Cuda,
+OpenMP, and OpenACC. This implies several constraints on code
+style. Here we briefly discuss a few things one should be aware of.</p>
+<ul class="simple">
+<li><p><strong>``ports-of-call`` and portability decorators:</strong> Functions that
+should be run on device needs to be decorated with one of the
+following macros: <code class="docutils literal notranslate"><span class="pre">PORTABLE_FUNCTION</span></code>,
+<code class="docutils literal notranslate"><span class="pre">PORTABLE_INLINE_FUNCTION</span></code>,
+<code class="docutils literal notranslate"><span class="pre">PORTABLE_FORCEINLINE_FUNCTION</span></code>. These macros are imported from
+the <a class="reference external" href="https://lanl.github.io/ports-of-call/main/index.html">ports-of-call</a> library and resolve to the appropriate
+decorations for a given device-side backend such as cuda so the code
+compiles correctly. Code that doesn’t need to run on device,
+such as EOS class constructors, does not need these decorations.</p></li>
+<li><p><strong>Relocatable device code:</strong> It is common in C++ to split code
+between a header file and an implementation file. Functionality that
+is to be called from within loops run on device should not be split
+in this way. Not all accelerator languages support this and the ones
+that do take a performance hit. Instead implement that functionality
+only in a header file and decorate it with
+<code class="docutils literal notranslate"><span class="pre">PORTABLE_INLINE_FUNCTION</span></code> or <code class="docutils literal notranslate"><span class="pre">PORTABLE_FORCEINLINE_FUNCTION</span></code>.</p></li>
+<li><p><strong>Host and device pointers:</strong> Usually accelerators have different
+memory spaces than the CPU they are attached to. So you need to be
+aware that data needs to be copied to an accelerator device to be
+used. If it is not properly copied, the code will likely crash with
+a segfault. In general scalar data such as a single variable (e.g.,
+<code class="docutils literal notranslate"><span class="pre">int</span> <span class="pre">x</span></code>) can be easily and automatically copied to device and you
+don’t need to worry about managing it. Arrays and pointers, however,
+are a different story. If you create an array or point to some
+memory on CPU, then you are pointing to a location in memory on your
+CPU. If you try to access it from your accelerator, your code will
+not behave properly. You need to manually copy data from host to
+device in this case. The libraries <a class="reference external" href="https://lanl.github.io/ports-of-call/main/index.html">ports-of-call</a> and <a class="reference external" href="https://lanl.github.io/spiner/main/index.html">spiner</a>
+offer some functionality for managing arrays on device.</p></li>
+<li><p><strong>Shallow copies:</strong> As a general rule, large
+amount of data stored within an <code class="docutils literal notranslate"><span class="pre">EOS</span></code> object should have
+“reference-semantics.” This means that if you copy an EOS object, it
+should always be a shallow copy, not a deep copy, unless a deep copy
+is explicitly requested. This is for performance reasons and also to
+simplify the managment of data on device.</p></li>
+<li><p><strong>Real:</strong> The <code class="docutils literal notranslate"><span class="pre">Real</span></code> datatype is either a single precision or
+double precision floating point number, depending on how
+<a class="reference external" href="https://lanl.github.io/ports-of-call/main/index.html">ports-of-call</a> is configured. For most floating point numbers use
+the <code class="docutils literal notranslate"><span class="pre">Real</span></code> type. However, be conscious that sometimes you will
+specifically need a single or double precision number, in which case
+you should specify the type as built into the language.</p></li>
+</ul>
+</section>
+<section id="the-crtp-slass-structure-and-static-polymorphism">
+<h3>The CRTP slass structure and static polymorphism<a class="headerlink" href="#the-crtp-slass-structure-and-static-polymorphism" title="Link to this heading"></a></h3>
+<p>Each of the EOS models in <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> inherits from a base class in
+order to centralize default functionality and avoid code duplication. The
+main example of this are the vector overloads.
+In the vector overloads, a simple for loop is used to iterate over
+the set of states provided to the function and then call the scalar version on
+each state. This feature is
+general to all types of EOS, but reliant on specific
+implementations of the EOS lookups. These functions provide a
+default behaviour that we might also want to override for a given equation of
+state.</p>
+<p>As an example, the vector overloads in the base class take the following form
+(in pseudocode):</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">RealIndexer</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">ConstRealIndexer</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">LambdaIndexer</span><span class="o">&gt;</span>
+<span class="kr">inline</span><span class="w"> </span><span class="kt">void</span>
+<span class="n">TemperatureFromDensityInternalEnergy</span><span class="p">(</span><span class="n">ConstRealIndexer</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">rhos</span><span class="p">,</span><span class="w"> </span><span class="n">ConstRealIndexer</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">sies</span><span class="p">,</span>
+<span class="w">                                     </span><span class="n">RealIndexer</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">temperatures</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">num</span><span class="p">,</span>
+<span class="w">                                     </span><span class="n">LambdaIndexer</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambdas</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">num</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">temperatures</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eos</span><span class="p">.</span><span class="n">TemperatureFromDensityInternalEnergy</span><span class="p">(</span><span class="n">rhos</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+<span class="w">        </span><span class="n">sies</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">lambdas</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>where the base class needs to call the specific implementation of the scalar
+lookup for the particular EOS. However, this means that the base class needs to
+have knowledge of which class is being derived from it in order to call the
+correct EOS implementation.</p>
+<p>The standard solution to this problem would be to deduce the type of the EOS at
+runtime (often through virtual functions) and then call the apprporiate member
+function in the derived class. While this is possible on GPU, it becomes
+cumbersome, as the user must be very explicit about class inheritence.
+Moreover, run-time inheritence relies on relocatable device code, which is not
+as performant on device, thanks to weaker cross-compilation unit optimization.
+We note that to obtain full performance on device and to build with compilers
+that don’t support relocatable device code, the entire library must be made
+header-only.</p>
+<p>We could have used a similar technique to the modifier classes and
+pass the EOS as a template paramter, but then the vector function
+calls could only be achieved by creating vector modifiers of all the
+implemented EOS, and the user would have to manually specify that they want to
+use a vector verison of the class.</p>
+<p>Since we wanted to both leverage C++ function overloading while enabling
+compile-time polymorphism, we decided to use the “curiously recurring template
+pattern” (<a class="reference external" href="https://www.fluentcpp.com/2017/05/12/curiously-recurring-template-pattern/">CRTP</a>). The basic idea is two-fold:</p>
+<ol class="arabic simple">
+<li><p>The base class is templated on the derived class to avoid the need for
+vtables.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">*this</span></code> pointer for the base class can be statically cast to that of
+the derived class. This is only possible because the base class is inherited
+by the derived class and this is known at compile time.</p></li>
+</ol>
+<p>Through template resolution, the compiler can then know exactly which member
+functions need to be called at <em>compile time</em>. This allows us to write the EOS
+implementation in the derived class and have common functionality that leverages
+these implementations in the base class.</p>
+<p>The above example modified to take advantage of the CRTP becomes</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">CRTP</span><span class="o">&gt;</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">EosBase</span><span class="w"> </span><span class="p">{</span>
+<span class="w"> </span><span class="k">public</span><span class="o">:</span>
+<span class="w">  </span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">RealIndexer</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">ConstRealIndexer</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">LambdaIndexer</span><span class="o">&gt;</span>
+<span class="w">  </span><span class="kr">inline</span><span class="w"> </span><span class="kt">void</span>
+<span class="w">  </span><span class="n">TemperatureFromDensityInternalEnergy</span><span class="p">(</span><span class="n">ConstRealIndexer</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">rhos</span><span class="p">,</span><span class="w"> </span><span class="n">ConstRealIndexer</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">sies</span><span class="p">,</span>
+<span class="w">                                       </span><span class="n">RealIndexer</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">temperatures</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">num</span><span class="p">,</span>
+<span class="w">                                       </span><span class="n">LambdaIndexer</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambdas</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">num</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">temperatures</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="n">CRTP</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">&amp;&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">).</span><span class="n">TemperatureFromDensityInternalEnergy</span><span class="p">(</span>
+<span class="w">        </span><span class="n">rhos</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">sies</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">lambdas</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">EosBase</span></code> class is templated upon the derived class which is passed via the
+<cite>CRTP</cite> template parameter. Then the <code class="docutils literal notranslate"><span class="pre">EosBase</span></code> class vector implementation
+statically casts its own <code class="docutils literal notranslate"><span class="pre">*this</span></code> pointer to that of the derived class in order
+to call the specific EOS implementation.</p>
+<p>The derived class then needs to look something like</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">EosImplementation</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">EosBase</span><span class="o">&lt;</span><span class="n">EosImplementation</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w"> </span><span class="k">public</span><span class="o">:</span>
+<span class="w">  </span><span class="k">static</span><span class="w"> </span><span class="kr">inline</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">TemperatureFromDensityInternalEnergy</span><span class="p">(</span>
+<span class="w">      </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">sie</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">lambda</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Specific EOS implementation for returning T(rho, e)</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">temperature</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="n">EosBase</span><span class="o">&lt;</span><span class="n">EosImplementation</span><span class="o">&gt;::</span><span class="n">TemperatureFromDensityInternalEnergy</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Note that the <code class="docutils literal notranslate"><span class="pre">using</span></code> statement needs to be included in order to properly
+overload the scalar functionality with the vector functionality. Otherwise the
+vector member function is hidden by the derived class method rather than
+overloaded.</p>
+<p>With several EOS that all inherit from the <code class="docutils literal notranslate"><span class="pre">EosBase</span></code> class, we can achieve
+static polymorphism in all of the EOS classes without having to duplicate code
+in each class.</p>
+<p>Note there are several macros to enable the <code class="docutils literal notranslate"><span class="pre">using</span></code> statements if
+all the functions in the base class can be used freely. Omitting a <code class="docutils literal notranslate"><span class="pre">using</span></code>
+statement allows the developer to provide a custom implementation of a member
+function for that particular EOS.</p>
+<p>Also note that any new functionality added to the base class needs to be
+mirrored in the <a class="reference internal" href="using-eos.html#variant-section"><span class="std std-ref">Variant class</span></a> so that it is accessable
+when using the <code class="docutils literal notranslate"><span class="pre">EOS</span></code> type.</p>
+<p>The solvers in <code class="docutils literal notranslate"><span class="pre">closure/mixed_cell_models.hpp</span></code> also use inheritence
+but again here the intent is <strong>not</strong> to use run-time polymorphism. The
+base class simply provides (potentially overridable) functionality to
+the derived classes. But you should always instantiate a derived
+class, <strong>not</strong> a pointer to a base class.</p>
+</section>
+<section id="fast-logs-and-approximate-log-gridding">
+<h3>Fast Logs and Approximate Log Gridding<a class="headerlink" href="#fast-logs-and-approximate-log-gridding" title="Link to this heading"></a></h3>
+<p>When spanning many orders of magnitude, Logarithmic grids are a
+natural choice. Even spacing in log space corresponds to exponential
+spacing in the original linear space. In other words, the grid spacing
+is proportional to the value of the independent variable.</p>
+<p>One can perform log-linear or log-log interpolation by simply
+converting to log space, interpolating as one normally would, and then
+converting back out. Unfortunately, logarithms and exponents are
+transcendental functions, meaning they are expensive to compute and it
+is thus expensive to transform in and out of log space.</p>
+<p>To avoid this issue, we construct a space that is <em>approximately</em>
+logarithmically spaced, but not quite exactly. The requirements for
+this space are that the transformation into and out of this space is
+fast to compute, continuous, differentiable, analytically invertible,
+and close to taking a logarithm or exponentiation (depending on which
+way you’re going).</p>
+<p>To achieve this, we leverage the internal representation of a floating
+point number in the IEE standard. In particular, a floating point
+number <span class="math notranslate nohighlight">\(x\)</span> is represented as a mantissa and an exponent in base
+2:</p>
+<div class="math notranslate nohighlight">
+\[x = m 2^e\]</div>
+<p>for mantissa <span class="math notranslate nohighlight">\(m\)</span> and exponent <span class="math notranslate nohighlight">\(e\)</span>. The mantissa is
+guaranteed to be on the interval <span class="math notranslate nohighlight">\([1/2, 1)\)</span>. The standard
+library of most low-level languages provides a performant and portable
+routine to pick apart this represnetation, <code class="docutils literal notranslate"><span class="pre">frexp</span></code>, which given a
+number <span class="math notranslate nohighlight">\(x\)</span>, return <span class="math notranslate nohighlight">\(m\)</span> and <span class="math notranslate nohighlight">\(e\)</span>.</p>
+<p>The log in base 2 <code class="docutils literal notranslate"><span class="pre">lg</span></code> of <span class="math notranslate nohighlight">\(x\)</span> is then given by the logarithm
+of the mantissa plus the exponent:</p>
+<div class="math notranslate nohighlight">
+\[\lg(x) = \lg(m) + e\]</div>
+<p>Therefore, if we can find a fast, invertible approximation to
+<span class="math notranslate nohighlight">\(\lg(m)\)</span>, we will have achieved our goal. The linear
+interpolation of <span class="math notranslate nohighlight">\(\lg(m)\)</span> on the given interval is</p>
+<div class="math notranslate nohighlight">
+\[2 (x - 1)\]</div>
+<p>and the quadratic is</p>
+<div class="math notranslate nohighlight">
+\[-\frac{4}{3} (m -2) (m - 1)\]</div>
+<p>where the former produces a function that is piecewise <span class="math notranslate nohighlight">\(C^1\)</span> and
+everywhere continuous. The latter produces a function that is
+everywhere <span class="math notranslate nohighlight">\(C^1\)</span> and piecewise <span class="math notranslate nohighlight">\(C^2\)</span>. Both functions are
+exactly exactly invertible. To invert, we use the built in function
+that inverts <code class="docutils literal notranslate"><span class="pre">frexp</span></code>, <code class="docutils literal notranslate"><span class="pre">ldexp</span></code>, which combines the mantissa and
+exponent into the original floating point representation.</p>
+<p>While these functions are not exactly logarithms, they do work for
+building logarithmic grids. The smoothness of the transformation
+mapping from linear to “not-quite-log” space does matter for
+interpolation, however. Linear interpolation in “not-quite-log” space
+converges at second order only in the <span class="math notranslate nohighlight">\(L^1\)</span> norm for the linear
+version of the approximate log. The quadratic version of the fast log
+provides second-order convergence in all norms, however.</p>
+<p>Finally, while <code class="docutils literal notranslate"><span class="pre">frexp</span></code> and <code class="docutils literal notranslate"><span class="pre">ldexp</span></code> are portable and performant,
+they are less performant than hand-implemented, low-level methods that
+leverage the bitwise structure of floating point numbers. These
+“bithacked” or “integer aliased” implementations are what are used in
+practice in the code.</p>
+<p>This approach is described in more detail in our <a class="reference external" href="https://arxiv.org/abs/2206.08957">short note</a> on the
+topic.</p>
+</section>
+</section>
+<section id="how-to-make-a-release">
+<h2>How to Make a Release<a class="headerlink" href="#how-to-make-a-release" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> uses <em>semantic versioning</em>. A version is written
+as <code class="docutils literal notranslate"><span class="pre">v[major</span> <span class="pre">version].[minor</span> <span class="pre">version].[patch</span> <span class="pre">number]</span></code>. To make a new
+release, first make a new pull request where you (1) change the
+version number in the <code class="docutils literal notranslate"><span class="pre">project</span></code> field of the of the top-level
+<code class="docutils literal notranslate"><span class="pre">CmakeLists.txt</span></code> file and (2) add a new release field to the
+<code class="docutils literal notranslate"><span class="pre">CHANGELOG.md</span></code>, moving all the changes listed under <code class="docutils literal notranslate"><span class="pre">Current</span> <span class="pre">Main</span></code>
+to that release. Then add empty categories for <code class="docutils literal notranslate"><span class="pre">Current</span>
+<span class="pre">Main</span></code>. Typically the branch for this merge request should be called
+<code class="docutils literal notranslate"><span class="pre">v[release</span> <span class="pre">number]-rc</span></code> for “release candidate.” Make sure that the
+full test suite passes for this PR.</p>
+<p>After that pull request is merged, go to the <code class="docutils literal notranslate"><span class="pre">releases</span></code> tab on the
+right sidebar on GitHub, and draft a new release. Set the tag to
+<code class="docutils literal notranslate"><span class="pre">v[release</span> <span class="pre">number]</span></code>, fill the comment with the changes in the
+changelog since the last release, and make the release.</p>
+<p>Finally, the Spackages must be updated. To do so, you will need the
+checksum for the tarball for the newest release. Download the tarball
+from the release page, and then run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sha256sum<span class="w"> </span>path/to/tarball.tar.gz
+</pre></div>
+</div>
+<p>and copy down the resulting checksum. Then create a new pull request
+and edit
+<code class="docutils literal notranslate"><span class="pre">singularity-eos/spack-repo/packages/singularity-eos/package.py</span></code> and
+find the line <code class="docutils literal notranslate"><span class="pre">version(&quot;main&quot;,</span> <span class="pre">branch=&quot;main&quot;)</span></code>. Below this line add
+a new line of the form</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">version</span><span class="p">(</span><span class="s2">&quot;[release number]&quot;</span><span class="p">,</span> <span class="n">sha256</span><span class="o">=</span><span class="s2">&quot;[checksum]&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>where you should fill in <code class="docutils literal notranslate"><span class="pre">[release</span> <span class="pre">number]</span></code> and <code class="docutils literal notranslate"><span class="pre">[checksum]</span></code>
+appropriately. You may then remove the oldest version from the
+spackace, and add the <code class="docutils literal notranslate"><span class="pre">deprecated=True</span></code> flag to the two oldest
+remaining versions.</p>
+<p>Finally, the new <code class="docutils literal notranslate"><span class="pre">package.py</span></code> file needs to be synchronized with
+<a class="reference external" href="https://github.com/spack/spack">Spack upstream</a>, and a pull request to that repository containing
+the new <code class="docutils literal notranslate"><span class="pre">package.py</span></code> file.</p>
+</section>
+<section id="continuous-integration">
+<h2>Continuous Integration<a class="headerlink" href="#continuous-integration" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> has two continuous integration (CI) systems. A public
+facing one via GitHub actions and an LANL internal one through a GitLab
+instance.</p>
+<p>The GitHub actions are configured via the files located in the
+<code class="docutils literal notranslate"><span class="pre">.github/workflows</span></code> subdirectory.</p>
+<p>Our GitLab CI is configured via the <code class="docutils literal notranslate"><span class="pre">.gitlab-ci.yml</span></code> file and scripts located
+in the <code class="docutils literal notranslate"><span class="pre">.gitlab</span></code> subdirectory. To trigger the GitLab CI runs, you need to
+have access to our internal GitLab instance, push your branch to this second
+Git repository, and create a GitLab merge request (MR).</p>
+<p>Each GitLab MR will launch a pipeline with multiple jobs on various
+clusters. These jobs will build and tests specific configurations of
+<code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> via Spack environments.</p>
+<p>These environments are defined in the internal XCAP deployment repository,
+which contains project and cluster specific Spack configurations, such as
+available compilers, system packages, preinstalled modules, etc.</p>
+<p>The XCAP deployment repository is used to create a XCAP-wide shared Spack
+installation with all the necessary dependencies for these Spack environments
+pre-built.</p>
+<p>Each GitLab CI job uses the <code class="docutils literal notranslate"><span class="pre">.gitlab/build_and_test.sh</span></code> script to create a
+temporary local Spack instance that is connected to an XCAP deployment on a
+specified cluster and selects one of the available environments to build.
+Internally it uses <code class="docutils literal notranslate"><span class="pre">spack</span> <span class="pre">develop</span></code> and <code class="docutils literal notranslate"><span class="pre">spack</span> <span class="pre">build-env</span></code>  to prepare the
+CMake build folder and its Spack build environment. This avoids duplicating
+CMake logic in <code class="docutils literal notranslate"><span class="pre">.gitlab-ci.yml</span></code>, since all CMake configurations are
+already encoded in the project’s Spack <code class="docutils literal notranslate"><span class="pre">package.py</span></code>. The
+<code class="docutils literal notranslate"><span class="pre">build_and_test.sh</span></code> script has the following signature.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span><span class="w"> </span>.gitlab/build_and_test.sh<span class="w"> </span><span class="o">[</span>--until<span class="w"> </span>PHASE<span class="o">]</span><span class="w"> </span>&lt;SYSTEM_NAME&gt;<span class="w"> </span>&lt;ENV_NAME&gt;
+</pre></div>
+</div>
+<p>By default, all phases defined in this script will be executed. With the
+<code class="docutils literal notranslate"><span class="pre">-u</span></code>/<code class="docutils literal notranslate"><span class="pre">--until</span></code> optional argument you can specify the name of a phase where
+the script should stop. See the output of <code class="docutils literal notranslate"><span class="pre">source</span> <span class="pre">.gitlab/build_and_test.sh</span> <span class="pre">-h</span></code>
+for more details.</p>
+<section id="reproducing-a-gitlab-ci-run">
+<h3>Reproducing a GitLab CI run<a class="headerlink" href="#reproducing-a-gitlab-ci-run" title="Link to this heading"></a></h3>
+<p>To simplify reproducability of CI runs, each GitLab job prints out a message on
+how to recreate the CI run by manually allocating a cluster node on a given
+system and executing the <code class="docutils literal notranslate"><span class="pre">build_and_test.sh</span></code> script.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#####################################################################</span>
+
+<span class="n">To</span> <span class="n">recreate</span> <span class="n">this</span> <span class="n">CI</span> <span class="n">run</span><span class="p">,</span> <span class="n">follow</span> <span class="n">these</span> <span class="n">steps</span><span class="p">:</span>
+
+<span class="n">ssh</span> <span class="n">darwin</span>
+<span class="n">cd</span> <span class="o">/</span><span class="n">your</span><span class="o">/</span><span class="n">singularity</span><span class="o">-</span><span class="n">eos</span><span class="o">/</span><span class="n">checkout</span>
+<span class="o">.</span><span class="n">gitlab</span><span class="o">/</span><span class="n">download_prereq</span><span class="o">.</span><span class="n">sh</span>
+<span class="n">salloc</span> <span class="o">-</span><span class="n">N</span> <span class="mi">1</span> <span class="o">--</span><span class="n">qos</span><span class="o">=</span><span class="n">debug</span> <span class="o">-</span><span class="n">p</span> <span class="n">general</span><span class="p">,</span><span class="n">skylake</span><span class="o">-</span><span class="n">gold</span><span class="p">,</span><span class="n">skylake</span><span class="o">-</span><span class="n">platinum</span> <span class="o">--</span><span class="n">constraint</span><span class="o">=</span><span class="s2">&quot;(cpu_family:skylake)&amp;ib:edr&quot;</span>
+<span class="n">source</span> <span class="o">.</span><span class="n">gitlab</span><span class="o">/</span><span class="n">build_and_test</span><span class="o">.</span><span class="n">sh</span> <span class="o">--</span><span class="n">until</span> <span class="n">install</span> <span class="n">darwin</span> <span class="n">openmpi</span><span class="o">-</span><span class="n">gcc</span>
+
+<span class="n">See</span> <span class="s1">&#39;source .gitlab/build_and_test.sh -h&#39;</span> <span class="k">for</span> <span class="n">more</span> <span class="n">options</span><span class="o">.</span>
+
+<span class="c1">######################################################################</span>
+</pre></div>
+</div>
+<p>After the <code class="docutils literal notranslate"><span class="pre">env</span></code> phase, you can use <code class="docutils literal notranslate"><span class="pre">activate_build_env</span></code> to enable the Spack
+build environment. See <code class="docutils literal notranslate"><span class="pre">source</span> <span class="pre">.gitlab/build_and_test.sh</span></code> for a list of
+commands to trigger the remaining phases or use regular CMake commands to drive
+your build and testing.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="fortran.html" class="btn btn-neutral float-left" title="Fortran Interface" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="sphinx-doc.html" class="btn btn-neutral float-right" title="How to Use Sphinx for Writing Docs" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2023. Triad National Security.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Other Versions</span>
+    v: jmm/units-fixes
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Tags</dt>
+      <dd><a href="../../../goldfiles-1.6.2/src/contributing.html">goldfiles-1.6.2</a></dd>
+      <dd><a href="../../../goldfiles-1.8.0/src/contributing.html">goldfiles-1.8.0</a></dd>
+      <dd><a href="../../../release-1.10.0/src/contributing.html">release-1.10.0</a></dd>
+      <dd><a href="../../../release-1.11.0/src/contributing.html">release-1.11.0</a></dd>
+      <dd><a href="../../../release-1.6.0/src/contributing.html">release-1.6.0</a></dd>
+      <dd><a href="../../../release-1.6.1/src/contributing.html">release-1.6.1</a></dd>
+      <dd><a href="../../../release-1.6.2/src/contributing.html">release-1.6.2</a></dd>
+      <dd><a href="../../../release-1.7.0/src/contributing.html">release-1.7.0</a></dd>
+      <dd><a href="../../../release-1.8.0/src/contributing.html">release-1.8.0</a></dd>
+      <dd><a href="../../../release-1.9.0/src/contributing.html">release-1.9.0</a></dd>
+      <dd><a href="../../../release-1.9.1/src/contributing.html">release-1.9.1</a></dd>
+      <dd><a href="../../../release-1.9.2/src/contributing.html">release-1.9.2</a></dd>
+    </dl>
+    <dl>
+      <dt>Branches</dt>
+      <dd><a href="../../../added_benchmark/src/contributing.html">added_benchmark</a></dd>
+      <dd><a href="../../../aemattssing/src/contributing.html">aemattssing</a></dd>
+      <dd><a href="../../../bgclayton_simple_macaw/src/contributing.html">bgclayton_simple_macaw</a></dd>
+      <dd><a href="../../../blb/python_entropy/src/contributing.html">blb/python_entropy</a></dd>
+      <dd><a href="../../../brryan/isothermal/src/contributing.html">brryan/isothermal</a></dd>
+      <dd><a href="../../../cmake_fixup_static_linking/src/contributing.html">cmake_fixup_static_linking</a></dd>
+      <dd><a href="../../../dempsey/mass_frac/src/contributing.html">dempsey/mass_frac</a></dd>
+      <dd><a href="../../../dholladay00/cleanup_variadic/src/contributing.html">dholladay00/cleanup_variadic</a></dd>
+      <dd><a href="../../../dholladay00/eap_debug/src/contributing.html">dholladay00/eap_debug</a></dd>
+      <dd><a href="../../../dholladay00/faster_ses2spin/src/contributing.html">dholladay00/faster_ses2spin</a></dd>
+      <dd><a href="../../../dholladay00/pt_solver/src/contributing.html">dholladay00/pt_solver</a></dd>
+      <dd><a href="../../../dholladay00/xl_cuda_eospac/src/contributing.html">dholladay00/xl_cuda_eospac</a></dd>
+      <dd><a href="../../../docs_spack_devworkflow/src/contributing.html">docs_spack_devworkflow</a></dd>
+      <dd><a href="../../../gopsub/crest/src/contributing.html">gopsub/crest</a></dd>
+      <dd><a href="../../../jdolence/default_shift/src/contributing.html">jdolence/default_shift</a></dd>
+      <dd><a href="../../../jdolence/new_pte/src/contributing.html">jdolence/new_pte</a></dd>
+      <dd><a href="../../../jhp/EAP_integration/src/contributing.html">jhp/EAP_integration</a></dd>
+      <dd><a href="../../../jhp/two_eos/src/contributing.html">jhp/two_eos</a></dd>
+      <dd><a href="../../../jhp/update_copyright/src/contributing.html">jhp/update_copyright</a></dd>
+      <dd><a href="../../../jhp/using_cleanup/src/contributing.html">jhp/using_cleanup</a></dd>
+      <dd><a href="../../hip-inline/src/contributing.html">jmm/hip-inline</a></dd>
+      <dd><a href="../../ports-testing/src/contributing.html">jmm/ports-testing</a></dd>
+      <dd><a href="../../rdc/src/contributing.html">jmm/rdc</a></dd>
+      <dd><a href="../../sesame2spiner-library/src/contributing.html">jmm/sesame2spiner-library</a></dd>
+      <dd><a href="../../sometimes-capture-by-reference/src/contributing.html">jmm/sometimes-capture-by-reference</a></dd>
+      <dd><a href="../../spiner-introspection/src/contributing.html">jmm/spiner-introspection</a></dd>
+      <dd><a href="../../svd/src/contributing.html">jmm/svd</a></dd>
+      <dd><a href="../../template-lambda-sfinae-edition/src/contributing.html">jmm/template-lambda-sfinae-edition</a></dd>
+      <dd><a href="../../test-pte-mem-tweak/src/contributing.html">jmm/test-pte-mem-tweak</a></dd>
+      <dd><a href="../../test-stellarcollapse-fast-logs/src/contributing.html">jmm/test-stellarcollapse-fast-logs</a></dd>
+      <dd><a href="contributing.html">jmm/units-fixes</a></dd>
+      <dd><a href="../../update-clang-format/src/contributing.html">jmm/update-clang-format</a></dd>
+      <dd><a href="../../update-kokkos-linalg/src/contributing.html">jmm/update-kokkos-linalg</a></dd>
+      <dd><a href="../../update-spackage-1.9.1/src/contributing.html">jmm/update-spackage-1.9.1</a></dd>
+      <dd><a href="../../../lroberts36/tilted-maxwell/src/contributing.html">lroberts36/tilted-maxwell</a></dd>
+      <dd><a href="../../../main/src/contributing.html">main</a></dd>
+      <dd><a href="../../../mauneyc/fix/CIcmake/src/contributing.html">mauneyc/fix/CIcmake</a></dd>
+      <dd><a href="../../../mauneyc/fix/checkOtherHDF5ParallelFlag/src/contributing.html">mauneyc/fix/checkOtherHDF5ParallelFlag</a></dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

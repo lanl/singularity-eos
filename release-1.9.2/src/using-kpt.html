@@ -1,0 +1,385 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kinetic Phase Transition Framework &mdash; Singularity-EOS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Python Bindings" href="python.html" />
+    <link rel="prev" title="Mixed Cell Closures" href="using-closures.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Singularity-EOS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="philosophy.html">Design Philosophy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building.html">Building <cite>singularity-eos</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="integration.html">Integrating <cite>singularity-eos</cite> into a CMake project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-eos.html">The Equation of State API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">EOS Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modifiers.html">Equation of State Modifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="customization.html">Customizing <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-closures.html">Mixed Cell Closures</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Kinetic Phase Transition Framework</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#mass-and-volume-fractions">Mass and volume fractions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#homogenization">Homogenization</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pte">PTE</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#mass-fraction-update">Mass fraction update</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#equilibrium-phase-transitions">Equilibrium phase transitions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#kinetic-phase-transition-models">Kinetic phase transition models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#carl-greeff-s-kpt-model">Carl Greeff’s KPT model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-time-step">The time step</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-update-method">The update method</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="python.html">Python Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sphinx-doc.html">How to Use Sphinx for Writing Docs</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Singularity-EOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Kinetic Phase Transition Framework</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/src/using-kpt.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="kinetic-phase-transition-framework">
+<h1>Kinetic Phase Transition Framework<a class="headerlink" href="#kinetic-phase-transition-framework" title="Link to this heading"></a></h1>
+<p>A step in adapting to more realistic calculations is to
+get away from that phase transitions are instantanious and the
+system is in, at least, local thermal equilibrium (LTE) all the time.
+Allowing for superheated (the material is hotter than the equilibrium state)
+and supercooled (the material is cooler than the equilibrium state) materials is
+a large step towards more realistic modelling. Gas bubbles “exploding” when a
+spoon is put into a microwave heated cup of coffee is an example of superheating and
+raindrops turning directly to ice when hitting the asphalt is an example
+of supercooling.</p>
+<p>Phase transitions are governed by the Gibbs free energy, <span class="math notranslate nohighlight">\(G(P,T)\)</span>. The equilibrium phase is the phase with lowest
+Gibbs free energy. If the material is heated or cooled from this equilibrium state and another
+phase emerges to have a lower Gibbs free energy, a phase transition occurs and the system eventually transform
+to this new phase. However, all phase transitions need some type of <em>nucleation event</em> to get started.
+For the liquid raindrop cooling down while falling to the ground through very cold air, the hit against the
+asphalt is the nucleation event, and the supercooled liquid in the drop instantaniously transform to the equilibrium ice phase.
+For the very hot coffee, the spoon insertion is the “nucleation” event when the very hot liquid coffee
+instantaneously transforms into its equilibrium phase, gas.</p>
+<p>In a solid state phase transition, say between an face-centered cubic (fcc) phase and a body-centered
+cubic (bcc) phase, the mere rearrangement of atoms can take some time, also resulting in a phase transition
+that doesn’t go directly from the previously lowest Gibbs free energy phase to the presently
+lowest Gibbs free energy phase.</p>
+<p><code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> provides the ingredients to build a kinetic phase transition framework in a host code.</p>
+<p>A comprehensive guide for implementing KPT into a hydro code is available <a class="reference external" href="https://www.osti.gov/biblio/2202604">here</a>.</p>
+<section id="mass-and-volume-fractions">
+<h2>Mass and volume fractions<a class="headerlink" href="#mass-and-volume-fractions" title="Link to this heading"></a></h2>
+<p>The first ingredient needed in a KPT framework is a quantity describing what phase a material currently
+is in. <em>Mass fractions</em>, <span class="math notranslate nohighlight">\(\mu_i\)</span>, gives a measure of how much of the total mass of the material in a cell, <span class="math notranslate nohighlight">\(M\)</span>,
+is in a specific phase</p>
+<div class="math notranslate nohighlight">
+\[\mu_i = \frac{M_i}{M} \qquad \qquad \sum_i \mu_i = 1\]</div>
+<p>For completeness we also introduce <em>volume fractions</em>, <span class="math notranslate nohighlight">\(f_i\)</span>, that give how much of the volume of
+the material in a cell, <span class="math notranslate nohighlight">\(V\)</span>, is in a specific phase</p>
+<div class="math notranslate nohighlight">
+\[f_i = \frac{V_i}{V} \qquad \qquad \sum_i f_i = 1\]</div>
+<p>With these definitions it is clear that both <span class="math notranslate nohighlight">\(0 \leq \mu_i \leq 1\)</span> and <span class="math notranslate nohighlight">\(0 \leq f_i \leq 1\)</span>.
+Mass and volume fractions are discussed more closely in the <a class="reference internal" href="using-closures.html#massandvolumefractions"><span class="std std-ref">mixed cell closure</span></a> section.
+Note, however, that mass and volume fractions in the KPT framework give how much of each <em>phase</em> of <em>one</em> material is present,
+while in mixed cells they give how much of one <em>material</em> is present. Even though we can use some of the same routines
+for mixed material cells and KPT, implementing KPT into a mixed cell environment need to use separate mass and volume
+fractions for the mixed cell and within each material in the cell.</p>
+</section>
+<section id="homogenization">
+<h2>Homogenization<a class="headerlink" href="#homogenization" title="Link to this heading"></a></h2>
+<p>A cell in a simulation can contain several different materials in several different phases. In order to have a well defined state
+in this heterogeneous cell we need to have some rules, preferably based in physics, on how to <em>homogenize</em> the cell into one average
+or mixture “material” with a well defined state. The natural and most common homogenization method for phase transitions is
+<em>pressure-temperature equilibrium</em> (PTE), which also is a common method for mixed materials cells.</p>
+<section id="pte">
+<h3>PTE<a class="headerlink" href="#pte" title="Link to this heading"></a></h3>
+<p>It is natural to use PTE for phase transitions since the Gibbs free energy, <span class="math notranslate nohighlight">\(G(P,T)\)</span>, is uniquely defined if <span class="math notranslate nohighlight">\(P\)</span> and <span class="math notranslate nohighlight">\(T\)</span>
+are given. PTE means that every phase/material present in a cell has the same pressure and temperature and
+given the specific internal energy, <span class="math notranslate nohighlight">\(E\)</span>, specific volume, <span class="math notranslate nohighlight">\(V\)</span>, the set of mass fractions <span class="math notranslate nohighlight">\(\{\mu_i\}\)</span>, and one Equations of state (EOS) for each phase <span class="math notranslate nohighlight">\(i\)</span>, we have:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}V &amp;=&amp; \sum_i \mu_i V_i \\
+E &amp;=&amp; \sum_i \mu_i E_i \\
+P &amp;=&amp; P_i(V_i,E_i) \\
+T &amp;=&amp; T_i(V_i,E_i)\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(i\)</span> denotes the different phases of one material. For <span class="math notranslate nohighlight">\(N\)</span> phases this gives enough of equations (<span class="math notranslate nohighlight">\(2N\)</span>) to determine all
+<span class="math notranslate nohighlight">\(V_i\)</span> and <span class="math notranslate nohighlight">\(E_i\)</span>, and thus <span class="math notranslate nohighlight">\(P\)</span> and <span class="math notranslate nohighlight">\(T\)</span> and Gibbs Free energy <span class="math notranslate nohighlight">\(G_i(P,T)\)</span> for each phase:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}G_i &amp;=&amp; E_i - P V_i - T S_i \\
+G &amp;=&amp; \sum_i \mu_i G_i\end{split}\]</div>
+<p>Note that we need information about the specific entropy, <span class="math notranslate nohighlight">\(S\)</span>, for each phase. This means that each phase EOS needs to be a <a class="reference internal" href="models.html#complete-eos"><span class="std std-ref">complete EOS</span></a> with a full description of the states.</p>
+<p>We recommend using the <a class="reference internal" href="using-closures.html#density-energy-formalism"><span class="std std-ref">density-energy formalism</span></a> (<code class="docutils literal notranslate"><span class="pre">PTESolverRhoU</span></code>) described in the <a class="reference internal" href="using-closures.html#using-closures"><span class="std std-ref">mixed cell closure</span></a> section, as PTE solver in the KPT framework.</p>
+</section>
+</section>
+<section id="mass-fraction-update">
+<h2>Mass fraction update<a class="headerlink" href="#mass-fraction-update" title="Link to this heading"></a></h2>
+<p>In a computational cell at a time <span class="math notranslate nohighlight">\(t_0\)</span>, the set of current mass fractions, <span class="math notranslate nohighlight">\(\{\mu_i\}_{t_0}\)</span>, the current specific internal energy, <span class="math notranslate nohighlight">\(E_{t_0}\)</span>, and specific volume, <span class="math notranslate nohighlight">\(V_{t_0}\)</span>,
+give all the information needed, including the state of the phases, about the current state of the cell via a PTE solve. This state is the ground for advancing the state in the cell to a
+state at time <span class="math notranslate nohighlight">\(t = t_0 + dt\)</span> via mass, momentum, and energy conservation in a hydro code. If a system is considered to be in equilibrium also through a phase transition, this state also gives
+the new mass fractions. However, in order to allow kinetics to influence the phase transition a new material specific model is needed, a mass fraction update model.</p>
+<section id="equilibrium-phase-transitions">
+<h3>Equilibrium phase transitions<a class="headerlink" href="#equilibrium-phase-transitions" title="Link to this heading"></a></h3>
+<p>Tables of equilibrium mass fractions as a function of <span class="math notranslate nohighlight">\(P\)</span> and <span class="math notranslate nohighlight">\(T\)</span>, can be constructed at the time of constructing complete EOSs for the different phases of a system.
+Phases participation in an equilibrium phase transition all have the same Gibbs free energy even though their specific internal energy, specific volume, and specific entropy, are different
+(see equation for Gibbs free energy above). Equilibrium phase transition mass fraction tables will be made available through <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> in the near future.</p>
+</section>
+<section id="kinetic-phase-transition-models">
+<h3>Kinetic phase transition models<a class="headerlink" href="#kinetic-phase-transition-models" title="Link to this heading"></a></h3>
+<p>We write the new mass fractions at time <span class="math notranslate nohighlight">\(t\)</span> as</p>
+<div class="math notranslate nohighlight">
+\[\mu_i^{t} = \mu_i^{t_0} + \frac{d\mu_i}{dt} dt\]</div>
+<p>which with discretized time becomes</p>
+<div class="math notranslate nohighlight">
+\[\mu_i^{t} = \mu_i^{t_0} + \dot{\mu_i} \Delta t\]</div>
+<p>Using mass conservation (<span class="math notranslate nohighlight">\(\sum_i \mu_i = 1\)</span>), we see that</p>
+<div class="math notranslate nohighlight">
+\[0 = \sum_i \dot{\mu_i} = \sum_i \sum_j ( \mu_j R_{ji} - \mu_i R_{ij} )\]</div>
+<p>where <span class="math notranslate nohighlight">\(R_{ij}\)</span> is the mass transportation rate from phase <span class="math notranslate nohighlight">\(i\)</span> to phase <span class="math notranslate nohighlight">\(j\)</span>, and we can derive the master equation</p>
+<div class="math notranslate nohighlight">
+\[\dot{\mu_i} = \sum_j ( \mu_j R_{ji} - \mu_i R_{ij} )\]</div>
+<p>This equation simply states the fact that all mass transforming from one phase ends up in another phase, it is
+just mass conservation.</p>
+<p>A KPT model is a model for the <span class="math notranslate nohighlight">\(R_{ij}\)</span>.</p>
+</section>
+<section id="carl-greeff-s-kpt-model">
+<h3>Carl Greeff’s KPT model<a class="headerlink" href="#carl-greeff-s-kpt-model" title="Link to this heading"></a></h3>
+<p>Carl Greeff formulated an empirical mass fraction update model as</p>
+<div class="math notranslate nohighlight">
+\[R_{ij} = \nu_{ij} \theta(G_i-G_j) \frac{G_i-G_j}{B_{ij}} \exp\left[ \left( \frac{G_i-G_j}{B_{ij}}\right)^2 \right]\]</div>
+<p>where <span class="math notranslate nohighlight">\(\nu_{ij}\)</span> and <span class="math notranslate nohighlight">\(B_{ij}\)</span> are material dependent fitting constants, and <span class="math notranslate nohighlight">\(\theta\)</span> is the Heaviside step function that is
+<span class="math notranslate nohighlight">\(0\)</span> for a negative argument and <span class="math notranslate nohighlight">\(1\)</span> for a positive argument.
+Mattsson-Wills performed a <a class="reference external" href="https://www.osti.gov/biblio/1900445">parameter study</a> of this model,
+which can be used as a guide for how to choose these parameters for a specific material and a specific phase transition.</p>
+<p>This model is included in <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> and its signature is</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">LogRatesCGModel</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">w</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">num_phases</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">gibbs</span><span class="p">,</span>
+<span class="w">                </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">gibbsorder</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">logRij</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">fromto</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">w</span></code> is <span class="math notranslate nohighlight">\(\nu_{ij}\)</span>, <code class="docutils literal notranslate"><span class="pre">b</span></code> is <span class="math notranslate nohighlight">\(B_{ij}\)</span>, <code class="docutils literal notranslate"><span class="pre">num_phases</span></code> is
+<span class="math notranslate nohighlight">\(N\)</span>, the number of phases, and <code class="docutils literal notranslate"><span class="pre">gibbs</span></code> is <span class="math notranslate nohighlight">\(G_i\)</span>.
+<code class="docutils literal notranslate"><span class="pre">gibbsorder</span></code> is an array of length <span class="math notranslate nohighlight">\(N\)</span>, where the <code class="docutils literal notranslate"><span class="pre">gibbs</span></code> phase indices are ordered
+from the largest Gibbs free energy phase to the lowest Gibbs free energy phase (see figure below),
+<code class="docutils literal notranslate"><span class="pre">logRij</span></code> is <span class="math notranslate nohighlight">\(\log(R_{ij})\)</span>, and <code class="docutils literal notranslate"><span class="pre">fromto</span></code> is a map between the phase indices <span class="math notranslate nohighlight">\(i\)</span> and <span class="math notranslate nohighlight">\(j\)</span> and the <span class="math notranslate nohighlight">\(ij\)</span> phase transition indices in <span class="math notranslate nohighlight">\(R_{ij}\)</span>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">gibbs</span></code> and <code class="docutils literal notranslate"><span class="pre">gibbsorder</span></code> arrays are of length <span class="math notranslate nohighlight">\(N\)</span> while <code class="docutils literal notranslate"><span class="pre">w</span></code> and <code class="docutils literal notranslate"><span class="pre">b</span></code> are arrays of length <span class="math notranslate nohighlight">\(N^2\)</span> representing the <span class="math notranslate nohighlight">\(N \times N\)</span> matrices, row by row.
+Note that it is <em>NOT</em> assumed that the phase transition parameters are the same when going from <span class="math notranslate nohighlight">\(i \rightarrow j\)</span> and  <span class="math notranslate nohighlight">\(j \rightarrow i\)</span>, that is, <span class="math notranslate nohighlight">\(\{\nu,B\}_{ij} \neq \{\nu,B\}_{ji}\)</span>.
+Also note that <span class="math notranslate nohighlight">\(R_{ii} = 0\)</span>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">logRij</span></code> is an array of length <span class="math notranslate nohighlight">\(N (N-1)/2\)</span> giving the logarithm of the non-zero mass transportation rates between phases.
+Using <code class="docutils literal notranslate"><span class="pre">gibbsorder</span></code> indices, <span class="math notranslate nohighlight">\(j\)</span> and <span class="math notranslate nohighlight">\(k\)</span>, we see that all <span class="math notranslate nohighlight">\(R_{jk}\)</span> with <span class="math notranslate nohighlight">\(j \geq k\)</span> are <span class="math notranslate nohighlight">\(0\)</span> because of
+<span class="math notranslate nohighlight">\(\theta(G_j - G_k) = 0\)</span> (since <span class="math notranslate nohighlight">\(G_k &gt; G_j\)</span>). Writing <span class="math notranslate nohighlight">\(R_{jk}\)</span> on matrix form would give that only the upper triangular part is non-zero,
+giving <span class="math notranslate nohighlight">\(N (N-1)/2\)</span> non-zero elements.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">fromto</span></code> array
+gives which two phases in the <code class="docutils literal notranslate"><span class="pre">gibbs</span></code> array, each rate in <code class="docutils literal notranslate"><span class="pre">logRij</span></code> is associated with: <code class="docutils literal notranslate"><span class="pre">logRij[k]</span></code> is the logarithm of the mass
+transportation rate from/to phases <code class="docutils literal notranslate"><span class="pre">fromto[k]</span></code>, with <code class="docutils literal notranslate"><span class="pre">k</span></code> a phase transition index according to the figure below. The integer
+in <code class="docutils literal notranslate"><span class="pre">fromto</span></code>, “ij”, is composed from the <code class="docutils literal notranslate"><span class="pre">gibbs</span></code> index of the “from” phase, <span class="math notranslate nohighlight">\(i\)</span>, and the <code class="docutils literal notranslate"><span class="pre">gibbs</span></code> index of the “to” phase,
+<span class="math notranslate nohighlight">\(j\)</span>, as <span class="math notranslate nohighlight">\(i*10+j\)</span>, and with a single digit integer, “x”, interpreted as “0x”.</p>
+<a class="reference internal image-reference" href="../_images/GibbsOrder.png"><img alt="Figure: How the phase transition index used in several arrays relate to the phase index in the  gibbsorder array." src="../_images/GibbsOrder.png" style="width: 500px;" />
+</a>
+<p><code class="docutils literal notranslate"><span class="pre">gibbsorder</span></code> can be obtained with any sorting algorithm. In <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code>, <code class="docutils literal notranslate"><span class="pre">SortGibbs</span></code> can be used</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">SortGibbs</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">num_phases</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">gibbs</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">gibbsorder</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">num_phases</span></code> is <span class="math notranslate nohighlight">\(N\)</span>, <code class="docutils literal notranslate"><span class="pre">gibbs</span></code> is an array with length <span class="math notranslate nohighlight">\(N\)</span>, with Gibbs free energy for each phase.
+<code class="docutils literal notranslate"><span class="pre">gibbsorder</span></code> gives the indices of <code class="docutils literal notranslate"><span class="pre">gibbs</span></code>, the phase indices, in order from highest Gibbs free energy to lowest Gibbs free energy (see figure above). This means
+that <code class="docutils literal notranslate"><span class="pre">gibbs[gibbsorder[0]]</span></code> is the highest Gibbs free energy and <code class="docutils literal notranslate"><span class="pre">gibbs[gibbsorder[N-1]]</span></code> is the lowest, that is, the Gibbs free energy of the equilibrium phase.</p>
+</section>
+<section id="the-time-step">
+<h3>The time step<a class="headerlink" href="#the-time-step" title="Link to this heading"></a></h3>
+<p>If a timestep would be truely infinitesimal, <span class="math notranslate nohighlight">\(R_{ij} dt \leq 1\)</span> would always hold, since however big the
+rate <span class="math notranslate nohighlight">\(R_{ij}\)</span> is, <span class="math notranslate nohighlight">\(dt &lt; \frac{1}{R_{ij}}\)</span>. This means that the new
+mass fractions would always obey <span class="math notranslate nohighlight">\(0 \leq \mu_i \leq 1\)</span>. However, with a discretized time step, <span class="math notranslate nohighlight">\(R_{ij} \Delta t\)</span> can become larger than <span class="math notranslate nohighlight">\(1\)</span>, and it can be that even
+if the master equation holds, it results in some phase mass fractions becomming negative and some being above <span class="math notranslate nohighlight">\(1\)</span>, which is unphysical.</p>
+<p>One way of dealing with this is to use a time step, <span class="math notranslate nohighlight">\(\Delta t\)</span>, that is smaller than the inverse of the largest rate from an active phase. A routine
+suggesting a maximum timestep is available in <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code>:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">Real</span><span class="w"> </span><span class="n">LogMaxTimeStep</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">num_phases</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">mfs</span><span class="p">,</span>
+<span class="w">                    </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">gibbsorder</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">logRij</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">num_phases</span></code> is <span class="math notranslate nohighlight">\(N\)</span>, <code class="docutils literal notranslate"><span class="pre">mfs</span></code> is the array containing each phase’s (old) mass fraction, <span class="math notranslate nohighlight">\(\mu_i\)</span>, <code class="docutils literal notranslate"><span class="pre">gibbsorder</span></code> contains the <code class="docutils literal notranslate"><span class="pre">gibbs</span></code> indices of the phases,
+ordered from the phase with the largest to the phase with the smallest Gibbs free energy (see figure above), and <code class="docutils literal notranslate"><span class="pre">logRij</span></code> contains <span class="math notranslate nohighlight">\(\log(R_{ij})\)</span>. The function
+gives out <span class="math notranslate nohighlight">\(\log(\Delta t_{max})\)</span> since it will be used together with <span class="math notranslate nohighlight">\(\log(R_{ij})\)</span> and both can be very large numbers but with opposite signs so that the difference is
+small and can be safely evaluated inside an exponential.</p>
+</section>
+<section id="the-update-method">
+<h3>The update method<a class="headerlink" href="#the-update-method" title="Link to this heading"></a></h3>
+<p>Because of the numerical sensitivity to the size of the time step, several different methods have been developed
+for how to perform the update. The first method made available in <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> is suitable for simulations where a small timestep can be used:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">SmallStepMFUpdate</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">logdt</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">num_phases</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">massfractions</span><span class="p">,</span>
+<span class="w">                  </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">gibbsorder</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">logRij</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">dmfs</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">newmfs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">logdt</span></code> is <span class="math notranslate nohighlight">\(\log(\Delta t)\)</span>, <code class="docutils literal notranslate"><span class="pre">num_phases</span></code> is <span class="math notranslate nohighlight">\(N\)</span>, <code class="docutils literal notranslate"><span class="pre">massfractions</span></code> is the array containing each phase’s (old) mass fraction,
+<code class="docutils literal notranslate"><span class="pre">gibbsorder</span></code> contains the indices of the phases, ordered from the phase with the largest to the phase with
+the smallest Gibbs free energy (see figure above), <code class="docutils literal notranslate"><span class="pre">logRij</span></code> is <span class="math notranslate nohighlight">\(\log(R_{ij})\)</span>, <code class="docutils literal notranslate"><span class="pre">dmfs</span></code> is the mass transformed from one phase to another,
+<span class="math notranslate nohighlight">\(\mu_i R_{ij} \Delta t\)</span>, for each phase transition in the order described in the figure above, and <code class="docutils literal notranslate"><span class="pre">newmfs</span></code> is containing the new, updated,
+mass fractions.</p>
+<p>The advantage of using Gibbs ordered phases in the internal calculations is shown in the figure above.
+All phase transitions will always go from a higher Gibbs free energy phase to a smaller Gibbs free energy phase,
+and by using the indexing scheme in the figure all mass transformed will always go from a phase with a lower index
+to a phase with a larger index. In addition, the rates are usually larger when the Gibbs free energy difference is larger
+(even though the material and phase transition fitting constants could reverse the order of the rates), and dealing with the phase transitions
+in the order shown in the figure facilitates the calculations. Using the Gibbs order indices, the connection between these indices, <span class="math notranslate nohighlight">\(j\)</span> and <span class="math notranslate nohighlight">\(k\)</span>, and
+the phase transition indices <span class="math notranslate nohighlight">\(jk\)</span> is</p>
+<div class="math notranslate nohighlight">
+\[jk = (j+1)(N-1) - (j-1)j/2 - k\]</div>
+<p>as can be verified by hand in the figure above.</p>
+<p>Note that this method depleats phases in order of mass transfer to the lowest Gibbs free energy first, then the next lowest, and so on (see figure above),
+but stops once the originating phase is depleated. If this is reflecting the physical reality, is up to the user to decide. The size of the time step
+problem is taken care of by never transfering more that the existing mass in a phase to any other phase.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="using-closures.html" class="btn btn-neutral float-left" title="Mixed Cell Closures" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="python.html" class="btn btn-neutral float-right" title="Python Bindings" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2023. Triad National Security.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Other Versions</span>
+    v: release-1.9.2
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Tags</dt>
+      <dd><a href="../../goldfiles-1.6.2/index.html">goldfiles-1.6.2</a></dd>
+      <dd><a href="../../goldfiles-1.8.0/index.html">goldfiles-1.8.0</a></dd>
+      <dd><a href="../../release-1.10.0/src/using-kpt.html">release-1.10.0</a></dd>
+      <dd><a href="../../release-1.11.0/src/using-kpt.html">release-1.11.0</a></dd>
+      <dd><a href="../../release-1.6.0/index.html">release-1.6.0</a></dd>
+      <dd><a href="../../release-1.6.1/index.html">release-1.6.1</a></dd>
+      <dd><a href="../../release-1.6.2/index.html">release-1.6.2</a></dd>
+      <dd><a href="../../release-1.7.0/index.html">release-1.7.0</a></dd>
+      <dd><a href="../../release-1.8.0/index.html">release-1.8.0</a></dd>
+      <dd><a href="../../release-1.9.0/index.html">release-1.9.0</a></dd>
+      <dd><a href="../../release-1.9.1/src/using-kpt.html">release-1.9.1</a></dd>
+      <dd><a href="using-kpt.html">release-1.9.2</a></dd>
+    </dl>
+    <dl>
+      <dt>Branches</dt>
+      <dd><a href="../../added_benchmark/src/using-kpt.html">added_benchmark</a></dd>
+      <dd><a href="../../aemattssing/src/using-kpt.html">aemattssing</a></dd>
+      <dd><a href="../../bgclayton_simple_macaw/src/using-kpt.html">bgclayton_simple_macaw</a></dd>
+      <dd><a href="../../blb/python_entropy/index.html">blb/python_entropy</a></dd>
+      <dd><a href="../../brryan/isothermal/index.html">brryan/isothermal</a></dd>
+      <dd><a href="../../cmake_fixup_static_linking/index.html">cmake_fixup_static_linking</a></dd>
+      <dd><a href="../../dempsey/mass_frac/src/using-kpt.html">dempsey/mass_frac</a></dd>
+      <dd><a href="../../dholladay00/cleanup_variadic/index.html">dholladay00/cleanup_variadic</a></dd>
+      <dd><a href="../../dholladay00/eap_debug/index.html">dholladay00/eap_debug</a></dd>
+      <dd><a href="../../dholladay00/faster_ses2spin/index.html">dholladay00/faster_ses2spin</a></dd>
+      <dd><a href="../../dholladay00/pt_solver/src/using-kpt.html">dholladay00/pt_solver</a></dd>
+      <dd><a href="../../dholladay00/xl_cuda_eospac/index.html">dholladay00/xl_cuda_eospac</a></dd>
+      <dd><a href="../../docs_spack_devworkflow/src/using-kpt.html">docs_spack_devworkflow</a></dd>
+      <dd><a href="../../gopsub/crest/index.html">gopsub/crest</a></dd>
+      <dd><a href="../../jdolence/default_shift/index.html">jdolence/default_shift</a></dd>
+      <dd><a href="../../jdolence/new_pte/index.html">jdolence/new_pte</a></dd>
+      <dd><a href="../../jhp/EAP_integration/index.html">jhp/EAP_integration</a></dd>
+      <dd><a href="../../jhp/two_eos/src/using-kpt.html">jhp/two_eos</a></dd>
+      <dd><a href="../../jhp/update_copyright/index.html">jhp/update_copyright</a></dd>
+      <dd><a href="../../jhp/using_cleanup/index.html">jhp/using_cleanup</a></dd>
+      <dd><a href="../../jmm/hip-inline/src/using-kpt.html">jmm/hip-inline</a></dd>
+      <dd><a href="../../jmm/ports-testing/src/using-kpt.html">jmm/ports-testing</a></dd>
+      <dd><a href="../../jmm/rdc/src/using-kpt.html">jmm/rdc</a></dd>
+      <dd><a href="../../jmm/sesame2spiner-library/index.html">jmm/sesame2spiner-library</a></dd>
+      <dd><a href="../../jmm/sometimes-capture-by-reference/src/using-kpt.html">jmm/sometimes-capture-by-reference</a></dd>
+      <dd><a href="../../jmm/spiner-introspection/src/using-kpt.html">jmm/spiner-introspection</a></dd>
+      <dd><a href="../../jmm/svd/src/using-kpt.html">jmm/svd</a></dd>
+      <dd><a href="../../jmm/template-lambda-sfinae-edition/index.html">jmm/template-lambda-sfinae-edition</a></dd>
+      <dd><a href="../../jmm/test-pte-mem-tweak/src/using-kpt.html">jmm/test-pte-mem-tweak</a></dd>
+      <dd><a href="../../jmm/test-stellarcollapse-fast-logs/src/using-kpt.html">jmm/test-stellarcollapse-fast-logs</a></dd>
+      <dd><a href="../../jmm/units-fixes/src/using-kpt.html">jmm/units-fixes</a></dd>
+      <dd><a href="../../jmm/update-clang-format/src/using-kpt.html">jmm/update-clang-format</a></dd>
+      <dd><a href="../../jmm/update-kokkos-linalg/src/using-kpt.html">jmm/update-kokkos-linalg</a></dd>
+      <dd><a href="../../jmm/update-spackage-1.9.1/src/using-kpt.html">jmm/update-spackage-1.9.1</a></dd>
+      <dd><a href="../../lroberts36/tilted-maxwell/index.html">lroberts36/tilted-maxwell</a></dd>
+      <dd><a href="../../main/src/using-kpt.html">main</a></dd>
+      <dd><a href="../../mauneyc/fix/CIcmake/index.html">mauneyc/fix/CIcmake</a></dd>
+      <dd><a href="../../mauneyc/fix/checkOtherHDF5ParallelFlag/index.html">mauneyc/fix/checkOtherHDF5ParallelFlag</a></dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

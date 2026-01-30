@@ -1,0 +1,318 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Use Sphinx for Writing Docs &mdash; Singularity-EOS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Contributing" href="contributing.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Singularity-EOS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="philosophy.html">Design Philosophy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building.html">Building <cite>singularity-eos</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="integration.html">Integrating <cite>singularity-eos</cite> into a CMake project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-eos.html">The Equation of State API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">EOS Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modifiers.html">Equation of State Modifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="customization.html">Customizing <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-closures.html">Mixed Cell Closures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-kpt.html">Kinetic Phase Transition Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python.html">Python Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">How to Use Sphinx for Writing Docs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#how-to-have-github-build-your-documentation-for-you">How to have github build your documentation for you</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#building-documentation-locally">Building documentation locally</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-to-get-the-dependencies">How to Get the Dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#using-docker">Using Docker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#using-spack">Using Spack</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#how-to-build-rst-into-html">How to Build .rst into .html</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#more-info">More Info.</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Singularity-EOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">How to Use Sphinx for Writing Docs</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/src/sphinx-doc.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="how-to-use-sphinx-for-writing-docs">
+<h1>How to Use Sphinx for Writing Docs<a class="headerlink" href="#how-to-use-sphinx-for-writing-docs" title="Link to this heading"></a></h1>
+<section id="how-to-have-github-build-your-documentation-for-you">
+<h2>How to have github build your documentation for you<a class="headerlink" href="#how-to-have-github-build-your-documentation-for-you" title="Link to this heading"></a></h2>
+<p>Github can automatically build your documentation for you through the continuous integration pipeline.
+After you submit a pull request with your .rst changes for documentation on <a class="reference external" href="https://github.com/lanl/singularity-eos">Github Singularity-EOS</a>,
+the documentation will automatically get built. You will see a “build and deploy documentation” job
+at the bottom of the pull request page. If this passes, your documentation will have been generated.</p>
+<p>On the bottom left of the documentation page on <a class="reference external" href="https://lanl.github.io/singularity-eos/">github-pages</a>, you can select the branch/build
+of the documentation, one of which should be the branch you wrote your changes on.</p>
+<p>Documentation is available on <a class="reference external" href="https://lanl.github.io/singularity-eos/">github-pages</a>.</p>
+</section>
+<section id="building-documentation-locally">
+<h2>Building documentation locally<a class="headerlink" href="#building-documentation-locally" title="Link to this heading"></a></h2>
+<p>While you can rely on the CI to build the documentation associated with your
+branch, you can also very easily build sphinx documentation locally through
+python. These instructions also <strong>do not</strong> require admin access and are usable
+with shared machines or python distributions.</p>
+<p>First, ensure that you are running a modern version of python (i.e. python 3 of
+some flavor)</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>python<span class="w"> </span>--version
+Python<span class="w"> </span><span class="m">3</span>.9.7
+</pre></div>
+</div>
+<p>Then, use pip to install <code class="code docutils literal notranslate"><span class="pre">spinx</span></code> and the RTD theme</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>sphinx<span class="w"> </span>sphinx-rtd-theme
+</pre></div>
+</div>
+<p>Now, navigate to the <code class="code docutils literal notranslate"><span class="pre">../doc/sphinx</span></code> directory where a <code class="code docutils literal notranslate"><span class="pre">make</span> <span class="pre">help</span></code>
+shows all of the available ways to build the documentation</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>:language:bash
+
+$ make help
+Sphinx v4.2.0
+Please use `make target&#39; where target is one of
+  html        to make standalone HTML files
+  dirhtml     to make HTML files named index.html in directories
+  singlehtml  to make a single large HTML file
+  pickle      to make pickle files
+  json        to make JSON files
+  htmlhelp    to make HTML files and an HTML help project
+  qthelp      to make HTML files and a qthelp project
+  devhelp     to make HTML files and a Devhelp project
+  epub        to make an epub
+  latex       to make LaTeX files, you can set PAPER=a4 or PAPER=letter
+  latexpdf    to make LaTeX and PDF files (default pdflatex)
+  latexpdfja  to make LaTeX files and run them through platex/dvipdfmx
+  text        to make text files
+  man         to make manual pages
+  texinfo     to make Texinfo files
+  info        to make Texinfo files and run them through makeinfo
+  gettext     to make PO message catalogs
+  changes     to make an overview of all changed/added/deprecated items
+  xml         to make Docutils-native XML files
+  pseudoxml   to make pseudoxml-XML files for display purposes
+  linkcheck   to check all external links for integrity
+  doctest     to run all doctests embedded in the documentation (if enabled)
+  coverage    to run coverage check of the documentation (if enabled)
+  clean       to remove everything in the build directory
+</pre></div>
+</div>
+<p>Making the documentation will create a new directory, <code class="code docutils literal notranslate"><span class="pre">_build</span></code> in the
+<code class="code docutils literal notranslate"><span class="pre">sphinx</span></code> directory along with whichever type of documentation you wanted
+to build.</p>
+<p>For example, building the HTML documentation with <code class="code docutils literal notranslate"><span class="pre">make</span> <span class="pre">html</span></code> produces the
+<code class="code docutils literal notranslate"><span class="pre">../doc/sphinx/_build/html</span></code> directory with an <code class="code docutils literal notranslate"><span class="pre">index.html</span></code> file that
+you can point a browser to in order to view the documenation.</p>
+</section>
+<section id="how-to-get-the-dependencies">
+<h2>How to Get the Dependencies<a class="headerlink" href="#how-to-get-the-dependencies" title="Link to this heading"></a></h2>
+<section id="using-docker">
+<h3>Using Docker<a class="headerlink" href="#using-docker" title="Link to this heading"></a></h3>
+<p>If you are using <a class="reference external" href="https://www.docker.com">Docker</a>, then simply pull the docker image specified below:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">image</span><span class="p">:</span> <span class="n">sphinxdoc</span><span class="o">/</span><span class="n">sphinx</span><span class="o">-</span><span class="n">latexpdf</span>
+</pre></div>
+</div>
+<p>Then, after running <code class="code docutils literal notranslate"><span class="pre">docker</span> <span class="pre">run</span> <span class="pre">-it</span> <span class="pre">&lt;docker-image-name&gt;</span> <span class="pre">/bin/bash</span></code>, install the theme we are using with <code class="code docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">sphinx_rtd_theme</span></code></p>
+</section>
+<section id="using-spack">
+<h3>Using Spack<a class="headerlink" href="#using-spack" title="Link to this heading"></a></h3>
+<p>If you are using <a class="reference external" href="https://spack.io">Spack</a> to provision dependencies, then follow the steps as such:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="linenos">111</span><span class="c1">#    scheduler_parameters: &quot;-n 1 --qos=debug -p shared-gpu-amd-mi250&quot;</span>
+<span class="linenos">112</span><span class="c1">#</span>
+<span class="linenos">113</span><span class="c1">#openmpi_fortran_rocm_gcc:</span>
+<span class="linenos">114</span><span class="c1">#  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]</span>
+<span class="linenos">115</span><span class="c1">#  needs: [download_prereq]</span>
+<span class="linenos">116</span><span class="c1">#  variables:</span>
+<span class="linenos">117</span><span class="c1">#    spack_env_name: openmpi-fortran-rocm-gcc</span>
+<span class="linenos">118</span><span class="c1">#    scheduler_parameters: &quot;-n 1 --qos=debug -p shared-gpu-amd-mi250&quot;</span>
+<span class="linenos">119</span>
+<span class="linenos">120</span><span class="nt">rocinante_craympich_gcc</span><span class="p">:</span>
+</pre></div>
+</div>
+<p>from <code class="code docutils literal notranslate"><span class="pre">.gitlab-ci.yml</span></code></p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If you do not have either Docker or Spack locally, you would need to install one of them first.</p>
+<p>For Docker, refer to their <a class="reference external" href="https://docs.docker.com/get-docker">Get Docker Guide</a>.</p>
+<p>For Spack, refer to their <a class="reference external" href="https://spack.readthedocs.io/en/latest/getting_started.html#installation">Getting Started Guide</a>.</p>
+</div>
+</section>
+</section>
+<section id="how-to-build-rst-into-html">
+<h2>How to Build .rst into .html<a class="headerlink" href="#how-to-build-rst-into-html" title="Link to this heading"></a></h2>
+<p>After you have the dependencies in your environment, then simply build your documentation as the following:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="linenos">121</span><span class="w">  </span><span class="nt">extends</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">.ascgit_job</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">.rocinante_job</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">.rocinante_regular_job</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">.build_and_test</span><span class="p p-Indicator">]</span>
+<span class="linenos">122</span><span class="w">  </span><span class="nt">needs</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">download_prereq</span><span class="p p-Indicator">]</span>
+</pre></div>
+</div>
+<p>from <code class="code docutils literal notranslate"><span class="pre">.gitlab-ci.yml</span></code></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You can view the documentation webpage locally on your web browser by passing in the URL as <code class="code docutils literal notranslate"><span class="pre">file:///path/to/singularity-eos/doc/sphinx/_build/html/index.html</span></code></p>
+</div>
+</section>
+<section id="more-info">
+<h2>More Info.<a class="headerlink" href="#more-info" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.sphinx-doc.org/en/master/usage/installation.html">Sphinx Installation</a></p></li>
+</ul>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html">Sphinx reStructuredText Documentation</a></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="contributing.html" class="btn btn-neutral float-left" title="Contributing" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2023. Triad National Security.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Other Versions</span>
+    v: dholladay00/pt_solver
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Tags</dt>
+      <dd><a href="../../../goldfiles-1.6.2/src/sphinx-doc.html">goldfiles-1.6.2</a></dd>
+      <dd><a href="../../../goldfiles-1.8.0/src/sphinx-doc.html">goldfiles-1.8.0</a></dd>
+      <dd><a href="../../../release-1.10.0/src/sphinx-doc.html">release-1.10.0</a></dd>
+      <dd><a href="../../../release-1.11.0/src/sphinx-doc.html">release-1.11.0</a></dd>
+      <dd><a href="../../../release-1.6.0/src/sphinx-doc.html">release-1.6.0</a></dd>
+      <dd><a href="../../../release-1.6.1/src/sphinx-doc.html">release-1.6.1</a></dd>
+      <dd><a href="../../../release-1.6.2/src/sphinx-doc.html">release-1.6.2</a></dd>
+      <dd><a href="../../../release-1.7.0/src/sphinx-doc.html">release-1.7.0</a></dd>
+      <dd><a href="../../../release-1.8.0/src/sphinx-doc.html">release-1.8.0</a></dd>
+      <dd><a href="../../../release-1.9.0/src/sphinx-doc.html">release-1.9.0</a></dd>
+      <dd><a href="../../../release-1.9.1/src/sphinx-doc.html">release-1.9.1</a></dd>
+      <dd><a href="../../../release-1.9.2/src/sphinx-doc.html">release-1.9.2</a></dd>
+    </dl>
+    <dl>
+      <dt>Branches</dt>
+      <dd><a href="../../../added_benchmark/src/sphinx-doc.html">added_benchmark</a></dd>
+      <dd><a href="../../../aemattssing/src/sphinx-doc.html">aemattssing</a></dd>
+      <dd><a href="../../../bgclayton_simple_macaw/src/sphinx-doc.html">bgclayton_simple_macaw</a></dd>
+      <dd><a href="../../../blb/python_entropy/src/sphinx-doc.html">blb/python_entropy</a></dd>
+      <dd><a href="../../../brryan/isothermal/src/sphinx-doc.html">brryan/isothermal</a></dd>
+      <dd><a href="../../../cmake_fixup_static_linking/src/sphinx-doc.html">cmake_fixup_static_linking</a></dd>
+      <dd><a href="../../../dempsey/mass_frac/src/sphinx-doc.html">dempsey/mass_frac</a></dd>
+      <dd><a href="../../cleanup_variadic/src/sphinx-doc.html">dholladay00/cleanup_variadic</a></dd>
+      <dd><a href="../../eap_debug/src/sphinx-doc.html">dholladay00/eap_debug</a></dd>
+      <dd><a href="../../faster_ses2spin/src/sphinx-doc.html">dholladay00/faster_ses2spin</a></dd>
+      <dd><a href="sphinx-doc.html">dholladay00/pt_solver</a></dd>
+      <dd><a href="../../xl_cuda_eospac/src/sphinx-doc.html">dholladay00/xl_cuda_eospac</a></dd>
+      <dd><a href="../../../docs_spack_devworkflow/src/sphinx-doc.html">docs_spack_devworkflow</a></dd>
+      <dd><a href="../../../gopsub/crest/src/sphinx-doc.html">gopsub/crest</a></dd>
+      <dd><a href="../../../jdolence/default_shift/src/sphinx-doc.html">jdolence/default_shift</a></dd>
+      <dd><a href="../../../jdolence/new_pte/src/sphinx-doc.html">jdolence/new_pte</a></dd>
+      <dd><a href="../../../jhp/EAP_integration/src/sphinx-doc.html">jhp/EAP_integration</a></dd>
+      <dd><a href="../../../jhp/two_eos/src/sphinx-doc.html">jhp/two_eos</a></dd>
+      <dd><a href="../../../jhp/update_copyright/src/sphinx-doc.html">jhp/update_copyright</a></dd>
+      <dd><a href="../../../jhp/using_cleanup/src/sphinx-doc.html">jhp/using_cleanup</a></dd>
+      <dd><a href="../../../jmm/hip-inline/src/sphinx-doc.html">jmm/hip-inline</a></dd>
+      <dd><a href="../../../jmm/ports-testing/src/sphinx-doc.html">jmm/ports-testing</a></dd>
+      <dd><a href="../../../jmm/rdc/src/sphinx-doc.html">jmm/rdc</a></dd>
+      <dd><a href="../../../jmm/sesame2spiner-library/src/sphinx-doc.html">jmm/sesame2spiner-library</a></dd>
+      <dd><a href="../../../jmm/sometimes-capture-by-reference/src/sphinx-doc.html">jmm/sometimes-capture-by-reference</a></dd>
+      <dd><a href="../../../jmm/spiner-introspection/src/sphinx-doc.html">jmm/spiner-introspection</a></dd>
+      <dd><a href="../../../jmm/svd/src/sphinx-doc.html">jmm/svd</a></dd>
+      <dd><a href="../../../jmm/template-lambda-sfinae-edition/src/sphinx-doc.html">jmm/template-lambda-sfinae-edition</a></dd>
+      <dd><a href="../../../jmm/test-pte-mem-tweak/src/sphinx-doc.html">jmm/test-pte-mem-tweak</a></dd>
+      <dd><a href="../../../jmm/test-stellarcollapse-fast-logs/src/sphinx-doc.html">jmm/test-stellarcollapse-fast-logs</a></dd>
+      <dd><a href="../../../jmm/units-fixes/src/sphinx-doc.html">jmm/units-fixes</a></dd>
+      <dd><a href="../../../jmm/update-clang-format/src/sphinx-doc.html">jmm/update-clang-format</a></dd>
+      <dd><a href="../../../jmm/update-kokkos-linalg/src/sphinx-doc.html">jmm/update-kokkos-linalg</a></dd>
+      <dd><a href="../../../jmm/update-spackage-1.9.1/src/sphinx-doc.html">jmm/update-spackage-1.9.1</a></dd>
+      <dd><a href="../../../lroberts36/tilted-maxwell/src/sphinx-doc.html">lroberts36/tilted-maxwell</a></dd>
+      <dd><a href="../../../main/src/sphinx-doc.html">main</a></dd>
+      <dd><a href="../../../mauneyc/fix/CIcmake/src/sphinx-doc.html">mauneyc/fix/CIcmake</a></dd>
+      <dd><a href="../../../mauneyc/fix/checkOtherHDF5ParallelFlag/src/sphinx-doc.html">mauneyc/fix/checkOtherHDF5ParallelFlag</a></dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,354 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Equation of State Modifiers &mdash; Singularity-EOS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Mixed Cell Closures" href="using-closures.html" />
+    <link rel="prev" title="EOS Models" href="models.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Singularity-EOS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="philosophy.html">Design Philosophy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building.html">Building <cite>singularity-eos</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="integration.html">Integrating <cite>singularity-eos</cite> into a CMake project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-eos.html">The Equation of State API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">EOS Models</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Equation of State Modifiers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#the-shifted-eos">The Shifted EOS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-scaled-eos">The Scaled EOS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-relativistic-eos">The Relativistic EOS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#eos-unit-system">EOS Unit System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#composing-modifiers">Composing Modifiers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#undoing-modifiers">Undoing Modifiers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="using-closures.html">Mixed Cell Closures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python.html">Python Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sphinx-doc.html">How to Use Sphinx for Writing Docs</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Singularity-EOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Equation of State Modifiers</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/src/modifiers.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="equation-of-state-modifiers">
+<span id="modifiers"></span><h1>Equation of State Modifiers<a class="headerlink" href="#equation-of-state-modifiers" title="Link to this heading"></a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">EOS</span></code> models can be <em>modified</em> by templated classes we call
+<em>modifiers</em>. A modifier has exactly the same API as an <code class="docutils literal notranslate"><span class="pre">EOS</span></code>, but
+provides some internal transformation on inputs and outputs. For
+example the <code class="docutils literal notranslate"><span class="pre">ShiftedEOS</span></code> modifier changes the zero point energy of a
+given EOS model by shifting all energies up or down. Modifiers can be
+used to, for example, production-harden a model. Only certain
+combinations of <code class="docutils literal notranslate"><span class="pre">EOS</span></code> and <code class="docutils literal notranslate"><span class="pre">modifier</span></code> are permitted by the defualt
+<code class="docutils literal notranslate"><span class="pre">Variant</span></code>. For example, only <code class="docutils literal notranslate"><span class="pre">IdealGas</span></code>, <code class="docutils literal notranslate"><span class="pre">SpinerEOS</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">StellarCollapse</span></code> support the <code class="docutils literal notranslate"><span class="pre">RelativisticEOS</span></code> and <code class="docutils literal notranslate"><span class="pre">UnitSystem</span></code>
+modifiers. All models support the <code class="docutils literal notranslate"><span class="pre">ShiftedEOS</span></code> and <code class="docutils literal notranslate"><span class="pre">ScaledEOS</span></code>
+modifiers. However, note that modifiers do not commute, and only one
+order is supported. The ordering, inside-out, is <code class="docutils literal notranslate"><span class="pre">UnitSystem</span></code> or
+<code class="docutils literal notranslate"><span class="pre">RelativisticEOS</span></code>, then <code class="docutils literal notranslate"><span class="pre">ScaledEOS</span></code>, then <code class="docutils literal notranslate"><span class="pre">ShiftedEOS</span></code>.</p>
+<p>We list below the available modifiers and their constructors.</p>
+<section id="the-shifted-eos">
+<h2>The Shifted EOS<a class="headerlink" href="#the-shifted-eos" title="Link to this heading"></a></h2>
+<p>The shifted equation of state modifies zero point energy of an
+underlying model by some shift. So for example, it transforms</p>
+<div class="math notranslate nohighlight">
+\[P(\rho, \varepsilon) \to P(\rho, \varepsilon - \varepsilon_0)\]</div>
+<p>for some shift <span class="math notranslate nohighlight">\(\varepsilon_0\)</span>. This is a permitted,
+thermodynamically consistent operation, the energy that corresponds to
+“zero” is a free gauge parameter.</p>
+<p>The constructor for the <code class="docutils literal notranslate"><span class="pre">ShiftedEOS</span></code> takes the underlying model and
+the shift parameter. For example, a shifted ideal gas might be
+initialized as:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">singularity</span><span class="p">;</span>
+<span class="n">EOS</span><span class="w"> </span><span class="n">my_eos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ShiftedEOS</span><span class="o">&lt;</span><span class="n">IdealGas</span><span class="o">&gt;</span><span class="p">(</span><span class="n">IdealGas</span><span class="p">(</span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span><span class="p">),</span><span class="w"> </span><span class="n">shift</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>where the first two parameters are the Gruneisen parameter and
+specific heat required by the ideal gas constructor and the latter is
+the energy shift.</p>
+</section>
+<section id="the-scaled-eos">
+<h2>The Scaled EOS<a class="headerlink" href="#the-scaled-eos" title="Link to this heading"></a></h2>
+<p>To understand the scaled EOS, consider the pressure for an ideal gas:</p>
+<div class="math notranslate nohighlight">
+\[P = \Gamma \rho \varepsilon\]</div>
+<p>where here <span class="math notranslate nohighlight">\(\Gamma\)</span> is the Gruneien parameter, <span class="math notranslate nohighlight">\(\rho\)</span> is
+the density, and <span class="math notranslate nohighlight">\(\varepsilon\)</span> is the specific internal
+energy. The pressure is unchanged under the operation</p>
+<div class="math notranslate nohighlight">
+\[\rho \to s\rho,\ \varepsilon\to \varepsilon/s\]</div>
+<p>for some scale parameter <span class="math notranslate nohighlight">\(s\)</span>.  The <code class="docutils literal notranslate"><span class="pre">ScaledEOS</span></code> applies this
+transformation to any equation of state, not just an ideal gas, where
+the pressure may change for different scaling ratios.</p>
+<p>Another way of understanding scaling ratios is that the pressure can be written
+as</p>
+<div class="math notranslate nohighlight">
+\[P = \left(\frac{\partial F}{\partial V} \right)_T\]</div>
+<p>where <span class="math notranslate nohighlight">\(F\)</span> is the Helmholtz free energy. For a given scaling such that
+<span class="math notranslate nohighlight">\(\rho_\mathrm{eos} = s\rho_\mathrm{in}\)</span>, the volume obeys the inverse
+scaling. Since the scaling ratio is constant, it can be substituted into the
+above expression so that</p>
+<div class="math notranslate nohighlight">
+\[P = \left(\frac{\partial F_\mathrm{eos}}{\partial V_\mathrm{eos}} \right)_T
+  = \left(\frac{\partial F_\mathrm{in}}{\partial V_\mathrm{in}} \right)_T
+  = \left(\frac{\partial F_\mathrm{in}}{s \partial V_\mathrm{eos}} \right)_T
+  = \left(\frac{s\partial F_\mathrm{eos}}{s \partial V_\mathrm{eos}} \right)_T\]</div>
+<p>which implies that the Helmholtz free energy must scale in the same way as
+volume (inverse to density) in order to preserve the same pressure. Applying
+this scaling to the definition of the Helmholtz free energy yields</p>
+<div class="math notranslate nohighlight">
+\[F_\mathrm{eos} = e_\mathrm{eos} - TS_\mathrm{eos} = \frac{1}{R} F_\mathrm{in}
+  = \frac{1}{R}e_\mathrm{in} - T\left(\frac{1}{R}S_\mathrm{in}\right),\]</div>
+<p>where the implicaiton is that this inverse the scaling ratio should also be
+applied to energy. The inverse scaling ratio must be applied to the entropy
+here in order to ensure that all other thermodynamic potentials
+(energy, entropy, and the Gibbs free energy) scale similarly.</p>
+<p>where <span class="math notranslate nohighlight">\(e\)</span> is the internal energy and <span class="math notranslate nohighlight">\(S\)</span> is the entropy. The
+implication is that the same scaling should be applied to the energy and entropy
+to maintain thermodynamic consistency.</p>
+<p>The constructor for <code class="docutils literal notranslate"><span class="pre">ScaledEOS</span></code> accepts the underlying model, and
+the scale parameter. For example, a shifted ideal gas might be
+initialized as:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">singularity</span><span class="p">;</span>
+<span class="n">EOS</span><span class="w"> </span><span class="n">my_eos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ScaledEOS</span><span class="o">&lt;</span><span class="n">IdealGas</span><span class="o">&gt;</span><span class="p">(</span><span class="n">IdealGas</span><span class="p">(</span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span><span class="p">),</span><span class="w"> </span><span class="n">scale</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>where the first two parameters are the Gruneisen parameter and
+specific heat required by the ideal gas constructor and the latter is
+the scale.</p>
+</section>
+<section id="the-relativistic-eos">
+<h2>The Relativistic EOS<a class="headerlink" href="#the-relativistic-eos" title="Link to this heading"></a></h2>
+<p>The relativistic modifier modifies the bulk modulus to enforce that
+the sound speed, defined as</p>
+<div class="math notranslate nohighlight">
+\[c_s = \sqrt{B_S/\rho}\]</div>
+<p>is always less than the speed of light. It does so by applying the
+transformation</p>
+<div class="math notranslate nohighlight">
+\[B_S \to B_S/h\]</div>
+<p>for the specific enthalpy <span class="math notranslate nohighlight">\(h\)</span>. This brings the sound speed formula into alignment with the relativistic version,</p>
+<div class="math notranslate nohighlight">
+\[c_s = \sqrt{B_S/w}\]</div>
+<p>for enthalpy by volume <span class="math notranslate nohighlight">\(w\)</span>. The <code class="docutils literal notranslate"><span class="pre">RelativisticEOS</span></code> constructor accepts
+the underlying model, and the speed of light as parameter. For example, a
+relativistic ideal gas might be initialized as:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">singularity</span><span class="p">;</span>
+<span class="n">EOS</span><span class="w"> </span><span class="n">my_eos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">RelativisticEOS</span><span class="o">&lt;</span><span class="n">IdealGas</span><span class="o">&gt;</span><span class="p">(</span><span class="n">IdealGas</span><span class="p">(</span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span><span class="p">),</span><span class="w"> </span><span class="n">cl</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="eos-unit-system">
+<h2>EOS Unit System<a class="headerlink" href="#eos-unit-system" title="Link to this heading"></a></h2>
+<p>By default, the <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> models all use cgs units. However,
+it is often desirable to modify the units used to interact with the
+library. The <code class="docutils literal notranslate"><span class="pre">UnitSystem</span></code> modifier partially implements this
+functionality.</p>
+<p>In particular, when constructing an EOS modified by the
+<code class="docutils literal notranslate"><span class="pre">UnitSystem</span></code>, the user may specify a new unit system either by
+thermal units, specific internal energy, and temperature, or by
+length, mass, and time units. Then all calls of the modified EOS will
+expect values in the new units and return values in the new units.</p>
+<p>The way units are specified is via tag dispatch. For example</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">singularity</span><span class="p">;</span>
+<span class="n">EOS</span><span class="w"> </span><span class="n">my_eos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">UnitSystem</span><span class="o">&lt;</span><span class="n">IdealGas</span><span class="o">&gt;</span><span class="p">(</span><span class="n">IdealGas</span><span class="p">(</span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span><span class="p">),</span>
+<span class="w">  </span><span class="n">eos_units_init</span><span class="o">::</span><span class="n">ThermalUnitsInit</span><span class="p">(),</span>
+<span class="w">  </span><span class="n">rho_unit</span><span class="p">,</span><span class="w"> </span><span class="n">sie_unit</span><span class="p">,</span><span class="w"> </span><span class="n">temp_unit</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>specifies the unit system by specifying units for density, specific
+internal energy, and temperature. On the other hand,</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">singularity</span><span class="p">;</span>
+<span class="n">EOS</span><span class="w"> </span><span class="n">my_eos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">UnitSystem</span><span class="o">&lt;</span><span class="n">IdealGas</span><span class="o">&gt;</span><span class="p">(</span><span class="n">IdealGas</span><span class="p">(</span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span><span class="p">),</span>
+<span class="w">  </span><span class="n">eos_units_init</span><span class="o">::</span><span class="n">LengthTimeUnitsInit</span><span class="p">(),</span>
+<span class="w">  </span><span class="n">time_unit</span><span class="p">,</span><span class="w"> </span><span class="n">mass_unit</span><span class="p">,</span><span class="w"> </span><span class="n">length_unit</span><span class="p">,</span><span class="w"> </span><span class="n">temp_unit</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>specifies the unit system by specifying units for time, mass, length,
+and temperature.</p>
+</section>
+<section id="composing-modifiers">
+<h2>Composing Modifiers<a class="headerlink" href="#composing-modifiers" title="Link to this heading"></a></h2>
+<p>Modifiers can be composed. For example:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">singularity</span><span class="p">;</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">my_eos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ShiftedEOS</span><span class="o">&lt;</span><span class="n">ScaledEOS</span><span class="o">&lt;</span><span class="n">IdealGas</span><span class="o">&gt;&gt;</span><span class="p">(</span><span class="n">ScaledEOS</span><span class="p">(</span><span class="n">IdealGas</span><span class="p">(</span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span><span class="p">),</span><span class="w"> </span><span class="n">scale</span><span class="p">),</span><span class="w"> </span><span class="n">shift</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>You can build modifiers up iteratively by, for example:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">singularity</span><span class="p">;</span>
+<span class="n">EOS</span><span class="w"> </span><span class="n">eos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IdealGas</span><span class="p">(</span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">cv</span><span class="p">);</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">do_shift</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">eos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eos</span><span class="p">.</span><span class="k">template</span><span class="w"> </span><span class="n">Modify</span><span class="o">&lt;</span><span class="n">ShiftedEOS</span><span class="o">&gt;</span><span class="p">(</span><span class="n">shift</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">do_scale</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">eos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eos</span><span class="p">.</span><span class="k">template</span><span class="w"> </span><span class="n">Modify</span><span class="o">&lt;</span><span class="n">ScaledEOS</span><span class="o">&gt;</span><span class="p">(</span><span class="n">scale</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="undoing-modifiers">
+<h2>Undoing Modifiers<a class="headerlink" href="#undoing-modifiers" title="Link to this heading"></a></h2>
+<p>Modifiers can also be undone, extracting the underlying EOS. Continuing the example above,</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">unmodified</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">my_eos</span><span class="p">.</span><span class="n">GetUnmodifiedObject</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>will extract the underlying <code class="docutils literal notranslate"><span class="pre">IdealGas</span></code> EOS model out from the scale and shift.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="models.html" class="btn btn-neutral float-left" title="EOS Models" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="using-closures.html" class="btn btn-neutral float-right" title="Mixed Cell Closures" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2023. Triad National Security.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Other Versions</span>
+    v: brryan/isothermal
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Tags</dt>
+      <dd><a href="../../../goldfiles-1.6.2/src/modifiers.html">goldfiles-1.6.2</a></dd>
+      <dd><a href="../../../goldfiles-1.8.0/src/modifiers.html">goldfiles-1.8.0</a></dd>
+      <dd><a href="../../../release-1.10.0/src/modifiers.html">release-1.10.0</a></dd>
+      <dd><a href="../../../release-1.11.0/src/modifiers.html">release-1.11.0</a></dd>
+      <dd><a href="../../../release-1.6.0/src/modifiers.html">release-1.6.0</a></dd>
+      <dd><a href="../../../release-1.6.1/src/modifiers.html">release-1.6.1</a></dd>
+      <dd><a href="../../../release-1.6.2/src/modifiers.html">release-1.6.2</a></dd>
+      <dd><a href="../../../release-1.7.0/src/modifiers.html">release-1.7.0</a></dd>
+      <dd><a href="../../../release-1.8.0/src/modifiers.html">release-1.8.0</a></dd>
+      <dd><a href="../../../release-1.9.0/src/modifiers.html">release-1.9.0</a></dd>
+      <dd><a href="../../../release-1.9.1/src/modifiers.html">release-1.9.1</a></dd>
+      <dd><a href="../../../release-1.9.2/src/modifiers.html">release-1.9.2</a></dd>
+    </dl>
+    <dl>
+      <dt>Branches</dt>
+      <dd><a href="../../../added_benchmark/src/modifiers.html">added_benchmark</a></dd>
+      <dd><a href="../../../aemattssing/src/modifiers.html">aemattssing</a></dd>
+      <dd><a href="../../../bgclayton_simple_macaw/src/modifiers.html">bgclayton_simple_macaw</a></dd>
+      <dd><a href="../../../blb/python_entropy/src/modifiers.html">blb/python_entropy</a></dd>
+      <dd><a href="modifiers.html">brryan/isothermal</a></dd>
+      <dd><a href="../../../cmake_fixup_static_linking/src/modifiers.html">cmake_fixup_static_linking</a></dd>
+      <dd><a href="../../../dempsey/mass_frac/src/modifiers.html">dempsey/mass_frac</a></dd>
+      <dd><a href="../../../dholladay00/cleanup_variadic/src/modifiers.html">dholladay00/cleanup_variadic</a></dd>
+      <dd><a href="../../../dholladay00/eap_debug/src/modifiers.html">dholladay00/eap_debug</a></dd>
+      <dd><a href="../../../dholladay00/faster_ses2spin/src/modifiers.html">dholladay00/faster_ses2spin</a></dd>
+      <dd><a href="../../../dholladay00/pt_solver/src/modifiers.html">dholladay00/pt_solver</a></dd>
+      <dd><a href="../../../dholladay00/xl_cuda_eospac/src/modifiers.html">dholladay00/xl_cuda_eospac</a></dd>
+      <dd><a href="../../../docs_spack_devworkflow/src/modifiers.html">docs_spack_devworkflow</a></dd>
+      <dd><a href="../../../gopsub/crest/src/modifiers.html">gopsub/crest</a></dd>
+      <dd><a href="../../../jdolence/default_shift/src/modifiers.html">jdolence/default_shift</a></dd>
+      <dd><a href="../../../jdolence/new_pte/index.html">jdolence/new_pte</a></dd>
+      <dd><a href="../../../jhp/EAP_integration/src/modifiers.html">jhp/EAP_integration</a></dd>
+      <dd><a href="../../../jhp/two_eos/src/modifiers.html">jhp/two_eos</a></dd>
+      <dd><a href="../../../jhp/update_copyright/src/modifiers.html">jhp/update_copyright</a></dd>
+      <dd><a href="../../../jhp/using_cleanup/src/modifiers.html">jhp/using_cleanup</a></dd>
+      <dd><a href="../../../jmm/hip-inline/src/modifiers.html">jmm/hip-inline</a></dd>
+      <dd><a href="../../../jmm/ports-testing/src/modifiers.html">jmm/ports-testing</a></dd>
+      <dd><a href="../../../jmm/rdc/src/modifiers.html">jmm/rdc</a></dd>
+      <dd><a href="../../../jmm/sesame2spiner-library/index.html">jmm/sesame2spiner-library</a></dd>
+      <dd><a href="../../../jmm/sometimes-capture-by-reference/src/modifiers.html">jmm/sometimes-capture-by-reference</a></dd>
+      <dd><a href="../../../jmm/spiner-introspection/src/modifiers.html">jmm/spiner-introspection</a></dd>
+      <dd><a href="../../../jmm/svd/src/modifiers.html">jmm/svd</a></dd>
+      <dd><a href="../../../jmm/template-lambda-sfinae-edition/src/modifiers.html">jmm/template-lambda-sfinae-edition</a></dd>
+      <dd><a href="../../../jmm/test-pte-mem-tweak/src/modifiers.html">jmm/test-pte-mem-tweak</a></dd>
+      <dd><a href="../../../jmm/test-stellarcollapse-fast-logs/src/modifiers.html">jmm/test-stellarcollapse-fast-logs</a></dd>
+      <dd><a href="../../../jmm/units-fixes/src/modifiers.html">jmm/units-fixes</a></dd>
+      <dd><a href="../../../jmm/update-clang-format/src/modifiers.html">jmm/update-clang-format</a></dd>
+      <dd><a href="../../../jmm/update-kokkos-linalg/src/modifiers.html">jmm/update-kokkos-linalg</a></dd>
+      <dd><a href="../../../jmm/update-spackage-1.9.1/src/modifiers.html">jmm/update-spackage-1.9.1</a></dd>
+      <dd><a href="../../../lroberts36/tilted-maxwell/src/modifiers.html">lroberts36/tilted-maxwell</a></dd>
+      <dd><a href="../../../main/src/modifiers.html">main</a></dd>
+      <dd><a href="../../../mauneyc/fix/CIcmake/src/modifiers.html">mauneyc/fix/CIcmake</a></dd>
+      <dd><a href="../../../mauneyc/fix/checkOtherHDF5ParallelFlag/src/modifiers.html">mauneyc/fix/checkOtherHDF5ParallelFlag</a></dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

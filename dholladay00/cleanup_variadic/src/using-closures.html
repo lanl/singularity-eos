@@ -1,0 +1,408 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mixed Cell Closures &mdash; Singularity-EOS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Python Bindings" href="python.html" />
+    <link rel="prev" title="Equation of State Modifiers" href="modifiers.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Singularity-EOS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="philosophy.html">Design Philosophy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building.html">Building <cite>singularity-eos</cite></a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-eos.html">The Equation of State API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">EOS Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modifiers.html">Equation of State Modifiers</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Mixed Cell Closures</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#governing-equations-and-assumptions">Governing Equations and Assumptions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-density-energy-formulation">The Density-Energy Formulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-density-temperature-formulation">The Density-Temperature Formulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-the-pressure-temperature-equilibrium-solver">Using the Pressure-Temperature Equilibrium Solver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv428PTESolverRhoTRequiredScratchKi"><code class="docutils literal notranslate"><span class="pre">PTESolverRhoTRequiredScratch()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv428PTESolverRhoURequiredScratchKi"><code class="docutils literal notranslate"><span class="pre">PTESolverRhoURequiredScratch()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv435PTESolverRhoTRequiredScratchInBytesKi"><code class="docutils literal notranslate"><span class="pre">PTESolverRhoTRequiredScratchInBytes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#_CPPv435PTESolverRhoURequiredScratchInBytesKi"><code class="docutils literal notranslate"><span class="pre">PTESolverRhoURequiredScratchInBytes()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#initial-guesses-for-pte-solvers">Initial Guesses for PTE Solvers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="python.html">Python Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sphinx-doc.html">How to Use Sphinx for Writing Docs</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Singularity-EOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Mixed Cell Closures</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/src/using-closures.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="mixed-cell-closures">
+<span id="using-closures"></span><h1>Mixed Cell Closures<a class="headerlink" href="#mixed-cell-closures" title="Link to this heading"></a></h1>
+<p>In Eulerian multi-material fluid simulations, a single grid point or
+finite volume cell may have more than one material in it. In this
+situation, one must decide how to compute thermodynamic quantities in
+that cell. One choice, though not necessarily the optimal choice, is
+to assume pressure-temperature equilibrium (PTE). This implies that there’s
+a single pressure in the cell and a single temperature, which are the
+same for all materials.</p>
+<p><code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> provides several methods for finding a PTE
+soluution. These methods differ in what they treat as independent
+variables, and thus what precise system of equations they solve
+for. However they all share some common characteristics.</p>
+<section id="governing-equations-and-assumptions">
+<h2>Governing Equations and Assumptions<a class="headerlink" href="#governing-equations-and-assumptions" title="Link to this heading"></a></h2>
+<p>Given a set of <span class="math notranslate nohighlight">\(N\)</span> materials ranging from <span class="math notranslate nohighlight">\(i = 0\)</span> to
+<span class="math notranslate nohighlight">\(N-1\)</span>, each material can, in principle, have a distinct pressure
+<span class="math notranslate nohighlight">\(P_i\)</span>, a distinct temperature <span class="math notranslate nohighlight">\(T_i\)</span>, a distinct material
+density <span class="math notranslate nohighlight">\(\rho_i\)</span>, and a distinct specific material energy
+<span class="math notranslate nohighlight">\(\varepsilon_i\)</span>. For some finite total volume <span class="math notranslate nohighlight">\(V\)</span>, each
+material also occupies some fraction of that volume given by the
+<em>volume fraction</em> <span class="math notranslate nohighlight">\(f_i\)</span> such that</p>
+<div class="math notranslate nohighlight">
+\[\sum_{i=0}^{N - 1} f_i = 1\]</div>
+<p>The average density in a given material-occupied volume is</p>
+<div class="math notranslate nohighlight">
+\[\bar{\rho} = \rho_i f_i\]</div>
+<p>and thus the density averaged over all materials is</p>
+<div class="math notranslate nohighlight">
+\[\rho = \sum_{i=0}^{N - 1} \bar{\rho} = \sum_{i=0}^{N-1} \rho_i f_i\]</div>
+<p>Conservation of energy implies that</p>
+<div class="math notranslate nohighlight">
+\[u = \rho \varepsilon = \sum_{i = 0}^{N - 1} \rho_i \varepsilon_i\]</div>
+<p>where <span class="math notranslate nohighlight">\(u = E/V\)</span> is the energy density by volume for total energy
+<span class="math notranslate nohighlight">\(E\)</span> and total volume <span class="math notranslate nohighlight">\(V\)</span>, and <span class="math notranslate nohighlight">\(\varepsilon\)</span> is the
+total specific internal energy within that volume.</p>
+<p>The assumption of pressure equilibrium implies that</p>
+<div class="math notranslate nohighlight">
+\[P = P_0 = P_1 = \ldots = P_{N - 1}\]</div>
+<p>where each pressure is computed as either</p>
+<div class="math notranslate nohighlight">
+\[P_i = P_i(\rho_i, T_i)\]</div>
+<div class="math notranslate nohighlight">
+\[P_i = P_i(\rho_i, \varepsilon_i)\]</div>
+<p>depending on the treatment.</p>
+<p>In <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> the <span class="math notranslate nohighlight">\(N\)</span> volume fractions are treated as
+unknowns, for which one must solve, and the fact that the volume
+fractions sum to 1 implies one constraint. At this point, we have 1
+constraint and <span class="math notranslate nohighlight">\(N\)</span> unknowns (the volume fractions). To guarantee
+uniqueness (but not existence) of a PTE solution, we must find a way
+to have at least as many equations as unknowns. There are several
+choices:</p>
+</section>
+<section id="the-density-energy-formulation">
+<h2>The Density-Energy Formulation<a class="headerlink" href="#the-density-energy-formulation" title="Link to this heading"></a></h2>
+<p>One choice is to treat volume fractions and material energies as
+independent quantities. The material energies provide <span class="math notranslate nohighlight">\(N\)</span> more
+unknowns. The equality of pressures provides <span class="math notranslate nohighlight">\(N-1\)</span> additional
+constraints. Additionally, the euqality of material temperatures, evaluated as</p>
+<div class="math notranslate nohighlight">
+\[T = T_0(\rho_0, \varepsilon_0) = T_1(\rho_1, \varepsilon_1) = \ldots = T_{N-1}(\rho_{N-1},\varepsilon_{N-1})\]</div>
+<p>provides <span class="math notranslate nohighlight">\(N-1\)</span> additional constraints. Finally, conservation of
+energy provides one more constraint. In the end we have <span class="math notranslate nohighlight">\(2 N\)</span>
+constraints and <span class="math notranslate nohighlight">\(2 N\)</span> unknowns.</p>
+<p>In the code this is referred to as the <code class="docutils literal notranslate"><span class="pre">PTESolverRhoU</span></code>.</p>
+</section>
+<section id="the-density-temperature-formulation">
+<h2>The Density-Temperature Formulation<a class="headerlink" href="#the-density-temperature-formulation" title="Link to this heading"></a></h2>
+<p>Another choice is to treat the temperature as an independent
+variable. Then the assumption of PTE implies that</p>
+<div class="math notranslate nohighlight">
+\[T = T_0 = T_1 = \ldots = T_{N - 1}\]</div>
+<p>which leads to a single additional unknown, the temperature
+<span class="math notranslate nohighlight">\(T\)</span>. The equality of pressure, now computed as</p>
+<div class="math notranslate nohighlight">
+\[P_0(\rho_0, T) = P_1(\rho_1, T) = \ldots = P_{N-1}(\rho_{N-1}, T)\]</div>
+<p>provides an additional <span class="math notranslate nohighlight">\(N-1\)</span> constraints. Conservation of
+energy, now computed as</p>
+<div class="math notranslate nohighlight">
+\[u = \sum_{i=}^{N-1} \rho_i \varepsilon_i(\rho_i, T)\]</div>
+<p>provides another constraint. This leads to <span class="math notranslate nohighlight">\(N+1\)</span> constraints and
+<span class="math notranslate nohighlight">\(N+1\)</span> unknowns.</p>
+<p>In the code this is referred to as the <code class="docutils literal notranslate"><span class="pre">PTESolverRhoT</span></code>.</p>
+</section>
+<section id="using-the-pressure-temperature-equilibrium-solver">
+<h2>Using the Pressure-Temperature Equilibrium Solver<a class="headerlink" href="#using-the-pressure-temperature-equilibrium-solver" title="Link to this heading"></a></h2>
+<p>The PTE machinery is implemented in the
+<code class="docutils literal notranslate"><span class="pre">singularity-es/closure/mixed_cell_models.hpp</span></code> header. It is
+entirely header only.</p>
+<p>There are several moving parts. First, one must allocate scratch space
+used by the solver. There are helper routines for providing the needed
+scratch space, wich will tell you how many bytes per mixed cell are
+required. For example:</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv428PTESolverRhoTRequiredScratchKi">
+<span id="_CPPv328PTESolverRhoTRequiredScratchKi"></span><span id="_CPPv228PTESolverRhoTRequiredScratchKi"></span><span id="PTESolverRhoTRequiredScratch__iC"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PTESolverRhoTRequiredScratch</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">nmat</span></span><span class="sig-paren">)</span><span class="p"><span class="pre">;</span></span><a class="headerlink" href="#_CPPv428PTESolverRhoTRequiredScratchKi" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>and</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv428PTESolverRhoURequiredScratchKi">
+<span id="_CPPv328PTESolverRhoURequiredScratchKi"></span><span id="_CPPv228PTESolverRhoURequiredScratchKi"></span><span id="PTESolverRhoURequiredScratch__iC"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PTESolverRhoURequiredScratch</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">nmat</span></span><span class="sig-paren">)</span><span class="p"><span class="pre">;</span></span><a class="headerlink" href="#_CPPv428PTESolverRhoURequiredScratchKi" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>provide the number of real numbers (i.e., either <code class="docutils literal notranslate"><span class="pre">float</span></code> or
+<code class="docutils literal notranslate"><span class="pre">double</span></code>) required for a single cell given a number of materials in
+equilibriun for either the <code class="docutils literal notranslate"><span class="pre">RhoT</span></code> or <code class="docutils literal notranslate"><span class="pre">RhoU</span></code> solver. The equivalent
+functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv435PTESolverRhoTRequiredScratchInBytesKi">
+<span id="_CPPv335PTESolverRhoTRequiredScratchInBytesKi"></span><span id="_CPPv235PTESolverRhoTRequiredScratchInBytesKi"></span><span id="PTESolverRhoTRequiredScratchInBytes__iC"></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PTESolverRhoTRequiredScratchInBytes</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">nmat</span></span><span class="sig-paren">)</span><span class="p"><span class="pre">;</span></span><a class="headerlink" href="#_CPPv435PTESolverRhoTRequiredScratchInBytesKi" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>and</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv435PTESolverRhoURequiredScratchInBytesKi">
+<span id="_CPPv335PTESolverRhoURequiredScratchInBytesKi"></span><span id="_CPPv235PTESolverRhoURequiredScratchInBytesKi"></span><span id="PTESolverRhoURequiredScratchInBytes__iC"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PTESolverRhoURequiredScratchInBytes</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">nmat</span></span><span class="sig-paren">)</span><span class="p"><span class="pre">;</span></span><a class="headerlink" href="#_CPPv435PTESolverRhoURequiredScratchInBytesKi" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<p>give the size in bytes needed to be allocated per cell given a number
+of materials <code class="docutils literal notranslate"><span class="pre">nmat</span></code>.</p>
+<p>A solver in a given cell is initialized via a <code class="docutils literal notranslate"><span class="pre">Solver</span></code> object,
+either <code class="docutils literal notranslate"><span class="pre">PTESolverRhoT</span></code> or <code class="docutils literal notranslate"><span class="pre">PTESolverRhoU</span></code>. The constructor takes
+the number of materials, some set of total quantities required for the
+conservation constraints, and <em>indexer</em> objects for the equation of
+state, the independent and dependent variables, and the <code class="docutils literal notranslate"><span class="pre">lambda</span></code>
+objects for each equation of state, similar to the vector API for a
+given EOS. Here the indexers/vectors are not over cells, but
+materials.</p>
+<p>The constructor for the <code class="docutils literal notranslate"><span class="pre">PTESolverRhoT</span></code> is of the form</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">EOS_t</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">Real_t</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">Lambda_t</span><span class="o">&gt;</span>
+<span class="n">PTESolverRhoT</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">nmat</span><span class="p">,</span><span class="w"> </span><span class="n">EOS_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">vfrac_tot</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">sie_tot</span><span class="p">,</span>
+<span class="w">              </span><span class="n">Real_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="n">Real_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">vfrac</span><span class="p">,</span><span class="w"> </span><span class="n">Real_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">sie</span><span class="p">,</span><span class="w"> </span><span class="n">Real_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">temp</span><span class="p">,</span><span class="w"> </span><span class="n">Real_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">press</span><span class="p">,</span>
+<span class="w">              </span><span class="n">Lambda_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">scratch</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">Tguess</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">nmat</span></code> is the number of materials, <code class="docutils literal notranslate"><span class="pre">eos</span></code> is an indexer over
+equation of state objects, one per material, and <code class="docutils literal notranslate"><span class="pre">vfrac_tot</span></code> is a
+number <span class="math notranslate nohighlight">\(\in (0,1]\)</span> such that the sum over all volume fractions
+adds up to <code class="docutils literal notranslate"><span class="pre">vfrac_tot</span></code>. For a problem in which all materials
+participate in PTE, <code class="docutils literal notranslate"><span class="pre">vfrac_tot_</span></code> should be 1. <code class="docutils literal notranslate"><span class="pre">sie_tot</span></code> is the
+total specific internal energy in the problem, <code class="docutils literal notranslate"><span class="pre">rho</span></code> is an indexer
+over densities, one per material. <code class="docutils literal notranslate"><span class="pre">vfract</span></code> is an indexer over volume
+fractions, one per material. <code class="docutils literal notranslate"><span class="pre">sie</span></code> is an indexer over temperatures,
+one per material. <code class="docutils literal notranslate"><span class="pre">press</span></code> is an indexer over pressures, one per
+material. <code class="docutils literal notranslate"><span class="pre">lambda</span></code> is an indexer over lambda arrays, one <code class="docutils literal notranslate"><span class="pre">Real</span> <span class="pre">*</span></code>
+object per material. <code class="docutils literal notranslate"><span class="pre">scratch</span></code> is a pointer to pre-allocated scratch
+memory, as described above. It is assumed enough scratch has been
+allocated.  Finally, the optional argument <code class="docutils literal notranslate"><span class="pre">Tguess</span></code> allows for host
+codes to pass in an initial temperature guess for the solver.  For more
+information on initial guesses, see the section below.</p>
+<p>The constructor for the <code class="docutils literal notranslate"><span class="pre">PTESolverRhoU</span></code> has the same structure:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">EOS_t</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">Real_t</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">Lambda_t</span><span class="o">&gt;</span>
+<span class="n">PTESolverRhoU</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">nmat</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">EOS_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">vfrac_tot</span><span class="p">,</span>
+<span class="w">              </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">sie_tot</span><span class="p">,</span><span class="w"> </span><span class="n">Real_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="n">Real_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">vfrac</span><span class="p">,</span><span class="w"> </span><span class="n">Real_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">sie</span><span class="p">,</span>
+<span class="w">              </span><span class="n">Real_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">temp</span><span class="p">,</span><span class="w"> </span><span class="n">Real_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">press</span><span class="p">,</span><span class="w"> </span><span class="n">Lambda_t</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">lambda</span><span class="p">,</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="o">*</span><span class="n">scratch</span><span class="p">,</span>
+<span class="w">              </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">Tguess</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Both constructors are callable on host or device. In gerneral,
+densities and internal energies are the required inputs. However, all
+indexer quantities are asusmed to be input/output, as the PTE solver
+may use unknowns, such as pressure and temperature, as initial guesses
+and may reset input quantities, such as material densities, to be
+thermodynamically consistent with the equilibrium solution.</p>
+<p>Once a PTE solver has been constructed, one performs the solve with
+the <code class="docutils literal notranslate"><span class="pre">PTESolver</span></code> function, which takes a <code class="docutils literal notranslate"><span class="pre">PTESolver</span></code> object as
+input and returns a boolean status of either success or failure. For
+example:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PTESolverRhoT</span><span class="o">&lt;</span><span class="k">decltype</span><span class="p">(</span><span class="n">eos</span><span class="p">),</span><span class="w"> </span><span class="k">decltype</span><span class="p">(</span><span class="n">rho</span><span class="p">),</span><span class="w"> </span><span class="k">decltype</span><span class="p">(</span><span class="n">lambda</span><span class="p">)</span><span class="o">&gt;</span><span class="p">(</span><span class="n">NMAT</span><span class="p">,</span><span class="w"> </span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="n">sie_tot</span><span class="p">,</span><span class="w"> </span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="n">vfrac</span><span class="p">,</span><span class="w"> </span><span class="n">sie</span><span class="p">,</span><span class="w"> </span><span class="n">temp</span><span class="p">,</span><span class="w"> </span><span class="n">press</span><span class="p">,</span><span class="w"> </span><span class="n">lambda</span><span class="p">,</span><span class="w"> </span><span class="n">scratch</span><span class="p">);</span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">success</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PTESolver</span><span class="p">(</span><span class="n">method</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>For an example of the PTE solver machinery in use, see the
+<code class="docutils literal notranslate"><span class="pre">test_pte.cpp</span></code> file in the tests directory.</p>
+</section>
+<section id="initial-guesses-for-pte-solvers">
+<h2>Initial Guesses for PTE Solvers<a class="headerlink" href="#initial-guesses-for-pte-solvers" title="Link to this heading"></a></h2>
+<p>As is always the case when solving systems of nonlinear equations, good initial
+guesses are important to ensure rapid convergence to the solution.  For the PTE
+solvers, this means providing intial guesses for the material densities and the
+equilibrium temperature.  For material densities, a good initial guess is often
+the previous value obtained from a prior call to the solver. <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code>
+does not provide any mechanism to cache these values from call to call, so it is
+up to the host code to provide these as input to the solvers.  Note that the
+input values for the material densities and volume fractions are assumed to be
+consistent with the conserved cell-averaged material densities, or in other
+words, the produce of the input material densities, volume fractions, and cell
+volume should equal the amount of mass of each material in the cell.  This
+consistency should be ensured for the input values or else the solvers will not
+provide correct answers.</p>
+<p>For the temperature initial guess, one can similarly use a previous value for
+the cell.  Alternatively, <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> provides a function that can be
+used to provide an initial guess.  This function takes the form</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">EOSIndexer</span><span class="p">,</span><span class="w"> </span><span class="k">typename</span><span class="w"> </span><span class="nc">RealIndexer</span><span class="o">&gt;</span>
+<span class="n">PORTABLE_INLINE_FUNCTION</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">ApproxTemperatureFromRhoMatU</span><span class="p">(</span>
+<span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">nmat</span><span class="p">,</span><span class="w"> </span><span class="n">EOSIndexer</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">eos</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">u_tot</span><span class="p">,</span><span class="w"> </span><span class="n">RealIndexer</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">rho</span><span class="p">,</span>
+<span class="w">  </span><span class="n">RealIndexer</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="n">vfrac</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Real</span><span class="w"> </span><span class="n">Tguess</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">nmat</span></code> is the number of materials, <code class="docutils literal notranslate"><span class="pre">eos</span></code> is an indexer over
+equation of state objects, <code class="docutils literal notranslate"><span class="pre">u_tot</span></code> is the total material internal
+energy density (energy per unit volume), <code class="docutils literal notranslate"><span class="pre">rho</span></code> is an indexer over
+material density, <code class="docutils literal notranslate"><span class="pre">vfrac</span></code> is an indexer over material volume fractions,
+and the optional argument <code class="docutils literal notranslate"><span class="pre">Tguess</span></code> allows for callers to pass in a guess
+that could accelerate finding a solution.  This function does a 1-D root find
+to find the temperature at which the material internal energies sum to the
+total.  The root find does not have a tight tolerance – instead the
+hard-coded tolerance was selected to balance performance with the accuracy
+desired for an initial guess in a PTE solve.  If a previous temperature value
+is unavailable or some other process may have significantly modified the
+temperature since it was last updated, this function can be quite effective.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modifiers.html" class="btn btn-neutral float-left" title="Equation of State Modifiers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="python.html" class="btn btn-neutral float-right" title="Python Bindings" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2023. Triad National Security.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Other Versions</span>
+    v: dholladay00/cleanup_variadic
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Tags</dt>
+      <dd><a href="../../../goldfiles-1.6.2/src/using-closures.html">goldfiles-1.6.2</a></dd>
+      <dd><a href="../../../goldfiles-1.8.0/src/using-closures.html">goldfiles-1.8.0</a></dd>
+      <dd><a href="../../../release-1.10.0/src/using-closures.html">release-1.10.0</a></dd>
+      <dd><a href="../../../release-1.11.0/src/using-closures.html">release-1.11.0</a></dd>
+      <dd><a href="../../../release-1.6.0/src/using-closures.html">release-1.6.0</a></dd>
+      <dd><a href="../../../release-1.6.1/src/using-closures.html">release-1.6.1</a></dd>
+      <dd><a href="../../../release-1.6.2/src/using-closures.html">release-1.6.2</a></dd>
+      <dd><a href="../../../release-1.7.0/src/using-closures.html">release-1.7.0</a></dd>
+      <dd><a href="../../../release-1.8.0/src/using-closures.html">release-1.8.0</a></dd>
+      <dd><a href="../../../release-1.9.0/src/using-closures.html">release-1.9.0</a></dd>
+      <dd><a href="../../../release-1.9.1/src/using-closures.html">release-1.9.1</a></dd>
+      <dd><a href="../../../release-1.9.2/src/using-closures.html">release-1.9.2</a></dd>
+    </dl>
+    <dl>
+      <dt>Branches</dt>
+      <dd><a href="../../../added_benchmark/src/using-closures.html">added_benchmark</a></dd>
+      <dd><a href="../../../aemattssing/src/using-closures.html">aemattssing</a></dd>
+      <dd><a href="../../../bgclayton_simple_macaw/src/using-closures.html">bgclayton_simple_macaw</a></dd>
+      <dd><a href="../../../blb/python_entropy/src/using-closures.html">blb/python_entropy</a></dd>
+      <dd><a href="../../../brryan/isothermal/src/using-closures.html">brryan/isothermal</a></dd>
+      <dd><a href="../../../cmake_fixup_static_linking/src/using-closures.html">cmake_fixup_static_linking</a></dd>
+      <dd><a href="../../../dempsey/mass_frac/src/using-closures.html">dempsey/mass_frac</a></dd>
+      <dd><a href="using-closures.html">dholladay00/cleanup_variadic</a></dd>
+      <dd><a href="../../eap_debug/src/using-closures.html">dholladay00/eap_debug</a></dd>
+      <dd><a href="../../faster_ses2spin/src/using-closures.html">dholladay00/faster_ses2spin</a></dd>
+      <dd><a href="../../pt_solver/src/using-closures.html">dholladay00/pt_solver</a></dd>
+      <dd><a href="../../xl_cuda_eospac/src/using-closures.html">dholladay00/xl_cuda_eospac</a></dd>
+      <dd><a href="../../../docs_spack_devworkflow/src/using-closures.html">docs_spack_devworkflow</a></dd>
+      <dd><a href="../../../gopsub/crest/src/using-closures.html">gopsub/crest</a></dd>
+      <dd><a href="../../../jdolence/default_shift/src/using-closures.html">jdolence/default_shift</a></dd>
+      <dd><a href="../../../jdolence/new_pte/src/using-closures.html">jdolence/new_pte</a></dd>
+      <dd><a href="../../../jhp/EAP_integration/src/using-closures.html">jhp/EAP_integration</a></dd>
+      <dd><a href="../../../jhp/two_eos/src/using-closures.html">jhp/two_eos</a></dd>
+      <dd><a href="../../../jhp/update_copyright/src/using-closures.html">jhp/update_copyright</a></dd>
+      <dd><a href="../../../jhp/using_cleanup/src/using-closures.html">jhp/using_cleanup</a></dd>
+      <dd><a href="../../../jmm/hip-inline/src/using-closures.html">jmm/hip-inline</a></dd>
+      <dd><a href="../../../jmm/ports-testing/src/using-closures.html">jmm/ports-testing</a></dd>
+      <dd><a href="../../../jmm/rdc/src/using-closures.html">jmm/rdc</a></dd>
+      <dd><a href="../../../jmm/sesame2spiner-library/src/using-closures.html">jmm/sesame2spiner-library</a></dd>
+      <dd><a href="../../../jmm/sometimes-capture-by-reference/src/using-closures.html">jmm/sometimes-capture-by-reference</a></dd>
+      <dd><a href="../../../jmm/spiner-introspection/src/using-closures.html">jmm/spiner-introspection</a></dd>
+      <dd><a href="../../../jmm/svd/src/using-closures.html">jmm/svd</a></dd>
+      <dd><a href="../../../jmm/template-lambda-sfinae-edition/src/using-closures.html">jmm/template-lambda-sfinae-edition</a></dd>
+      <dd><a href="../../../jmm/test-pte-mem-tweak/src/using-closures.html">jmm/test-pte-mem-tweak</a></dd>
+      <dd><a href="../../../jmm/test-stellarcollapse-fast-logs/src/using-closures.html">jmm/test-stellarcollapse-fast-logs</a></dd>
+      <dd><a href="../../../jmm/units-fixes/src/using-closures.html">jmm/units-fixes</a></dd>
+      <dd><a href="../../../jmm/update-clang-format/src/using-closures.html">jmm/update-clang-format</a></dd>
+      <dd><a href="../../../jmm/update-kokkos-linalg/src/using-closures.html">jmm/update-kokkos-linalg</a></dd>
+      <dd><a href="../../../jmm/update-spackage-1.9.1/src/using-closures.html">jmm/update-spackage-1.9.1</a></dd>
+      <dd><a href="../../../lroberts36/tilted-maxwell/src/using-closures.html">lroberts36/tilted-maxwell</a></dd>
+      <dd><a href="../../../main/src/using-closures.html">main</a></dd>
+      <dd><a href="../../../mauneyc/fix/CIcmake/src/using-closures.html">mauneyc/fix/CIcmake</a></dd>
+      <dd><a href="../../../mauneyc/fix/checkOtherHDF5ParallelFlag/src/using-closures.html">mauneyc/fix/checkOtherHDF5ParallelFlag</a></dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,1079 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Building singularity-eos &mdash; Singularity-EOS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Integrating singularity-eos into a CMake project" href="integration.html" />
+    <link rel="prev" title="Design Philosophy" href="philosophy.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Singularity-EOS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="philosophy.html">Design Philosophy</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Building <cite>singularity-eos</cite></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basics">Basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#options-for-configuring-the-build">Options for configuring the build</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cmake-presets">CMake presets</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#predefined-presets">Predefined presets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#user-defined-presets">User defined presets</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#building-in-submodule-mode">Building in <em>submodule mode</em></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#building-in-standalone-mode">Building in <em>standalone mode</em></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#building-with-spack">Building with Spack</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#preparation">Preparation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#setup-compilers">Setup compilers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#setup-system-provided-packages">Setup system-provided packages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#first-install-with-spack">First install with Spack</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#installing-singularity-eos-using-spack">Installing <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> using Spack</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#developing-singularity-eos-using-spack">Developing <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> using Spack</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#some-recipes">Some Recipes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="integration.html">Integrating <cite>singularity-eos</cite> into a CMake project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-eos.html">The Equation of State API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">EOS Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modifiers.html">Equation of State Modifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="customization.html">Customizing <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-closures.html">Mixed Cell Closures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-kpt.html">Kinetic Phase Transition Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python.html">Python Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fortran.html">Fortran Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sphinx-doc.html">How to Use Sphinx for Writing Docs</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Singularity-EOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Building <cite>singularity-eos</cite></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/src/building.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="building-singularity-eos">
+<h1>Building <cite>singularity-eos</cite><a class="headerlink" href="#building-singularity-eos" title="Link to this heading"></a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> build system is designed with two goals in mind</p>
+<ol class="arabic simple">
+<li><p>Portability to a wide range of host codes, system layouts, and
+underlying hardware</p></li>
+<li><p>Ease of code development, and flexibility for developers</p></li>
+</ol>
+<p>These considerations continue to guide development of the tools and
+workflows in working with <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code>.</p>
+<section id="basics">
+<h2>Basics<a class="headerlink" href="#basics" title="Link to this heading"></a></h2>
+<p>The build of <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> can take two forms:</p>
+<ol class="arabic simple">
+<li><p>Submodule mode</p></li>
+<li><p>Standalone mode</p></li>
+</ol>
+<p>These will be described in more detail below, but in brief <strong>submodule
+mode</strong> is intended for downstream codes that build <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code>
+source code directly in the build (sometimes referred to as “in-tree”),
+while <strong>standalone mode</strong> will build <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> as an independent
+library that can be installed onto the system.</p>
+<p>The most important distinction between the modes is how dependencies are
+handled. <em>submodule mode</em> will use <em>internal</em> source clones of key
+dependencies (located in <code class="docutils literal notranslate"><span class="pre">utils\</span></code>), effectively building these
+dependencies as part of the overall <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> build procedure.
+It should be noted, however, that there are optional dependencies that
+are not provided internally and must be separately available.</p>
+<p>In <em>standalone mode</em>, <strong>all</strong> dependencies must be available in the
+environment, and be discoverable to CMake. While not required, it is
+encouraged to use the dependency management tool <code class="docutils literal notranslate"><span class="pre">spack</span></code> to help
+facilitate constructing a build environment, as well as deploying
+<code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code>. Example uses of <code class="docutils literal notranslate"><span class="pre">spack</span></code> for these purposes are
+provided below.</p>
+<p>A CMake configuration option is provided that allows developers to
+select a specific mode (<code class="docutils literal notranslate"><span class="pre">SINGULARITY_FORCE_SUBMODULE_MODE</span></code>), however
+this is intended for internal development only. The intended workflow is
+to let <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> decide the appropriate mode, which it
+decides based on inspecting the project directory that the source
+resides in.</p>
+</section>
+<section id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> has a number of required and optional depdencies.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Package Name</p></th>
+<th class="head"><p>Distribution</p></th>
+<th class="head"><p>Comment</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://github.com/lanl/spiner">ports-of-call</a></p></td>
+<td><p>submodule / external</p></td>
+<td><p>Required</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://github.com/lanl/spiner">spiner</a></p></td>
+<td><p>submodule <a class="footnote-reference brackets" href="#id4" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>*<span class="fn-bracket">]</span></a> / external <a class="footnote-reference brackets" href="#id5" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>†<span class="fn-bracket">]</span></a></p></td>
+<td><p>Optional; enhanced backend for EOS tables</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://www.hdfgroup.org/solutions/hdf5/">hdf5</a></p></td>
+<td><p>external only</p></td>
+<td><p>Optional; used for table I/O</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://laws.lanl.gov/projects/data/eos/eospacReleases.php">eospac</a></p></td>
+<td><p>external only</p></td>
+<td><p>Optional; used for sesame tables.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://github.com/kokkos/kokkos">kokkos</a></p></td>
+<td><p>submodule / external</p></td>
+<td><p>Optional; enables GPU offloading.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://eigen.tuxfamily.org/index.php?title=Main_Page">Eigen</a></p></td>
+<td><p>submodule / external</p></td>
+<td><p>Optional; used for linear algebra on the CPU when doing mixed-cell closures.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://github.com/kokkos/kokkos-kernels/">kokkos-kernels</a></p></td>
+<td><p>submodule / external</p></td>
+<td><p>Optional; used for linear algebra on the GPU when doing mixed-cell closures.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://github.com/pybind/pybind11">pybind11</a></p></td>
+<td><p>external / fetchable <a class="footnote-reference brackets" href="#id6" id="id3" role="doc-noteref"><span class="fn-bracket">[</span>‡<span class="fn-bracket">]</span></a></p></td>
+<td><p>Optional</p></td>
+</tr>
+</tbody>
+</table>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id4" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">*</a><span class="fn-bracket">]</span></span>
+<p>available as a git submodule for in-tree builds</p>
+</aside>
+<aside class="footnote brackets" id="id5" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">†</a><span class="fn-bracket">]</span></span>
+<p>located outside the build tree and discoverable by CMake</p>
+</aside>
+<aside class="footnote brackets" id="id6" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id3">‡</a><span class="fn-bracket">]</span></span>
+<p>CMake can download and configure this source in-tree</p>
+</aside>
+</aside>
+<p>A FORTRAN compiler is required if fortran bindings are enabled.</p>
+</section>
+<section id="options-for-configuring-the-build">
+<h2>Options for configuring the build<a class="headerlink" href="#options-for-configuring-the-build" title="Link to this heading"></a></h2>
+<p>Most configuration options are the same between the two builds.
+<em>standalone</em> / <em>submodule</em> specific options are touched on in the
+sections detailing those build modes.</p>
+<p>The main CMake options to configure building are in the following table:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Comment</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_SPINER</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Enables EOS objects that use <code class="docutils literal notranslate"><span class="pre">spiner</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_FORTRAN</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Enable Fortran API for equation of state.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_KOKKOS</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>Uses Kokkos as the portability backend. Currently only Kokkos is supported for GPUs.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_EOSPAC</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>Link against EOSPAC. Needed for sesame2spiner and some tests.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_EOSPAC_ENABLE_SHMEM</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>Enable shared memory support in EOSPAC backend.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_BUILD_CLOSURE</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>Build the mixed cell closure models</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_BUILD_TESTS</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>Build test infrastructure.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_BUILD_PYTHON</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>Build Python bindings.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_BUILD_EXAMPLES</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>Build examples of <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> in use.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_INVERT_AT_SETUP</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>For tests, pre-invert eospac tables.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_BETTER_DEBUG_FLAGS</span></code></p></td>
+<td><p>ON</p></td>
+<td><p>Enables nicer GPU debug flags. May interfere with in-tree builds as a submodule.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_HIDE_MORE_WARNINGS</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>Makes warnings less verbose. May interfere with in-tree builds as a submodule.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_FORCE_SUBMODULE_MODE</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>Force build in _submodule_ mode.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_TRUE_LOG_GRIDDING</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>Use grids that conform to logarithmic spacing.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_SINGLE_LOGS</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>Use single precision logarithms (may degrade accuracy).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_NQT_ORDER_1</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>For fast logs, use the less accurate but faster 1st-order version.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_NQT_PORTABLE</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>For fast logs, use the slower but endianness-independent implementation.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_STRICT_WARNINGS</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>For testing. Adds -Wall and -Werror to builds.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_V_AND_V_EOS</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>Enables several additional EOS models and adds them to the default variant</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_STELLAR_COLLAPSE</span></code></p></td>
+<td><p>OFF</p></td>
+<td><p>Adds the Stellar Collapse EOS to the default variant</p></td>
+</tr>
+</tbody>
+</table>
+<p>More options are available to modify only if certain other options or
+variables satisfy certain conditions (<em>dependent options</em>). <em>Dependent
+options</em> can only be accessed if their precondition is satisfied.</p>
+<p>If the precondition is satisfied, they take on a default value, although
+they can be changed. If the precondition is <em>not</em> satisfied, then their
+value is fixed and cannot be changed. For instance,</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># in &lt;top-level&gt;/build</span>
+cmake<span class="w"> </span>..<span class="w"> </span>-DSINGULARITY_USE_KOKKOS<span class="o">=</span>OFF<span class="w"> </span>-DSINGULARITY_USE_CUDA<span class="o">=</span>ON
+</pre></div>
+</div>
+<p>will have no effect (i.e. <code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_CUDA</span></code> will be set to
+<code class="docutils literal notranslate"><span class="pre">OFF</span></code>), because the precondition of <code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_CUDA</span></code> is for
+<code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_KOKKOS=ON</span></code>.</p>
+<p>Generally, <em>dependent options</em> should only be used for specific
+use-cases where the defaults are not applicable. For most scenarios, the
+preconditions and defaults are logically constructed and the most
+natural in practice (<code class="docutils literal notranslate"><span class="pre">SINGULARITY_TEST_*</span></code> are only available if
+<code class="docutils literal notranslate"><span class="pre">SINGLARITY_BUILD_TESTS</span></code> is enabled, for instance).</p>
+<p>These options are listed in the following table, along with their
+preconditions:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Precondition</p></th>
+<th class="head"><p>Comment</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_SPINER_WITH_HDF5</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_SPINER=ON</span></code></p></td>
+<td><p>Requests that <code class="docutils literal notranslate"><span class="pre">spiner</span></code> be configured for <code class="docutils literal notranslate"><span class="pre">HDF5</span></code> support.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_CUDA</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_KOKKOS=ON</span></code></p></td>
+<td><p>Target nvidia GPUs for <code class="docutils literal notranslate"><span class="pre">Kokkos</span></code> offloading.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_KOKKOSKERNELS</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_KOKKOS=ON</span></code> <code class="docutils literal notranslate"><span class="pre">SINGULARITY_BUILD_CLOSURE=ON</span></code></p></td>
+<td><p>Use Kokkos Kernels for linear algebra. Needed for mixed cell closure models on GPU.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_BUILD_SESAME2SPINER</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_SPINER=ON</span></code> <code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_SPINER_WITH_HDF5=ON</span></code></p></td>
+<td><p>Builds the conversion tool sesame2spiner which makes files readable by SpinerEOS.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_SPINER=ON</span></code> <code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_SPINER_WITH_HDF5=ON</span></code></p></td>
+<td><p>Builds the conversion tool stellarcollapse2spiner which optionally makes stellar collapse files faster to read.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_TEST_SESAME</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_BUILD_TESTS=ON</span></code> <code class="docutils literal notranslate"><span class="pre">SINGULARITY_BUILD_SESAME2SPINER=ON</span></code></p></td>
+<td><p>Test the Sesame table readers.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_TEST_STELLAR_COLLAPSE</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_BUILD_TESTS=ON</span></code> <code class="docutils literal notranslate"><span class="pre">SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON</span></code></p></td>
+<td><p>Test the Stellar Collapse table readers.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_TEST_PYTHON</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_BUILD_TESTS=ON</span></code> <code class="docutils literal notranslate"><span class="pre">SINGULARITY_BUILD_PYTHON=ON</span></code></p></td>
+<td><p>Test the Python bindings.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_HELMHOLTZ</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_SPINER=ON</span></code> <code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_SPINER_WITH_HDF5=ON</span></code></p></td>
+<td><p>Use Helmholtz equation of state.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_TEST_HELMHOLTZ</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_USE_HELMHOLTZ</span></code></p></td>
+<td><p>Build Helmholtz equation of state tests.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SINGULARITY_BUILD_FORTRAN_BACKEND</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">NOT</span> <span class="pre">SINGULARITY_USE_FORTRAN</span></code></p></td>
+<td><p>For testing, you may build the C++ code to which the fortran bindings bind without building the bindings themselves.</p></td>
+</tr>
+</tbody>
+</table>
+<p>When installing <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code>, data files are also installed. The
+following options control where the data files are installed:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Comment</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CMAKE_INSTALL_DATADIR</span></code></p></td>
+<td><p>&lt;none&gt;</p></td>
+<td><p>Install directory for data files.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CMAKE_INSTALL_DATAROOTDIR</span></code></p></td>
+<td><p>share</p></td>
+<td><p>Fallback data install directory.</p></td>
+</tr>
+</tbody>
+</table>
+<p>The paths specified by these options are relative to the install prefix.</p>
+</section>
+<section id="cmake-presets">
+<h2>CMake presets<a class="headerlink" href="#cmake-presets" title="Link to this heading"></a></h2>
+<p>To further aid the developer, <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> is distributed with
+<strong>Presets</strong>, a list of common build options with naturally named labels
+that when used can reduce the need to input and remember the many
+options <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> uses. For a general overview of CMake
+presets, see the <a class="reference external" href="https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html">cmake documentation on
+presets</a></p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>CMake presets are only available if <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> is the
+top-level project.</p>
+</div>
+<section id="predefined-presets">
+<h3>Predefined presets<a class="headerlink" href="#predefined-presets" title="Link to this heading"></a></h3>
+<p>Predefined presets are described with a <code class="docutils literal notranslate"><span class="pre">json</span></code> schema in the file
+<code class="docutils literal notranslate"><span class="pre">CMakePresets.json</span></code>. As an example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># in &lt;top-level&gt;/build</span>
+$&gt;<span class="w"> </span>cmake<span class="w"> </span>..<span class="w"> </span>--preset<span class="o">=</span><span class="s2">&quot;basic_with_testing&quot;</span>
+Preset<span class="w"> </span>CMake<span class="w"> </span>variables:
+
+<span class="w">  </span><span class="nv">CMAKE_EXPORT_COMPILE_COMMANDS</span><span class="o">=</span><span class="s2">&quot;ON&quot;</span>
+<span class="w">  </span><span class="nv">SINGULARITY_BUILD_TESTS</span><span class="o">=</span><span class="s2">&quot;ON&quot;</span>
+<span class="w">  </span><span class="nv">SINGULARITY_USE_EOSPAC</span><span class="o">=</span><span class="s2">&quot;ON&quot;</span>
+<span class="w">  </span><span class="nv">SINGULARITY_USE_SPINER</span><span class="o">=</span><span class="s2">&quot;ON&quot;</span>
+
+<span class="c1"># ...</span>
+</pre></div>
+</div>
+<p>As you can see, CMake reports the configuration variables that the
+preset has used, and their values. A list of presets can be easily
+examined with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># in &lt;top-level&gt;/build</span>
+$&gt;<span class="w"> </span>cmake<span class="w"> </span>..<span class="w"> </span>--list-presets
+Available<span class="w"> </span>configure<span class="w"> </span>presets:
+
+<span class="w">  </span><span class="s2">&quot;basic&quot;</span>
+<span class="w">  </span><span class="s2">&quot;basic_with_testing&quot;</span>
+<span class="w">  </span><span class="s2">&quot;kokkos_nogpu&quot;</span>
+<span class="w">  </span><span class="s2">&quot;kokkos_nogpu_with_testing&quot;</span>
+<span class="w">  </span><span class="s2">&quot;kokkos_gpu&quot;</span>
+<span class="w">  </span><span class="s2">&quot;kokkos_gpu_with_testing&quot;</span>
+</pre></div>
+</div>
+<p>When using presets, additional options may be readily appended to
+augment the required build. For example, suppose that the <code class="docutils literal notranslate"><span class="pre">basic</span></code>
+preset is mostly sufficient, but you would like to enable building the
+closure models:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># in &lt;top-level&gt;/build</span>
+$&gt;<span class="w"> </span>cmake<span class="w"> </span>..<span class="w"> </span>--preset<span class="o">=</span><span class="s2">&quot;basic_with_testing&quot;</span><span class="w"> </span>-DSINGULARITY_BUILD_CLOSURE<span class="o">=</span>ON
+<span class="c1"># ...</span>
+</pre></div>
+</div>
+</section>
+<section id="user-defined-presets">
+<h3>User defined presets<a class="headerlink" href="#user-defined-presets" title="Link to this heading"></a></h3>
+<p>The CMake preset functionality includes the ability of developers to
+define local presets in <code class="docutils literal notranslate"><span class="pre">CMakeUserPresets.json</span></code>. <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code>
+explicitly does not track this file in Git, so developers can construct
+their own presets. All presets in the predefined <code class="docutils literal notranslate"><span class="pre">CMakePresets.json</span></code>
+are automatically included by CMake, so developers can build off of
+those if needed.</p>
+<p>For instance, suppose you have a local checkout of the <code class="docutils literal notranslate"><span class="pre">kokkos</span></code> and
+<code class="docutils literal notranslate"><span class="pre">kokkos-kernels</span></code> codes that you’re using to debug a GPU build, and you
+have these installed in <code class="docutils literal notranslate"><span class="pre">~/scratch/</span></code>. Your <code class="docutils literal notranslate"><span class="pre">CMakeUserPresets.json</span></code>
+could look like:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;cmakeMinimumRequired&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;major&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;minor&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">19</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;configurePresets&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;my_local_build&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;submodule build using a local scratch install of kokkos&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;inherits&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;kokkos_gpu_with_testing&quot;</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;cacheVariables&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;Kokkos_DIR&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$env{HOME}/scratch/kokkos/lib/cmake/Kokkos&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;KokkosKernels_DIR&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;$env{HOME}/scratch/kokkoskernels/lib/cmake/KokkosKernels&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;SINGULARITY_BUILD_PYTHON&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ON&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;SINGULARITY_TEST_PYTHON&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;OFF&quot;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>This inherits the predefined <code class="docutils literal notranslate"><span class="pre">kokkos_gpu_with_testing</span></code> preset, sets
+the <code class="docutils literal notranslate"><span class="pre">Kokkos*_DIR</span></code> cache variables to point <code class="docutils literal notranslate"><span class="pre">find_package()</span></code> to use
+these directories, and finally enables building the python bindings
+without including the python tests.</p>
+</section>
+</section>
+<section id="building-in-submodule-mode">
+<h2>Building in <em>submodule mode</em><a class="headerlink" href="#building-in-submodule-mode" title="Link to this heading"></a></h2>
+<p>For <em>submodule mode</em> to activate, a clone of the <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code>
+source should be placed below the top-level of a host project</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># An example directory layout when using singularity-eos in submodule mode</span>
+my_project
+<span class="p">|</span>_CMakeLists.txt
+<span class="p">|</span>_README.md
+<span class="p">|</span>_src
+<span class="p">|</span>_include
+<span class="p">|</span>_tpl/singularity-eos
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> is then imported using the <code class="docutils literal notranslate"><span class="pre">add_subdirectory()</span></code>
+command in CMake</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="c"># In your CMakeLists.txt</span>
+<span class="nb">cmake_minimum_required</span><span class="p">(</span><span class="s">VERSION</span><span class="w"> </span><span class="s">3.19</span><span class="p">)</span>
+<span class="nb">project</span><span class="p">(</span><span class="s">my_project</span><span class="p">)</span>
+
+<span class="nb">add_executable</span><span class="p">(</span><span class="s">my_exec</span><span class="w"> </span><span class="s">src/main.cc</span><span class="p">)</span>
+<span class="nb">target_include_directories</span><span class="p">(</span><span class="s">my_exec</span><span class="w"> </span><span class="s">include</span><span class="p">)</span>
+
+<span class="nb">add_subdirectory</span><span class="p">(</span><span class="s">tpl/singularity-eos</span><span class="p">)</span>
+
+<span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">my_exec</span><span class="w"> </span><span class="s">singularity-eos::singularity-eos</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This will expose the <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> interface and library to your
+code, along with the interfaces of the internal dependencies</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// in source of my_project</span>
+
+<span class="cp">#include</span><span class="cpf">&lt;singularity-eos/eos/eos.hpp&gt;</span>
+<span class="c1">// from the internal ports-of-call submodule</span>
+<span class="cp">#include</span><span class="cpf">&lt;ports-of-call/portability&gt;</span>
+
+<span class="c1">// ...</span>
+
+<span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">singularity</span><span class="p">;</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> will build (along with internal dependencies) and be
+linked directly to your executable.</p>
+<p>The git submoudles may change during development, either by changing the
+pinned hash, addition or removal of submodules. If you have errors that
+appear to be the result of incompatible code, make sure you have updated
+your submodules with</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>submodule<span class="w"> </span>update<span class="w"> </span>--init<span class="w"> </span>--recursive
+</pre></div>
+</div>
+</section>
+<section id="building-in-standalone-mode">
+<h2>Building in <em>standalone mode</em><a class="headerlink" href="#building-in-standalone-mode" title="Link to this heading"></a></h2>
+<p>For <em>standalone</em> mode, all required and optional dependencies are
+expected to be discoverable by CMake. This can be done several ways</p>
+<ol class="arabic simple">
+<li><p>(<em>preferred</em>) Use Spack to configure and install all the dependencies
+needed to build.</p></li>
+<li><p>Use a system package manager (<code class="docutils literal notranslate"><span class="pre">apt-get</span></code>, <code class="docutils literal notranslate"><span class="pre">yum</span></code>, &amp;t) to install
+dependencies.</p></li>
+<li><p>Hand-build to a local filesystem, and configure your shell or CMake
+invocation to be aware of these installs</p></li>
+</ol>
+<p><em>standalone</em> mode is the mode used to install <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> to a
+system as a common library. If, for example, you use Spack to install
+packages, <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> will be built and installed in
+<em>standalone</em> mode.</p>
+<section id="building-with-spack">
+<h3>Building with Spack<a class="headerlink" href="#building-with-spack" title="Link to this heading"></a></h3>
+<p>Spack is a package management tool that is designed specifically for HPC
+environments, but may be used in any compute environment. It is useful
+for gathering, configuring and installing software and it’s dependencies
+self-consistently, and can use existing software installed on the system
+or do a “full” install of all required (even system) packages in a local
+directory.</p>
+<p>Spack remains under active development, and is subject to rapid change
+in interface, design, and functionality. Here we will provide an
+overview of how to use Spack to develop and deploy <code class="docutils literal notranslate"><span class="pre">singularigy-eos</span></code>,
+but for more in-depth information, please refer to the <a class="reference external" href="spack.readthedocs.io">official Spack
+documentation</a>.</p>
+<section id="preparation">
+<h4>Preparation<a class="headerlink" href="#preparation" title="Link to this heading"></a></h4>
+<p>First, we need to clone the Spack repository. You can place this
+anywhere, but note that by default Spack will download and install
+software under this directory. This default behavior can be changed,
+please refer to the documentation for information of customizing your
+Spack instance.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$&gt;<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>~
+$&gt;<span class="w"> </span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/spack/spack.git
+</pre></div>
+</div>
+<p>To start using Spack, we use the provided activation script</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># equivalent scripts for tcsh, fish are located here as well</span>
+$&gt;<span class="w"> </span><span class="nb">source</span><span class="w"> </span>~/spack/share/spack/setup-env.sh
+</pre></div>
+</div>
+<p>You will always need to <em>activate</em> spack for each new shell. You may
+find it convenient to invoke this Spack setup in your login script,
+though be aware that Spack will prepend paths to your environment which
+may cause conflicts with other package tools and software.</p>
+<p>The first time a Spack command is invoked, it will need to bootstrap
+itself to be able to start <em>concretizing package specs</em>. This will
+download pre-built packages and create a <code class="docutils literal notranslate"><span class="pre">${HOME}/.spack</span></code> directory.
+This directory is important and is where your <em>primary</em> Spack
+configuration data will be located. If at any point this configuration
+becomes corrupted or too complicated to easily fix, you may safely
+remove this directory to restore the default configuration, or just to
+try a new approach. Again, refer to the Spack documentaion for more
+information.</p>
+</section>
+<section id="setup-compilers">
+<h4>Setup compilers<a class="headerlink" href="#setup-compilers" title="Link to this heading"></a></h4>
+<p>To use Spack effectively, we need to configure it for the HPC
+environment we’re using. This can be done manually (by editing
+<code class="docutils literal notranslate"><span class="pre">packages.yaml</span></code>, <code class="docutils literal notranslate"><span class="pre">compilers.yaml</span></code>, and perhaps a few others). This
+is ideal if you understand how your software environment is installed on
+the HPC system, and you are fluent in the Spack configuration schema.</p>
+<p>However, Spack has put in a lot of effort to be able to automatically
+discover the available tools and software on any given system. While not
+perfect, we can get a fairly robust starting point.</p>
+<p>Assume we are on an HPC system that has Environmental Modules that
+provides compilers, MPI implementations, and sundry other common tools.
+To help Spack find these, let’s load a specific configuration into the
+active shell environment.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$&gt;<span class="w"> </span>module<span class="w"> </span>load<span class="w"> </span>cmake/3.19.2<span class="w"> </span>gcc/11.2.0<span class="w"> </span>openmpi/4.1.1<span class="w"> </span>python/3.10
+$&gt;<span class="w"> </span>module<span class="w"> </span>list
+
+Currently<span class="w"> </span>Loaded<span class="w"> </span>Modules:
+<span class="w">  </span><span class="m">1</span><span class="o">)</span><span class="w"> </span>cmake/3.19.2<span class="w">   </span><span class="m">2</span><span class="o">)</span><span class="w"> </span>gcc/11.2.0<span class="w">   </span><span class="m">3</span><span class="o">)</span><span class="w"> </span>openmpi/4.1.1<span class="w">   </span><span class="m">4</span><span class="o">)</span><span class="w"> </span>python/3.10-anaconda-2023.03
+</pre></div>
+</div>
+<p>First, let’s find the available compilers. (If this is the first Spack
+command you’ve run, it will need to bootstrap)</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$&gt;<span class="w"> </span>spack<span class="w"> </span>compiler<span class="w"> </span><span class="nv">find</span>
+<span class="o">==</span>&gt;<span class="w"> </span>Added<span class="w"> </span><span class="m">2</span><span class="w"> </span>new<span class="w"> </span>compilers<span class="w"> </span>to<span class="w"> </span><span class="si">${</span><span class="nv">HOME</span><span class="si">}</span>/.spack/linux/compilers.yaml
+<span class="w">    </span>gcc@4.8.5<span class="w">  </span>gcc@11.2.0
+<span class="o">==</span>&gt;<span class="w"> </span>Compilers<span class="w"> </span>are<span class="w"> </span>defined<span class="w"> </span><span class="k">in</span><span class="w"> </span>the<span class="w"> </span>following<span class="w"> </span>files:
+<span class="w">    </span><span class="si">${</span><span class="nv">HOME</span><span class="si">}</span>/.spack/linux/compilers.yaml
+</pre></div>
+</div>
+<p>Here, we find the default system compiler (<code class="docutils literal notranslate"><span class="pre">gcc&#64;4.8.5</span></code>), along with
+the compiler from the module we loaded. Also notice that the
+<code class="docutils literal notranslate"><span class="pre">${HOME}/.spack</span></code> directory has been modified with some new YAML config
+files. These are information on the compilers and how Spack will use
+them. You are free to modify these files, but for now let’s leave them
+as is.</p>
+<p><em>NB</em>: You can repeat this procedure for other compilers and packages,
+though if you need to use many different combinations of
+compiler/software, you will find using Spack <em>environments</em> <a class="reference external" href="https://spack.readthedocs.io/en/latest/environments.html">more
+convenient</a>.</p>
+</section>
+<section id="setup-system-provided-packages">
+<h4>Setup system-provided packages<a class="headerlink" href="#setup-system-provided-packages" title="Link to this heading"></a></h4>
+<p>Next, we will try and find system software (e.g.
+<code class="docutils literal notranslate"><span class="pre">ncurses</span></code>,<code class="docutils literal notranslate"><span class="pre">git</span></code>,<code class="docutils literal notranslate"><span class="pre">zlib</span></code>) that we can use instead of needing to
+build our own. This will also find the module software we loaded
+(<code class="docutils literal notranslate"><span class="pre">cmake</span></code>,<code class="docutils literal notranslate"><span class="pre">openmpi</span></code>,<code class="docutils literal notranslate"><span class="pre">python</span></code>). (This command will take a couple
+minutes to complete).</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$&gt;<span class="w"> </span>spack<span class="w"> </span>external<span class="w"> </span>find<span class="w"> </span>--all<span class="w"> </span>--not-buildable
+<span class="o">==</span>&gt;<span class="w"> </span>The<span class="w"> </span>following<span class="w"> </span>specs<span class="w"> </span>have<span class="w"> </span>been<span class="w"> </span>detected<span class="w"> </span>on<span class="w"> </span>this<span class="w"> </span>system<span class="w"> </span>and<span class="w"> </span>added<span class="w"> </span>to<span class="w"> </span><span class="si">${</span><span class="nv">HOME</span><span class="si">}</span>/.spack/packages.yaml
+autoconf@2.69<span class="w">       </span>bzip2@1.0.6<span class="w">     </span>coreutils@8.22<span class="w">  </span>dos2unix@6.0.3<span class="w">    </span>gcc@11.2.0<span class="w">        </span>go@1.16.5<span class="w">            </span>hdf5@1.8.12<span class="w">      </span>libfuse@3.6.1<span class="w">         </span>ncurses@6.4.20221231<span class="w">   </span>openssl@1.1.1t<span class="w">     </span>python@3.10.9<span class="w">   </span>sqlite@3.7.17<span class="w">      </span>texlive@20130530
+automake@1.13.4<span class="w">     </span>bzip2@1.0.8<span class="w">     </span>cpio@2.11<span class="w">       </span>doxygen@1.8.5<span class="w">     </span>gettext@0.19.8.1<span class="w">  </span>go@1.18.4<span class="w">            </span>hdf5@1.10.6<span class="w">      </span>libtool@2.4.2<span class="w">         </span>ninja@1.10.2<span class="w">           </span>perl@5.16.3<span class="w">        </span>rdma-core@22.4<span class="w">  </span>sqlite@3.40.1<span class="w">      </span>which@2.20
+bash@4.2.46<span class="w">         </span>ccache@3.7.7<span class="w">    </span>curl@7.29.0<span class="w">     </span>file@5.11<span class="w">         </span>ghostscript@9.25<span class="w">  </span>go-bootstrap@1.16.5<span class="w">  </span>krb5@1.15.1<span class="w">      </span>lustre@2.12.9<span class="w">         </span>opencv@2.4.5<span class="w">           </span>pkg-config@0.27.1<span class="w">  </span>rsync@3.1.2<span class="w">     </span>subversion@1.7.14<span class="w">  </span>xz@5.2.2
+berkeley-db@5.3.21<span class="w">  </span>cmake@2.8.12.2<span class="w">  </span>curl@7.87.0<span class="w">     </span>findutils@4.5.11<span class="w">  </span>git@2.18.4<span class="w">        </span>go-bootstrap@1.18.4<span class="w">  </span>krb5@1.19.4<span class="w">      </span>m4@1.4.16<span class="w">             </span>openjdk@1.8.0_372-b07<span class="w">  </span>python@2.7.5<span class="w">       </span>ruby@2.0.0<span class="w">      </span>swig@2.0.10<span class="w">        </span>xz@5.2.10
+binutils@2.27.44<span class="w">    </span>cmake@3.17.5<span class="w">    </span>cvs@1.11.23<span class="w">     </span>flex@2.5.37<span class="w">       </span>git-lfs@2.10.0<span class="w">    </span>gpgme@1.3.2<span class="w">          </span>libfabric@1.7.2<span class="w">  </span>maven@3.0.5<span class="w">           </span>openssh@7.4p1<span class="w">          </span>python@3.4.10<span class="w">      </span>sed@4.2.2<span class="w">       </span>tar@1.26<span class="w">           </span>zip@3.0
+bison@3.0.4<span class="w">         </span>cmake@3.19.2<span class="w">    </span>diffutils@3.3<span class="w">   </span>gawk@4.0.2<span class="w">        </span>gmake@3.82<span class="w">        </span>groff@1.22.2<span class="w">         </span>libfuse@2.9.2<span class="w">    </span>ncurses@5.9.20130511<span class="w">  </span>openssl@1.0.2k-fips<span class="w">    </span>python@3.6.8<span class="w">       </span>slurm@23.02.1<span class="w">   </span>texinfo@5.1
+
+--<span class="w"> </span>no<span class="w"> </span>arch<span class="w"> </span>/<span class="w"> </span>gcc@11.2.0<span class="w"> </span>-----------------------------------------
+openmpi@4.1.1
+</pre></div>
+</div>
+<p><em>Generally</em> you will want to use as much system-provided software as you
+can get away with (in Spack speak, these are called <strong>externals</strong>, though
+<em>external packages</em> are not limited to system provided ones and can
+point to, e.g., a manual install). In the above command, we told Spack
+to mark any packages it can find as <code class="docutils literal notranslate"><span class="pre">not-buildable</span></code>, which means that
+Spack will never attempt to build that package and will always use the
+external one. This <em>may</em> cause issues in resolving packages specs when
+the external is not compatible with the requirements of an downstream
+package.</p>
+<p>As a first pass, we will use <code class="docutils literal notranslate"><span class="pre">--not-buildable</span></code> for
+<code class="docutils literal notranslate"><span class="pre">spack</span> <span class="pre">external</span> <span class="pre">find</span></code>, but if you have any issues with concretizing
+then start this guide over (remove <code class="docutils literal notranslate"><span class="pre">${HOME}/.spack</span></code> and go back to
+compilers) and do not use <code class="docutils literal notranslate"><span class="pre">--not-buildable</span></code> in the previous command.
+You may also manually edit the <code class="docutils literal notranslate"><span class="pre">packages.yaml</span></code> file to switch the
+<code class="docutils literal notranslate"><span class="pre">buildable</span></code> flag for the troublesome package, but you will need to be
+a least familiar with YAML schema.</p>
+</section>
+<section id="first-install-with-spack">
+<h4>First install with Spack<a class="headerlink" href="#first-install-with-spack" title="Link to this heading"></a></h4>
+<p>Let’s walk through a simple Spack workflow for installing. First, we
+want to look at the options available for a package. The Spack team and
+package developers have worked over the years to provide an impressive
+selection of packages. This example will use <code class="docutils literal notranslate"><span class="pre">hypre</span></code>, a parallel
+library for multigrid methods.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$&gt;<span class="w"> </span>spack<span class="w"> </span>info<span class="w"> </span>hypre
+AutotoolsPackage:<span class="w">   </span>hypre
+
+Description:
+<span class="w">    </span>Hypre<span class="w"> </span>is<span class="w"> </span>a<span class="w"> </span>library<span class="w"> </span>of<span class="w"> </span>high<span class="w"> </span>performance<span class="w"> </span>preconditioners<span class="w"> </span>that<span class="w"> </span>features
+<span class="w">    </span>parallel<span class="w"> </span>multigrid<span class="w"> </span>methods<span class="w"> </span><span class="k">for</span><span class="w"> </span>both<span class="w"> </span>structured<span class="w"> </span>and<span class="w"> </span>unstructured<span class="w"> </span>grid
+<span class="w">    </span>problems.
+
+Homepage:<span class="w"> </span>https://llnl.gov/casc/hypre
+
+Preferred<span class="w"> </span>version:
+<span class="w">    </span><span class="m">2</span>.28.0<span class="w">     </span>https://github.com/hypre-space/hypre/archive/v2.28.0.tar.gz
+
+Safe<span class="w"> </span>versions:
+<span class="w">    </span>develop<span class="w">    </span><span class="o">[</span>git<span class="o">]</span><span class="w"> </span>https://github.com/hypre-space/hypre.git<span class="w"> </span>on<span class="w"> </span>branch<span class="w"> </span>master
+<span class="w">    </span><span class="m">2</span>.28.0<span class="w">     </span>https://github.com/hypre-space/hypre/archive/v2.28.0.tar.gz
+
+<span class="c1"># ... more versions listed</span>
+
+Variants:
+<span class="w">    </span>Name<span class="w"> </span><span class="o">[</span>Default<span class="o">]</span><span class="w">              </span>When<span class="w">       </span>Allowed<span class="w"> </span>values<span class="w">          </span><span class="nv">Description</span>
+<span class="w">    </span><span class="o">========================</span><span class="w">    </span><span class="o">=======</span><span class="w">    </span><span class="o">====================</span><span class="w">    </span><span class="o">==============================================</span>
+
+<span class="w">    </span>amdgpu_target<span class="w"> </span><span class="o">[</span>none<span class="o">]</span><span class="w">        </span><span class="o">[</span>+rocm<span class="o">]</span><span class="w">    </span>none,<span class="w"> </span>gfx900,<span class="w">           </span>AMD<span class="w"> </span>GPU<span class="w"> </span>architecture
+<span class="w">                                           </span>gfx1030,<span class="w"> </span>gfx90c,
+<span class="w">                                           </span>gfx90a,<span class="w"> </span>gfx1101,
+<span class="w">                                           </span>gfx908,<span class="w"> </span>gfx1010,
+<span class="c1"># ... lots of amd targets listed</span>
+<span class="w">    </span>build_system<span class="w"> </span><span class="o">[</span>autotools<span class="o">]</span><span class="w">    </span>--<span class="w">         </span>autotools<span class="w">               </span>Build<span class="w"> </span>systems<span class="w"> </span>supported<span class="w"> </span>by<span class="w"> </span>the<span class="w"> </span>package
+<span class="w">    </span>caliper<span class="w"> </span><span class="o">[</span>off<span class="o">]</span><span class="w">               </span>--<span class="w">         </span>on,<span class="w"> </span>off<span class="w">                 </span>Enable<span class="w"> </span>Caliper<span class="w"> </span>support
+<span class="w">    </span>complex<span class="w"> </span><span class="o">[</span>off<span class="o">]</span><span class="w">               </span>--<span class="w">         </span>on,<span class="w"> </span>off<span class="w">                 </span>Use<span class="w"> </span>complex<span class="w"> </span>values
+<span class="w">    </span>cuda<span class="w"> </span><span class="o">[</span>off<span class="o">]</span><span class="w">                  </span>--<span class="w">         </span>on,<span class="w"> </span>off<span class="w">                 </span>Build<span class="w"> </span>with<span class="w"> </span>CUDA
+<span class="w">    </span>cuda_arch<span class="w"> </span><span class="o">[</span>none<span class="o">]</span><span class="w">            </span><span class="o">[</span>+cuda<span class="o">]</span><span class="w">    </span>none,<span class="w"> </span><span class="m">62</span>,<span class="w"> </span><span class="m">80</span>,<span class="w"> </span><span class="m">90</span>,<span class="w">       </span>CUDA<span class="w"> </span>architecture
+<span class="w">                                           </span><span class="m">20</span>,<span class="w"> </span><span class="m">32</span>,<span class="w"> </span><span class="m">35</span>,<span class="w"> </span><span class="m">37</span>,<span class="w"> </span><span class="m">87</span>,
+<span class="w">                                           </span><span class="m">10</span>,<span class="w"> </span><span class="m">21</span>,<span class="w"> </span><span class="m">30</span>,<span class="w"> </span><span class="m">12</span>,<span class="w"> </span><span class="m">61</span>,
+<span class="w">                                           </span><span class="m">11</span>,<span class="w"> </span><span class="m">72</span>,<span class="w"> </span><span class="m">13</span>,<span class="w"> </span><span class="m">60</span>,<span class="w"> </span><span class="m">53</span>,
+<span class="w">                                           </span><span class="m">52</span>,<span class="w"> </span><span class="m">75</span>,<span class="w"> </span><span class="m">70</span>,<span class="w"> </span><span class="m">89</span>,<span class="w"> </span><span class="m">86</span>,
+<span class="w">                                           </span><span class="m">50</span>
+<span class="w">    </span>debug<span class="w"> </span><span class="o">[</span>off<span class="o">]</span><span class="w">                 </span>--<span class="w">         </span>on,<span class="w"> </span>off<span class="w">                 </span>Build<span class="w"> </span>debug<span class="w"> </span>instead<span class="w"> </span>of<span class="w"> </span>optimized<span class="w"> </span>version
+<span class="w">    </span>fortran<span class="w"> </span><span class="o">[</span>on<span class="o">]</span><span class="w">                </span>--<span class="w">         </span>on,<span class="w"> </span>off<span class="w">                 </span>Enables<span class="w"> </span>fortran<span class="w"> </span>bindings
+<span class="w">    </span>gptune<span class="w"> </span><span class="o">[</span>off<span class="o">]</span><span class="w">                </span>--<span class="w">         </span>on,<span class="w"> </span>off<span class="w">                 </span>Add<span class="w"> </span>the<span class="w"> </span>GPTune<span class="w"> </span>hookup<span class="w"> </span>code
+<span class="w">    </span>int64<span class="w"> </span><span class="o">[</span>off<span class="o">]</span><span class="w">                 </span>--<span class="w">         </span>on,<span class="w"> </span>off<span class="w">                 </span>Use<span class="w"> </span>64bit<span class="w"> </span>integers
+<span class="w">    </span>internal-superlu<span class="w"> </span><span class="o">[</span>off<span class="o">]</span><span class="w">      </span>--<span class="w">         </span>on,<span class="w"> </span>off<span class="w">                 </span>Use<span class="w"> </span>internal<span class="w"> </span>SuperLU<span class="w"> </span>routines
+<span class="w">    </span>mixedint<span class="w"> </span><span class="o">[</span>off<span class="o">]</span><span class="w">              </span>--<span class="w">         </span>on,<span class="w"> </span>off<span class="w">                 </span>Use<span class="w"> </span>64bit<span class="w"> </span>integers<span class="w"> </span><span class="k">while</span><span class="w"> </span>reducing<span class="w"> </span>memory<span class="w"> </span>use
+<span class="w">    </span>mpi<span class="w"> </span><span class="o">[</span>on<span class="o">]</span><span class="w">                    </span>--<span class="w">         </span>on,<span class="w"> </span>off<span class="w">                 </span>Enable<span class="w"> </span>MPI<span class="w"> </span>support
+<span class="w">    </span>openmp<span class="w"> </span><span class="o">[</span>off<span class="o">]</span><span class="w">                </span>--<span class="w">         </span>on,<span class="w"> </span>off<span class="w">                 </span>Enable<span class="w"> </span>OpenMP<span class="w"> </span>support
+<span class="w">    </span>rocm<span class="w"> </span><span class="o">[</span>off<span class="o">]</span><span class="w">                  </span>--<span class="w">         </span>on,<span class="w"> </span>off<span class="w">                 </span>Enable<span class="w"> </span>ROCm<span class="w"> </span>support
+<span class="w">    </span>shared<span class="w"> </span><span class="o">[</span>on<span class="o">]</span><span class="w">                 </span>--<span class="w">         </span>on,<span class="w"> </span>off<span class="w">                 </span>Build<span class="w"> </span>shared<span class="w"> </span>library<span class="w"> </span><span class="o">(</span>disables<span class="w"> </span>static<span class="w"> </span>library<span class="o">)</span>
+<span class="w">    </span>superlu-dist<span class="w"> </span><span class="o">[</span>off<span class="o">]</span><span class="w">          </span>--<span class="w">         </span>on,<span class="w"> </span>off<span class="w">                 </span>Activates<span class="w"> </span>support<span class="w"> </span><span class="k">for</span><span class="w"> </span>SuperLU_Dist<span class="w"> </span>library
+<span class="w">    </span>sycl<span class="w"> </span><span class="o">[</span>off<span class="o">]</span><span class="w">                  </span>--<span class="w">         </span>on,<span class="w"> </span>off<span class="w">                 </span>Enable<span class="w"> </span>SYCL<span class="w"> </span>support
+<span class="w">    </span>umpire<span class="w"> </span><span class="o">[</span>off<span class="o">]</span><span class="w">                </span>--<span class="w">         </span>on,<span class="w"> </span>off<span class="w">                 </span>Enable<span class="w"> </span>Umpire<span class="w"> </span>support
+<span class="w">    </span>unified-memory<span class="w"> </span><span class="o">[</span>off<span class="o">]</span><span class="w">        </span>--<span class="w">         </span>on,<span class="w"> </span>off<span class="w">                 </span>Use<span class="w"> </span>unified<span class="w"> </span>memory
+
+Build<span class="w"> </span>Dependencies:
+<span class="w">    </span>blas<span class="w">  </span>caliper<span class="w">  </span>cuda<span class="w">  </span>gnuconfig<span class="w">  </span>hip<span class="w">  </span>hsa-rocr-dev<span class="w">  </span>lapack<span class="w">  </span>llvm-amdgpu<span class="w">  </span>mpi<span class="w">  </span>rocprim<span class="w">  </span>rocrand<span class="w">  </span>rocsparse<span class="w">  </span>rocthrust<span class="w">  </span>superlu-dist<span class="w">  </span>umpire
+
+Link<span class="w"> </span>Dependencies:
+<span class="w">    </span>blas<span class="w">  </span>caliper<span class="w">  </span>cuda<span class="w">  </span>hip<span class="w">  </span>hsa-rocr-dev<span class="w">  </span>lapack<span class="w">  </span>llvm-amdgpu<span class="w">  </span>mpi<span class="w">  </span>rocprim<span class="w">  </span>rocrand<span class="w">  </span>rocsparse<span class="w">  </span>rocthrust<span class="w">  </span>superlu-dist<span class="w">  </span>umpire
+
+Run<span class="w"> </span>Dependencies:
+<span class="w">    </span>None
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">spack</span> <span class="pre">info</span></code> commands gives us three important data-points we
+need. First, it tells the versions available. If you do not specify a
+version, the <em>preferred</em> version is default.</p>
+<p>Next and most important are the <em>variants</em>. These are used to control
+how to build the package, i.e. to build with MPI, to build a fortran
+interface, and so on. These will have default values, and in practice
+you will only need to provide a small number for any particular system.</p>
+<p>Finally, we are given the <em>dependencies</em> of the package. The
+dependencies listed are for <em>all</em> configurations, so some dependencies
+may not be necessary for your particular install. (For instance, if you
+do not build with <code class="docutils literal notranslate"><span class="pre">cuda</span></code>, then <code class="docutils literal notranslate"><span class="pre">cuda</span></code> will not be necessary to
+install)</p>
+<p>Let’s look at what Spack will do when we want to install. We will start
+with the default configuration (that is, all variants are left to
+default). The <code class="docutils literal notranslate"><span class="pre">spack</span> <span class="pre">spec</span></code> command will try to use the active Spack
+configuration to determine which packages are needed to install
+<code class="docutils literal notranslate"><span class="pre">hypre</span></code>, and will print the dependency tree out.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$&gt;<span class="w"> </span>spack<span class="w"> </span>spec<span class="w"> </span>hypre
+Input<span class="w"> </span>spec
+--------------------------------
+<span class="w"> </span>-<span class="w">   </span>hypre
+
+Concretized
+--------------------------------
+<span class="w"> </span>-<span class="w">   </span>hypre@2.28.0%gcc@11.2.0~caliper~complex~cuda~debug+fortran~gptune~int64~internal-superlu~mixedint+mpi~openmp~rocm+shared~superlu-dist~sycl~umpire~unified-memory<span class="w"> </span><span class="nv">build_system</span><span class="o">=</span>autotools<span class="w"> </span><span class="nv">arch</span><span class="o">=</span>linux-rhel7-broadwell
+<span class="w"> </span>-<span class="w">       </span>^openblas@0.3.23%gcc@11.2.0~bignuma~consistent_fpcsr+fortran~ilp64+locking+pic+shared<span class="w"> </span><span class="nv">build_system</span><span class="o">=</span>makefile<span class="w"> </span><span class="nv">symbol_suffix</span><span class="o">=</span>none<span class="w"> </span><span class="nv">threads</span><span class="o">=</span>none<span class="w"> </span><span class="nv">arch</span><span class="o">=</span>linux-rhel7-broadwell
+<span class="o">[</span>e<span class="o">]</span><span class="w">          </span>^perl@5.16.3%gcc@11.2.0+cpanm+opcode+open+shared+threads<span class="w"> </span><span class="nv">build_system</span><span class="o">=</span>generic<span class="w"> </span><span class="nv">patches</span><span class="o">=</span>0eac10e,3bbd7d6<span class="w"> </span><span class="nv">arch</span><span class="o">=</span>linux-rhel7-broadwell
+<span class="o">[</span>e<span class="o">]</span><span class="w">      </span>^openmpi@4.1.1%gcc@11.2.0~atomics~cuda~cxx~cxx_exceptions~gpfs~internal-hwloc~internal-pmix~java~legacylaunchers~lustre~memchecker~openshmem~orterunprefix+pmi+romio+rsh~singularity+static+vt~wrapper-rpath<span class="w"> </span><span class="nv">build_system</span><span class="o">=</span>autotools<span class="w"> </span><span class="nv">fabrics</span><span class="o">=</span>ofi,psm,psm2<span class="w"> </span><span class="nv">schedulers</span><span class="o">=</span>slurm<span class="w"> </span><span class="nv">arch</span><span class="o">=</span>linux-rhel7-broadwell
+</pre></div>
+</div>
+<p>Here, we see the full default Spack <em>spec</em>, which as a rough guide is
+structured as
+<code class="docutils literal notranslate"><span class="pre">&lt;package&gt;&#64;&lt;version&gt;%&lt;compiler&gt;&#64;&lt;compiler_version&gt;{[+/~]variants}</span> <span class="pre">&lt;arch_info&gt;</span></code>.
+The <code class="docutils literal notranslate"><span class="pre">+,~</span></code> variant prefixes are used to turn on/off variants with
+binary values, while variants with a set of values are given similar to
+keyword values (e.g. <code class="docutils literal notranslate"><span class="pre">+cuda</span> <span class="pre">cuda_arch=70</span> <span class="pre">~shared</span></code>)</p>
+<p>If we wanted to install a different configuration, in this case say we
+want <code class="docutils literal notranslate"><span class="pre">complex</span></code> and <code class="docutils literal notranslate"><span class="pre">openmp</span></code> enabled, but we don’t need <code class="docutils literal notranslate"><span class="pre">fortran</span></code>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$&gt;<span class="w"> </span>spack<span class="w"> </span>spec<span class="w"> </span>hypre+complex+openmp~fortran
+Input<span class="w"> </span>spec
+--------------------------------
+<span class="w"> </span>-<span class="w">   </span>hypre+complex~fortran+openmp
+
+Concretized
+--------------------------------
+<span class="w"> </span>-<span class="w">   </span>hypre@2.28.0%gcc@11.2.0~caliper+complex~cuda~debug~fortran~gptune~int64~internal-superlu~mixedint+mpi+openmp~rocm+shared~superlu-dist~sycl~umpire~unified-memory<span class="w"> </span><span class="nv">build_system</span><span class="o">=</span>autotools<span class="w"> </span><span class="nv">arch</span><span class="o">=</span>linux-rhel7-broadwell
+<span class="w"> </span>-<span class="w">       </span>^openblas@0.3.23%gcc@11.2.0~bignuma~consistent_fpcsr+fortran~ilp64+locking+pic+shared<span class="w"> </span><span class="nv">build_system</span><span class="o">=</span>makefile<span class="w"> </span><span class="nv">symbol_suffix</span><span class="o">=</span>none<span class="w"> </span><span class="nv">threads</span><span class="o">=</span>none<span class="w"> </span><span class="nv">arch</span><span class="o">=</span>linux-rhel7-broadwell
+<span class="o">[</span>e<span class="o">]</span><span class="w">          </span>^perl@5.16.3%gcc@11.2.0+cpanm+opcode+open+shared+threads<span class="w"> </span><span class="nv">build_system</span><span class="o">=</span>generic<span class="w"> </span><span class="nv">patches</span><span class="o">=</span>0eac10e,3bbd7d6<span class="w"> </span><span class="nv">arch</span><span class="o">=</span>linux-rhel7-broadwell
+<span class="o">[</span>e<span class="o">]</span><span class="w">      </span>^openmpi@4.1.1%gcc@11.2.0~atomics~cuda~cxx~cxx_exceptions~gpfs~internal-hwloc~internal-pmix~java~legacylaunchers~lustre~memchecker~openshmem~orterunprefix+pmi+romio+rsh~singularity+static+vt~wrapper-rpath<span class="w"> </span><span class="nv">build_system</span><span class="o">=</span>autotools<span class="w"> </span><span class="nv">fabrics</span><span class="o">=</span>ofi,psm,psm2<span class="w"> </span><span class="nv">schedulers</span><span class="o">=</span>slurm<span class="w"> </span><span class="nv">arch</span><span class="o">=</span>linux-rhel7-broadwell
+</pre></div>
+</div>
+<p>Here, you can see the full spec has out supplied variants. In general,
+variants can control build options and features, and can change which
+dependencies are needed.</p>
+<p>Notice also the left-aligned string starting each line for a package.
+<code class="docutils literal notranslate"><span class="pre">-</span></code> indicates that Spack isn’t aware that this package is installed
+(which is expected). <code class="docutils literal notranslate"><span class="pre">[+]</span></code> indicates that the package has been
+previously installed. <code class="docutils literal notranslate"><span class="pre">[e]</span></code> indicates that the package has been marked
+as externally installed.</p>
+<p>Finally, we can install it. Because <code class="docutils literal notranslate"><span class="pre">perl</span></code> and <code class="docutils literal notranslate"><span class="pre">openmpi</span></code> are already
+present, Spack will not need to download, build, and install these
+packages. This can save lots of time! Note, however, that external
+packages are loosely constrained and may not be correctly configured for
+the requested package.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>By default, Spack will try to download the package source from the
+repository associated with the package. This behavior can be overrided
+with Spack <em>mirrors</em> , but that is beyond the scope of this doc.</p>
+</div>
+<p>Now, we can use Spack similarly to <code class="docutils literal notranslate"><span class="pre">module</span> <span class="pre">load</span></code>,</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$&gt;<span class="w"> </span>spack<span class="w"> </span>load<span class="w"> </span>hypre
+$&gt;<span class="w"> </span>spack<span class="w"> </span>find<span class="w"> </span>--loaded
+</pre></div>
+</div>
+<p>Other options are available for integrating Spack installed packages
+into your environment. For more, head over to
+<a class="reference external" href="https://spack.readthedocs.io">https://spack.readthedocs.io</a></p>
+</section>
+<section id="installing-singularity-eos-using-spack">
+<h4>Installing <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> using Spack<a class="headerlink" href="#installing-singularity-eos-using-spack" title="Link to this heading"></a></h4>
+<p>The spackage is available in the main <a class="reference external" href="https://spack.io/">Spack</a>
+repositories. If you have spack installed, simply call</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>spack<span class="w"> </span>install<span class="w"> </span>singularity-eos
+</pre></div>
+</div>
+<p>to install <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> into your spack instance. The spackage
+supports a number of relevant variants:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Variant Name [default]</p></th>
+<th class="head"><p>Allowed Values</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>build_extra [none]</p></td>
+<td><p>none, sesame,
+stellarcollapse</p></td>
+<td><p>Build sesame2spiner
+or stellarcollapse2spiner</p></td>
+</tr>
+<tr class="row-odd"><td><p>build_type [RelWithDebInfo]</p></td>
+<td><p>Debug, Release,
+RelWitHDebInfo,
+MinSizeRel</p></td>
+<td><p>Equivalent to
+-DCMAKE_BUILD_TYPE
+in cmake build</p></td>
+</tr>
+<tr class="row-even"><td><p>cuda [off]</p></td>
+<td><p>on, off</p></td>
+<td><p>Build with cuda</p></td>
+</tr>
+<tr class="row-odd"><td><p>cuda_arch [none]</p></td>
+<td><p>see kokkos spec</p></td>
+<td><p>The target GPU architecture</p></td>
+</tr>
+<tr class="row-even"><td><p>doc [off]</p></td>
+<td><p>on, off</p></td>
+<td><p>Build sphinx docs</p></td>
+</tr>
+<tr class="row-odd"><td><p>format [off]</p></td>
+<td><p>on, off</p></td>
+<td><p>Support for clang-format</p></td>
+</tr>
+<tr class="row-even"><td><p>fortran [on]</p></td>
+<td><p>on, off</p></td>
+<td><p>Provide fortran bindings</p></td>
+</tr>
+<tr class="row-odd"><td><p>hdf5 [off]</p></td>
+<td><p>on, off</p></td>
+<td><p>Enable HDF5 I/O for tables</p></td>
+</tr>
+<tr class="row-even"><td><p>ipo [off]</p></td>
+<td><p>on, off</p></td>
+<td><p>CMake interprocedural
+optimization</p></td>
+</tr>
+<tr class="row-odd"><td><p>kokkos [off]</p></td>
+<td><p>on, off</p></td>
+<td><p>Enable Kokkos backend
+Required for cuda support</p></td>
+</tr>
+<tr class="row-even"><td><p>kokkos-kernels [off]</p></td>
+<td><p>on, off</p></td>
+<td><p>Use kokkos-kernels for
+linear algebra suport,
+which is needed with
+mixed-cell closures on GPU</p></td>
+</tr>
+<tr class="row-odd"><td><p>mpi [off]</p></td>
+<td><p>on, off</p></td>
+<td><p>Build with parallel HDF5
+otherwise build with serial</p></td>
+</tr>
+<tr class="row-even"><td><p>openmp [off]</p></td>
+<td><p>on, off</p></td>
+<td><p>Build Kokkos openmp backend</p></td>
+</tr>
+<tr class="row-odd"><td><p>tests [off]</p></td>
+<td><p>on, off</p></td>
+<td><p>Build tests</p></td>
+</tr>
+<tr class="row-even"><td><p>vandv [on]</p></td>
+<td><p>on, off</p></td>
+<td><p>Add some V&amp;V EOS’s to the
+Singularity::Variant</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="developing-singularity-eos-using-spack">
+<h4>Developing <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> using Spack<a class="headerlink" href="#developing-singularity-eos-using-spack" title="Link to this heading"></a></h4>
+<p>Spack is a powerful tool that can help develop <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> for a
+variety of platforms and hardware.</p>
+<ol class="arabic simple">
+<li><p>Install the dependencies <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> needs using Spack</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$&gt;<span class="w"> </span>spack<span class="w"> </span>install<span class="w"> </span>-u<span class="w"> </span>cmake<span class="w"> </span>singularity-eos@main%gcc@13+hdf5+eospac+mpi+kokkos+kokkos-kernels+openmp^eospac@6.4.0
+</pre></div>
+</div>
+<p>This command will initiate an install of <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> using
+Spack, but will stop right before <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> starts to build
+(<code class="docutils literal notranslate"><span class="pre">-u</span> <span class="pre">cmake</span></code> means <code class="docutils literal notranslate"><span class="pre">until</span> <span class="pre">cmake</span></code>). This ensures all the necessary
+dependencies are installed and visible to Spack</p>
+<ol class="arabic simple" start="2">
+<li><p>Use Spack to construct an <em>ad-hoc</em> shell environment</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$&gt;<span class="w"> </span>spack<span class="w"> </span>build-env<span class="w"> </span>singularity-eos@main%gcc@13+hdf5+eospac+mpi+kokkos+kokkos-kernels+openmp^eospac@6.4.0<span class="w"> </span>--<span class="w"> </span>bash
+</pre></div>
+</div>
+<p>This command will construct a shell environment in <code class="docutils literal notranslate"><span class="pre">bash</span></code> that has all
+the dependency information populated (e.g. <code class="docutils literal notranslate"><span class="pre">PREFIX_PATH</span></code>,
+<code class="docutils literal notranslate"><span class="pre">CMAKE_PREFIX_PATH</span></code>, <code class="docutils literal notranslate"><span class="pre">LD_LIBRARY_PATH</span></code>, and so on). Even external
+packages from a module system will be correctly loaded. Thus, we can
+build for a specific combination of dependencies, compilers, and
+portability strategies.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$&gt;<span class="w"> </span>salloc<span class="w"> </span>-p<span class="w"> </span>scaling
+<span class="c1"># ...</span>
+$&gt;<span class="w"> </span><span class="nb">source</span><span class="w"> </span>~/spack/share/spack/setup-env.sh
+$&gt;<span class="w"> </span>spack<span class="w"> </span>build-env<span class="w"> </span>singularity-eos@main%gcc@12+hdf5+eospac+mpi+kokkos+kokkos-kernels+openmp^eospac@6.4.0<span class="w"> </span>--<span class="w"> </span>bash
+$&gt;<span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span>build_gpu_mpi<span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build_gpu_mpi
+$&gt;<span class="w"> </span>cmake<span class="w"> </span>..<span class="w"> </span>--preset<span class="o">=</span><span class="s2">&quot;kokkos_nogpu_with_testing&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="some-recipes">
+<h2>Some Recipes<a class="headerlink" href="#some-recipes" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Building stellar collapse and stellarcollapse2spiner without pre-installing dependencies:</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>--recursive<span class="w"> </span>https://github.com/lanl/singularity-eos.git
+mkdir<span class="w"> </span>-p<span class="w"> </span>singularity-eos/build
+<span class="nb">cd</span><span class="w"> </span>singularity-eos/build
+cmake<span class="w"> </span>-DSINGULARITY_FORCE_SUBMODULE_MODE<span class="o">=</span>ON<span class="w"> </span>-DSINGULARITY_USE_SPINER<span class="o">=</span>ON<span class="w"> </span>-DSINGULARITY_USE_FORTRAN<span class="o">=</span>OFF<span class="w"> </span>-DSINGULARITY_BUILD_CLOSURE<span class="o">=</span>OFF<span class="w"> </span>-DSINGULARITY_USE_STELLAR_COLLAPSE<span class="o">=</span>ON<span class="w"> </span>-DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER<span class="o">=</span>ON<span class="w"> </span>-DSINGULARITY_USE_TRUE_LOG_GRIDDING<span class="o">=</span>ON<span class="w"> </span>..
+make<span class="w"> </span>-j8
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="philosophy.html" class="btn btn-neutral float-left" title="Design Philosophy" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="integration.html" class="btn btn-neutral float-right" title="Integrating singularity-eos into a CMake project" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2023. Triad National Security.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Other Versions</span>
+    v: main
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Tags</dt>
+      <dd><a href="../../goldfiles-1.6.2/src/building.html">goldfiles-1.6.2</a></dd>
+      <dd><a href="../../goldfiles-1.8.0/src/building.html">goldfiles-1.8.0</a></dd>
+      <dd><a href="../../release-1.10.0/src/building.html">release-1.10.0</a></dd>
+      <dd><a href="../../release-1.11.0/src/building.html">release-1.11.0</a></dd>
+      <dd><a href="../../release-1.6.0/src/building.html">release-1.6.0</a></dd>
+      <dd><a href="../../release-1.6.1/src/building.html">release-1.6.1</a></dd>
+      <dd><a href="../../release-1.6.2/src/building.html">release-1.6.2</a></dd>
+      <dd><a href="../../release-1.7.0/src/building.html">release-1.7.0</a></dd>
+      <dd><a href="../../release-1.8.0/src/building.html">release-1.8.0</a></dd>
+      <dd><a href="../../release-1.9.0/src/building.html">release-1.9.0</a></dd>
+      <dd><a href="../../release-1.9.1/src/building.html">release-1.9.1</a></dd>
+      <dd><a href="../../release-1.9.2/src/building.html">release-1.9.2</a></dd>
+    </dl>
+    <dl>
+      <dt>Branches</dt>
+      <dd><a href="../../added_benchmark/src/building.html">added_benchmark</a></dd>
+      <dd><a href="../../aemattssing/src/building.html">aemattssing</a></dd>
+      <dd><a href="../../bgclayton_simple_macaw/src/building.html">bgclayton_simple_macaw</a></dd>
+      <dd><a href="../../blb/python_entropy/src/building.html">blb/python_entropy</a></dd>
+      <dd><a href="../../brryan/isothermal/src/building.html">brryan/isothermal</a></dd>
+      <dd><a href="../../cmake_fixup_static_linking/src/building.html">cmake_fixup_static_linking</a></dd>
+      <dd><a href="../../dempsey/mass_frac/src/building.html">dempsey/mass_frac</a></dd>
+      <dd><a href="../../dholladay00/cleanup_variadic/src/building.html">dholladay00/cleanup_variadic</a></dd>
+      <dd><a href="../../dholladay00/eap_debug/src/building.html">dholladay00/eap_debug</a></dd>
+      <dd><a href="../../dholladay00/faster_ses2spin/src/building.html">dholladay00/faster_ses2spin</a></dd>
+      <dd><a href="../../dholladay00/pt_solver/src/building.html">dholladay00/pt_solver</a></dd>
+      <dd><a href="../../dholladay00/xl_cuda_eospac/src/building.html">dholladay00/xl_cuda_eospac</a></dd>
+      <dd><a href="../../docs_spack_devworkflow/src/building.html">docs_spack_devworkflow</a></dd>
+      <dd><a href="../../gopsub/crest/src/building.html">gopsub/crest</a></dd>
+      <dd><a href="../../jdolence/default_shift/src/building.html">jdolence/default_shift</a></dd>
+      <dd><a href="../../jdolence/new_pte/src/building.html">jdolence/new_pte</a></dd>
+      <dd><a href="../../jhp/EAP_integration/src/building.html">jhp/EAP_integration</a></dd>
+      <dd><a href="../../jhp/two_eos/src/building.html">jhp/two_eos</a></dd>
+      <dd><a href="../../jhp/update_copyright/src/building.html">jhp/update_copyright</a></dd>
+      <dd><a href="../../jhp/using_cleanup/src/building.html">jhp/using_cleanup</a></dd>
+      <dd><a href="../../jmm/hip-inline/src/building.html">jmm/hip-inline</a></dd>
+      <dd><a href="../../jmm/ports-testing/src/building.html">jmm/ports-testing</a></dd>
+      <dd><a href="../../jmm/rdc/src/building.html">jmm/rdc</a></dd>
+      <dd><a href="../../jmm/sesame2spiner-library/src/building.html">jmm/sesame2spiner-library</a></dd>
+      <dd><a href="../../jmm/sometimes-capture-by-reference/src/building.html">jmm/sometimes-capture-by-reference</a></dd>
+      <dd><a href="../../jmm/spiner-introspection/src/building.html">jmm/spiner-introspection</a></dd>
+      <dd><a href="../../jmm/svd/src/building.html">jmm/svd</a></dd>
+      <dd><a href="../../jmm/template-lambda-sfinae-edition/src/building.html">jmm/template-lambda-sfinae-edition</a></dd>
+      <dd><a href="../../jmm/test-pte-mem-tweak/src/building.html">jmm/test-pte-mem-tweak</a></dd>
+      <dd><a href="../../jmm/test-stellarcollapse-fast-logs/src/building.html">jmm/test-stellarcollapse-fast-logs</a></dd>
+      <dd><a href="../../jmm/units-fixes/src/building.html">jmm/units-fixes</a></dd>
+      <dd><a href="../../jmm/update-clang-format/src/building.html">jmm/update-clang-format</a></dd>
+      <dd><a href="../../jmm/update-kokkos-linalg/src/building.html">jmm/update-kokkos-linalg</a></dd>
+      <dd><a href="../../jmm/update-spackage-1.9.1/src/building.html">jmm/update-spackage-1.9.1</a></dd>
+      <dd><a href="../../lroberts36/tilted-maxwell/src/building.html">lroberts36/tilted-maxwell</a></dd>
+      <dd><a href="building.html">main</a></dd>
+      <dd><a href="../../mauneyc/fix/CIcmake/src/building.html">mauneyc/fix/CIcmake</a></dd>
+      <dd><a href="../../mauneyc/fix/checkOtherHDF5ParallelFlag/src/building.html">mauneyc/fix/checkOtherHDF5ParallelFlag</a></dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

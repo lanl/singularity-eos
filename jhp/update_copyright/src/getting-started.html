@@ -1,0 +1,250 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Getting Started &mdash; Singularity-EOS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Design Philosophy" href="philosophy.html" />
+    <link rel="prev" title="Welcome to Singularity-EOS’s Documentation!" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Singularity-EOS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#going-deeper">Going Deeper</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="philosophy.html">Design Philosophy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building.html">Building Singularity-EOS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-eos.html">The Equation of State API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">EOS Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modifiers.html">Equation of State Modifiers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-closures.html">Mixed Cell Closures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python.html">Python Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sphinx-doc.html">How to Use Sphinx for Writing Docs</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Singularity-EOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Getting Started</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/src/getting-started.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="getting-started">
+<span id="id1"></span><h1>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading"></a></h1>
+<p>At it’s most basic, you can download and install <code class="docutils literal notranslate"><span class="pre">singularity-eos</span></code> with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>--recursive<span class="w"> </span>git@github.com:lanl/singularity-eos.git
+<span class="nb">cd</span><span class="w"> </span>singularity-eos
+mkdir<span class="w"> </span>bin
+<span class="nb">cd</span><span class="w"> </span>bin
+cmake<span class="w"> </span>..
+make<span class="w"> </span>install
+</pre></div>
+</div>
+<p>This will downloady singularity-eos with no optional dependencies and
+compile the capabilities available in that form.</p>
+<p>If the library is in your include and lib paths (or you built it
+in-tree), you can include the eos part of the library with</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="cpf">&lt;singularity-eos/eos/eos.hpp&gt;</span>
+</pre></div>
+</div>
+<p>You can then initialize an equation of state by setting the model
+class you want to an <code class="docutils literal notranslate"><span class="pre">EOS</span></code> object. For example:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">EOS</span><span class="w"> </span><span class="n">ideal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IdealGas</span><span class="p">(</span><span class="n">gm1</span><span class="p">,</span><span class="w"> </span><span class="n">Cv</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>To see which equations of state are available, see <a class="reference internal" href="using-eos.html#the-equation-of-state-api"><span class="std std-ref">The Equation of State API</span></a>.</p>
+<p>Some equations of state store tabulated data.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If you want to run one of these on an accelerator device like a GPU,
+you must copy the data over. This is provided by the function</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">EOS</span><span class="o">::</span><span class="n">GetOnDevice</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>which can be called as, e.g.,</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">ideal</span><span class="p">.</span><span class="n">GetOnDevice</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>If you don’t want to use GPU’s you can ignore this.</p>
+</div>
+<p>You can then call the EOS. For example, to get pressure from density
+and temperature, just call (for example),</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">ideal</span><span class="p">.</span><span class="n">PressureFromDensityTemperature</span><span class="p">(</span><span class="n">rho</span><span class="p">,</span><span class="w"> </span><span class="n">T</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The units are all in cgs. You can ignore the lambda for now.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>When you’re done with the model, it’s good practice to release
+device memory with a call to</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">EOS</span><span class="p">::</span><span class="n">Finalize</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>If you’re not using device memory, you can ignore this.</p>
+</div>
+<p>And that’s it!</p>
+<section id="going-deeper">
+<h2>Going Deeper<a class="headerlink" href="#going-deeper" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>You can find code examples in the <code class="docutils literal notranslate"><span class="pre">examples</span></code> source directory.</p></li>
+<li><p>To learn more about the design philosophy, look <a class="reference internal" href="philosophy.html#philosophy"><span class="std std-ref">here</span></a>.</p></li>
+<li><p>To learn about how to build, look at <a class="reference internal" href="building.html#building"><span class="std std-ref">our build document</span></a>.</p></li>
+<li><p>To learn more about the equation of state API, look <a class="reference internal" href="using-eos.html#using-eos"><span class="std std-ref">here</span></a>.</p></li>
+<li><p>To learn about the available equations of state, look <a class="reference internal" href="models.html#models"><span class="std std-ref">here</span></a>.</p></li>
+<li><p>To learn about our mixed-cell closure models, such as pressure-temperature equilibrium, look at <a class="reference internal" href="using-closures.html#using-closures"><span class="std std-ref">Mixed Cell Closures</span></a>.</p></li>
+<li><p>If you’re interested in contributing, check out our <a class="reference internal" href="contributing.html#contributing"><span class="std std-ref">documentation for developers</span></a>.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="Welcome to Singularity-EOS’s Documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="philosophy.html" class="btn btn-neutral float-right" title="Design Philosophy" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2023. Triad National Security.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Other Versions</span>
+    v: jhp/update_copyright
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Tags</dt>
+      <dd><a href="../../../goldfiles-1.6.2/src/getting-started.html">goldfiles-1.6.2</a></dd>
+      <dd><a href="../../../goldfiles-1.8.0/src/getting-started.html">goldfiles-1.8.0</a></dd>
+      <dd><a href="../../../release-1.10.0/src/getting-started.html">release-1.10.0</a></dd>
+      <dd><a href="../../../release-1.11.0/src/getting-started.html">release-1.11.0</a></dd>
+      <dd><a href="../../../release-1.6.0/src/getting-started.html">release-1.6.0</a></dd>
+      <dd><a href="../../../release-1.6.1/src/getting-started.html">release-1.6.1</a></dd>
+      <dd><a href="../../../release-1.6.2/src/getting-started.html">release-1.6.2</a></dd>
+      <dd><a href="../../../release-1.7.0/src/getting-started.html">release-1.7.0</a></dd>
+      <dd><a href="../../../release-1.8.0/src/getting-started.html">release-1.8.0</a></dd>
+      <dd><a href="../../../release-1.9.0/src/getting-started.html">release-1.9.0</a></dd>
+      <dd><a href="../../../release-1.9.1/src/getting-started.html">release-1.9.1</a></dd>
+      <dd><a href="../../../release-1.9.2/src/getting-started.html">release-1.9.2</a></dd>
+    </dl>
+    <dl>
+      <dt>Branches</dt>
+      <dd><a href="../../../added_benchmark/src/getting-started.html">added_benchmark</a></dd>
+      <dd><a href="../../../aemattssing/src/getting-started.html">aemattssing</a></dd>
+      <dd><a href="../../../bgclayton_simple_macaw/src/getting-started.html">bgclayton_simple_macaw</a></dd>
+      <dd><a href="../../../blb/python_entropy/src/getting-started.html">blb/python_entropy</a></dd>
+      <dd><a href="../../../brryan/isothermal/src/getting-started.html">brryan/isothermal</a></dd>
+      <dd><a href="../../../cmake_fixup_static_linking/src/getting-started.html">cmake_fixup_static_linking</a></dd>
+      <dd><a href="../../../dempsey/mass_frac/src/getting-started.html">dempsey/mass_frac</a></dd>
+      <dd><a href="../../../dholladay00/cleanup_variadic/src/getting-started.html">dholladay00/cleanup_variadic</a></dd>
+      <dd><a href="../../../dholladay00/eap_debug/src/getting-started.html">dholladay00/eap_debug</a></dd>
+      <dd><a href="../../../dholladay00/faster_ses2spin/src/getting-started.html">dholladay00/faster_ses2spin</a></dd>
+      <dd><a href="../../../dholladay00/pt_solver/src/getting-started.html">dholladay00/pt_solver</a></dd>
+      <dd><a href="../../../dholladay00/xl_cuda_eospac/src/getting-started.html">dholladay00/xl_cuda_eospac</a></dd>
+      <dd><a href="../../../docs_spack_devworkflow/src/getting-started.html">docs_spack_devworkflow</a></dd>
+      <dd><a href="../../../gopsub/crest/src/getting-started.html">gopsub/crest</a></dd>
+      <dd><a href="../../../jdolence/default_shift/src/getting-started.html">jdolence/default_shift</a></dd>
+      <dd><a href="../../../jdolence/new_pte/src/getting-started.html">jdolence/new_pte</a></dd>
+      <dd><a href="../../EAP_integration/src/getting-started.html">jhp/EAP_integration</a></dd>
+      <dd><a href="../../two_eos/src/getting-started.html">jhp/two_eos</a></dd>
+      <dd><a href="getting-started.html">jhp/update_copyright</a></dd>
+      <dd><a href="../../using_cleanup/src/getting-started.html">jhp/using_cleanup</a></dd>
+      <dd><a href="../../../jmm/hip-inline/src/getting-started.html">jmm/hip-inline</a></dd>
+      <dd><a href="../../../jmm/ports-testing/src/getting-started.html">jmm/ports-testing</a></dd>
+      <dd><a href="../../../jmm/rdc/src/getting-started.html">jmm/rdc</a></dd>
+      <dd><a href="../../../jmm/sesame2spiner-library/src/getting-started.html">jmm/sesame2spiner-library</a></dd>
+      <dd><a href="../../../jmm/sometimes-capture-by-reference/src/getting-started.html">jmm/sometimes-capture-by-reference</a></dd>
+      <dd><a href="../../../jmm/spiner-introspection/src/getting-started.html">jmm/spiner-introspection</a></dd>
+      <dd><a href="../../../jmm/svd/src/getting-started.html">jmm/svd</a></dd>
+      <dd><a href="../../../jmm/template-lambda-sfinae-edition/src/getting-started.html">jmm/template-lambda-sfinae-edition</a></dd>
+      <dd><a href="../../../jmm/test-pte-mem-tweak/src/getting-started.html">jmm/test-pte-mem-tweak</a></dd>
+      <dd><a href="../../../jmm/test-stellarcollapse-fast-logs/src/getting-started.html">jmm/test-stellarcollapse-fast-logs</a></dd>
+      <dd><a href="../../../jmm/units-fixes/src/getting-started.html">jmm/units-fixes</a></dd>
+      <dd><a href="../../../jmm/update-clang-format/src/getting-started.html">jmm/update-clang-format</a></dd>
+      <dd><a href="../../../jmm/update-kokkos-linalg/src/getting-started.html">jmm/update-kokkos-linalg</a></dd>
+      <dd><a href="../../../jmm/update-spackage-1.9.1/src/getting-started.html">jmm/update-spackage-1.9.1</a></dd>
+      <dd><a href="../../../lroberts36/tilted-maxwell/src/getting-started.html">lroberts36/tilted-maxwell</a></dd>
+      <dd><a href="../../../main/src/getting-started.html">main</a></dd>
+      <dd><a href="../../../mauneyc/fix/CIcmake/src/getting-started.html">mauneyc/fix/CIcmake</a></dd>
+      <dd><a href="../../../mauneyc/fix/checkOtherHDF5ParallelFlag/src/getting-started.html">mauneyc/fix/checkOtherHDF5ParallelFlag</a></dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
