@@ -17,6 +17,7 @@
 
 #include <cstring>
 #include <limits>
+#include <memory>
 #include <string>
 
 #include <ports-of-call/portability.hpp>
@@ -1052,8 +1053,8 @@ class EosBase {
   auto Serialize() {
     CRTP *pcrtp = static_cast<CRTP *>(this);
     std::size_t size = pcrtp->SerializedSizeInBytes();
-    char *dst = (char *)malloc(size);
-    std::size_t size_new = Serialize(dst);
+    std::shared_ptr<char[]> dst(new char[size]);
+    std::size_t size_new = Serialize(dst.get());
     PORTABLE_ALWAYS_REQUIRE(size_new == size, "Serialization failed!");
     return std::make_pair(size, dst);
   }

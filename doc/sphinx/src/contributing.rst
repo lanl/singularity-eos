@@ -12,7 +12,7 @@ repository, or submit a pull request!
 Pull request protocol
 ----------------------
 
-There is a pull reuqest template that will be auto-populated when you
+There is a pull request template that will be auto-populated when you
 submit a pull request. A pull request should have a summary of
 changes. You should also add tests for bugs fixed or new features you
 add.
@@ -36,7 +36,7 @@ useful output. For example:
     CFM=clang-format-12 VERBOSE=1 ./util/scripts/format.sh
 
 Several sets of tests are triggered on a pull request: a static format
-check, a docs buld, and unit tests of analytic models and the stellar
+check, a docs build, and unit tests of analytic models and the stellar
 collapse model. These are run through GitHub's CPU infrastructure. We
 have a second set of tests run on a wider set of architectures that
 also access the Sesame library, which we are not able to make public.
@@ -72,7 +72,7 @@ be requested to split your pull request into two or more separate
 contributions. You may also receive many "nitpicky" comments about
 code style or structure. These comments help keep a broad codebase,
 with many contributors uniform in style and maintainable with
-consistent expectations accross the code base. While there is no
+consistent expectations across the code base. While there is no
 formal style guide for now, the regular contributors have a sense for
 the broad style of the project. You should take these stylistic and
 "nitpicky" suggestions seriously, but you should also feel free to
@@ -81,7 +81,7 @@ push back.
 As with any creative endeavor, we put a lot of ourselves into our
 code. It can be painful to receive criticism on your contribution and
 easy to take it personally. While you should resist the urge to take
-offense, it is also partly code reviewer's responsiblity to create a
+offense, it is also partly code reviewer's responsibility to create a
 constructive environment, as discussed below.
 
 Expectations of code reviewers
@@ -100,7 +100,7 @@ congenial:
   want to try this other pattern."
 
 * Avoid language that can be misconstrued, even if it's common
-  notation in the commnunity. For example, avoid phrases like "code
+  notation in the community. For example, avoid phrases like "code
   smell."
 
 * Explain why you make a suggestion. In addition to saying "try X
@@ -117,7 +117,7 @@ congenial:
 General principle for everyone
 ```````````````````````````````
 
-It's hard to convey tone in text correspondance. Try to read what
+It's hard to convey tone in text correspondence. Try to read what
 others write favorably and try to write in such a way that your tone
 can't be mis-interpreted as malicious.
 
@@ -147,7 +147,7 @@ The basic process for adding a new EOS can be summarized as
 #. Create a Fortran interface to initialize your EOS into an array of EOS
 
 In addition to these main steps, there are a couple more that are required if
-you would like your EOS to work with our fortran interface, which will be
+you would like your EOS to work with our Fortran interface, which will be
 discussed below.
 
 Step 1: Create a new header file for your EOS
@@ -156,7 +156,7 @@ Step 1: Create a new header file for your EOS
 In general, the best practice is to simply copy an existing EOS file and modify
 it for the new EOS. However, there are some subtleties here that are important.
 
-- Parameters for the EOS can be initialzed via an initializer list, and
+- Parameters for the EOS can be initialized via an initializer list, and
   additional parameter checking can be done in the constructor.
 - Any EOS must have a set of member functions that conform to the general
   :ref:`EOS API<eos methods reference section>`. In essence, these functions are
@@ -291,7 +291,7 @@ At this point your new EOS should be usable to any host code written in C++. To
 allow the EOS to work with Fortran, an initializer wrapper function needs to be
 defined and interfaced with Fortran.
 
-First, the C++ intialization function needs to be named soas to avoid namespace
+First, the C++ initialization function needs to be named so as to avoid namespace
 conflicts. We typically name the initialization functions ``init_sg_<EOSName>``.
 For example, the function for initialing an ideal gas looks like
 
@@ -329,7 +329,7 @@ We also overload the initialization function to make the ``enabled`` and
       return init_sg_IdealGas(matindex, eos, gm1, Cv, def_en, def_v);
     }
 
-Finally the fortran side, we then define a fortran interface to the C++
+Finally the Fortran side, we then define a Fortran interface to the C++
 initialization function,
 
 .. code-block:: fortran
@@ -347,7 +347,7 @@ initialization function,
         end function init_sg_IdealGas
       end interface
 
-and a fortran wrapper function to call the C++ function:
+and a Fortran wrapper function to call the C++ function:
 
 .. code-block:: fortran
 
@@ -370,13 +370,13 @@ A Note on the EOS Builder
 `````````````````````````
 
 The :ref:`EOS Builder <eos builder section>` is a tool that eliminates the need
-for chaining together an EOS with a series of modifiers by instead specifing
+for chaining together an EOS with a series of modifiers by instead specifying
 the parameters and modifications in one function. This convenience comes at the
 cost of added development complexity though, and so we do not require a new EOS
 to be available for the EOS Builder.
 
 At a basic level though, the EOS needs to be declared in the ``EOSType`` enum
-and logic needs to be added to initialze the EOS parameters. More effort may be
+and logic needs to be added to initialize the EOS parameters. More effort may be
 needed to make the EOS compatible with modifiers and we point the interested
 contributor to the existing EOS as examples.
 
@@ -408,7 +408,7 @@ Some notes on style and code architecture
 * A major influence on code style and architecture is the
   `ten rules for developing safety-critical code`_, by Gerard Holzmann.
   Safety critical code is code that exists in a context where failure
-  implies serious harm. A flight controler on an airplane or
+  implies serious harm. A flight controller on an airplane or
   spacecraft or the microcontroller in a car are examples of
   safety-critical contexts. ``singularity-eos`` is not safety-critical
   but many of the coding habits advocated for by Holzmann produce
@@ -469,7 +469,7 @@ style. Here we briefly discuss a few things one should be aware of.
   ``PORTABLE_INLINE_FUNCTION``,
   ``PORTABLE_FORCEINLINE_FUNCTION``. These macros are imported from
   the `ports-of-call`_ library and resolve to the appropriate
-  decorations for a given device-side backend such as cuda so the code
+  decorations for a given device-side backend such as Cuda so the code
   compiles correctly. Code that doesn't need to run on device,
   such as EOS class constructors, does not need these decorations.
 
@@ -500,7 +500,7 @@ style. Here we briefly discuss a few things one should be aware of.
   "reference-semantics." This means that if you copy an EOS object, it
   should always be a shallow copy, not a deep copy, unless a deep copy
   is explicitly requested. This is for performance reasons and also to
-  simplify the managment of data on device.
+  simplify the management of data on device.
 
 * **Real:** The ``Real`` datatype is either a single precision or
   double precision floating point number, depending on how

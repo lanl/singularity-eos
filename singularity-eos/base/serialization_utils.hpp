@@ -15,6 +15,7 @@
 #ifndef SINGULARITY_EOS_BASE_SERIALIZATION_UTILS_
 #define SINGULARITY_EOS_BASE_SERIALIZATION_UTILS_
 
+#include <memory>
 #include <numeric>
 #include <utility>
 #include <vector>
@@ -67,8 +68,8 @@ struct BulkSerializer {
   }
   auto Serialize() {
     std::size_t size = SerializedSizeInBytes();
-    char *dst = (char *)malloc(size);
-    std::size_t new_size = Serialize(dst);
+    std::shared_ptr<char[]> dst(new char[size]);
+    std::size_t new_size = Serialize(dst.get());
     PORTABLE_ALWAYS_REQUIRE(size == new_size, "Serialization failed!");
     return std::make_pair(size, dst);
   }

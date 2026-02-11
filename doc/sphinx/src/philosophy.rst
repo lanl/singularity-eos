@@ -44,7 +44,7 @@ This also motivates the hot-swappable modifiers for equation of state
 models. Capturing real-world material, or production-hardening an
 equation of state can be challenging and imperfect. The modifiers
 allow the user to ensure an EOS meets their needs, in a way that is
-reproducible and comparable accross host codes.
+reproducible and comparable across host codes.
 
 No Compromise on Performance Portability
 ------------------------------------------
@@ -56,6 +56,6 @@ Performance, Flexibility, Usability, and Extendability
 --------------------------------------------------------
 
 We recognize that performance, runtime usability and flexibility, and
-extendability are all imporant, and do our best to navigate this
+extendability are all important, and do our best to navigate this
 trade-space. We write our code in as modular a way as possible, but we
 recognize that sometimes abstraction gets in the way.
