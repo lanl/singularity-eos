@@ -35,6 +35,7 @@
 #include <spiner/spiner_types.hpp>
 
 // singularity-eos
+#include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 
