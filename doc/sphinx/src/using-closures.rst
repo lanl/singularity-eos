@@ -9,7 +9,7 @@ When transitioning to a multi-material approach, a single velocity is typically
 used and the Euler equations are solved with respect to the bulk fluid motion.
 In this case, the pressure contribution to momentum isn't well-defined and in
 principle each material could have its own pressure contribution to material
-motion. Furthermore, the paritioning of volume and energy between the materials
+motion. Furthermore, the partitioning of volume and energy between the materials
 in the flow is not well-defined either.
 
 As a result, a multi-material closure rule is needed to determine both how to
@@ -67,7 +67,7 @@ where :math:`\rho_i` is the physical density (i.e. material mass per
 *material* volume). It is important to note here that while the
 densities, :math:`\rho_i`, and the volume fractions, :math:`f_i`, will
 vary as the closure model is applied, the average densities,
-:math:`\overline{\rho}_i`, will all remain constant, motiviating their
+:math:`\overline{\rho}_i`, will all remain constant, motivating their
 internal use in the closure solvers. The total density (mass of
 *participating* materials per total volume) is then
 
@@ -91,11 +91,11 @@ that
   = \sum_{i = 0}^{N - 1} u_i
 
 where :math:`u` is the total internal energy density (internal energy per unit
-volume). Similarly, :math:`u_i` is analagous to :math:`\overline{\rho}_i` in
+volume). Similarly, :math:`u_i` is analogous to :math:`\overline{\rho}_i` in
 that it is the internal energy for a material averaged over the entire control
 volume.
 
-Internally, the closer models in ``singularity-eos`` operate on :math:`f_i`,
+Internally, the closure models in ``singularity-eos`` operate on :math:`f_i`,
 :math:`\overline{\rho}_i`, and :math:`u_i` as well as their total counterparts.
 This is different than the forms stated at the beginning of this section so
 that in essence the PTE solver has the form
@@ -256,10 +256,10 @@ equilibrium state described by :math:`f_i^*(x_i, y_i)` and
     + \sum\limits_{i=0}^{N-1} (y_i^* - y_i)
       \left(\frac{\partial u_i}{\partial y_i}\right)_{x_i},
 
-providing a means to update the guess for the equilbrium state. Minor
+providing a means to update the guess for the equilibrium state. Minor
 manipulations are needed to recast the derivatives in terms of accessible
 thermodynamic derivatives, and then these equations can be written in matrix
-form to solve for the unknown distance away from the equilibrum state. At each
+form to solve for the unknown distance away from the equilibrium state. At each
 iteration of the Newton-Raphson solver, the derivatives are recomputed and a
 new update is found until some tolerance is reached. When a good initial guess
 is used (such as a previous PTE state), some algorithms may converge in
@@ -271,7 +271,7 @@ specify the system.  For example, if pressure, :math:`P`, and
 temperature, :math:`T`, are chosen, then the subscripts are eliminated
 since we seek a solution where all materials have the same temperature
 and pressure. (See :ref:`pressure-temperature-formulation`.) In this
-formulation, there are two equations and two unkowns, and one such
+formulation, there are two equations and two unknowns, and one such
 solver is described below.
 
 Most of the current PTE solvers in ``singularity-eos`` are cast in terms
@@ -298,7 +298,7 @@ that
     - (y^*_j - y_j) \left(\frac{\partial P_j}{\partial y_j}\right)_{f_j},
 
 where the equations are typically written such that :math:`j = i + 1`. Since the
-equlibrium pressure is the same for both materials, the term cancels out and
+equilibrium pressure is the same for both materials, the term cancels out and
 the material pressures are left.
 
 
@@ -311,7 +311,7 @@ terms of just the volume fractions:
   f_\mathrm{tot} - \sum\limits_{i=0}^{N-1} f_i =
     \sum\limits_{i=0}^{N-1} (f_i^* - f_i).
 
-The EOS only returns derivatives in terms of density though, so a the density
+The EOS only returns derivatives in terms of density though, so the density
 derivatives must be transformed to volume fraction derivatives via
 
 .. math::
@@ -319,8 +319,8 @@ derivatives must be transformed to volume fraction derivatives via
   \left(\frac{\partial Q}{\partial f_i}\right)_X
     = - \frac{\rho_i^2}{\rho}\left(\frac{\partial Q}{\partial \rho_i}\right)_X,
 
-were :math:`Q` and :math:`X` are arbitrary thermodynamic variables. At this
-point, there are :math:`N + 1` equations and unknowns in the PTE sover. The
+where :math:`Q` and :math:`X` are arbitrary thermodynamic variables. At this
+point, there are :math:`N + 1` equations and unknowns in the PTE solver. The
 choice of the second independent variable is discussed below and has
 implications for both the number of additional unknowns and the stability of the
 method.
@@ -331,9 +331,9 @@ The Pressure-Temperature Formulation
 
 An obvious choice is to treat the independent variables as pressure
 and temperature. Then one has only two equations and two unknowns. The
-residual contains only the volume fraction and energy summmation rules
+residual contains only the volume fraction and energy summation rules
 described above. Taylor expanding these residuals about fixed
-temeprature and pressure points leads to two residual equations of the
+temperature and pressure points leads to two residual equations of the
 form
 
 .. math::
@@ -391,7 +391,7 @@ equations of the form
 
   T_i(\rho_i, \epsilon_i) - T_j(\rho_j, \epsilon_j) = 0.
 
-Again Taylor expanding about the equilibirum state, this results in a set of
+Again Taylor expanding about the equilibrium state, this results in a set of
 equations of the form
 
 .. math::
@@ -413,7 +413,7 @@ state by iterating on temperature; there may also be a loss of accuracy in the
 derivatives depending on how they are calculated.
 
 In general, the density-temperature formulation of the PTE solver seems to be
-more stable and performant and is usually preferrred to this formulation.
+more stable and performant and is usually preferred to this formulation.
 
 In the code this is referred to as the ``PTESolverRhoU``.
 
@@ -493,7 +493,7 @@ equivalent sized :math:`N+1` system) that in the 2-material case the
 Jacobian is a 2x2 matrix, similar to the ``PTESolverPT``. In many
 cases the number of materials participating in a mixed cell will be
 small, and the difference between :math:`N` equations and :math:`N+1`
-equuations may be be significant from a performance
+equations may be be significant from a performance
 perspective. However, special care must be taken (and has been taken
 in our implementation) to ensure that all volume fractions remain
 within their regime of validity as the solver iterates.
@@ -529,7 +529,7 @@ Fixed temperature
 When the temperature and total density are known, the equilibrium pressure and
 the component densities are unknown. This requires a total of :math:`N`
 equations and unknowns. Since the total energy is unknown, it can be dropped
-from the contraints leaving just the :math:`N - 1` pressure equality equations
+from the constraints leaving just the :math:`N - 1` pressure equality equations
 and the volume fraction sum constraint. The pressure residuals can then be
 simplified to be
 
@@ -573,7 +573,7 @@ entirely header only.
 
 There are several moving parts. First, one must allocate scratch space
 used by the solver. There are helper routines for providing the needed
-scratch space, wich will tell you how many bytes per mixed cell are
+scratch space, which will tell you how many bytes per mixed cell are
 required. For example:
 
 .. cpp:function:: int PTESolverRhoTRequiredScratch(const size_t nmat);
@@ -584,7 +584,7 @@ and
 
 provide the number of real numbers (i.e., either ``float`` or
 ``double``) required for a single cell given a number of materials in
-equilibriun for either the ``RhoT`` or ``RhoU`` solver.
+equilibrium for either the ``RhoT`` or ``RhoU`` solver.
 
 The equivalent functions
 
@@ -625,7 +625,7 @@ materials.
   The PTE solvers **require** that all input densities and volume fractions
   are non-zero. As a result, ``nmat`` refers to the number of *participating*
   materials. The user is encouraged to wrap their data arrays using an
-  ``Indexer`` concept where, for example, three paricipating PTE materials
+  ``Indexer`` concept where, for example, three participating PTE materials
   might be indexed as 5, 7, 20 in the material arrays. This requires overloading
   the square bracket operator to map from PTE idex to material index.
 
@@ -663,44 +663,44 @@ contains the following member fields, with default values:
 
 .. code-block:: cpp
 
-struct MixParams {
-  bool verbose = false;
-  bool iterate_t_guess = true;
-  Real derivative_eps = 3.0e-6;
-  Real pte_rel_tolerance_p = 1.0e-6;
-  Real pte_rel_tolerance_t = 1.0e-4;
-  Real pte_rel_tolerance_e = 1.0e-6;
-  Real pte_rel_tolerance_v = 1.0e-6;
-  Real pte_abs_tolerance_p = 1.0e-6;
-  Real pte_abs_tolerance_t = 1.0e-4;
+  struct MixParams {
+    bool verbose = false;
+    bool iterate_t_guess = true;
+    Real derivative_eps = 3.0e-6;
+    Real pte_rel_tolerance_p = 1.0e-6;
+    Real pte_rel_tolerance_t = 1.0e-4;
+    Real pte_rel_tolerance_e = 1.0e-6;
+    Real pte_rel_tolerance_v = 1.0e-6;
+    Real pte_abs_tolerance_p = 1.0e-6;
+    Real pte_abs_tolerance_t = 1.0e-4;
 
-  Real pte_slow_convergence_thresh = 0.99;
-  Real pte_rel_tolerance_p_sufficient = 1.e2 * pte_rel_tolerance_p;
-  Real pte_rel_tolerance_t_sufficient = 10 * pte_rel_tolerance_t;
-  Real pte_rel_tolerance_e_sufficient = 1.e2 * pte_rel_tolerance_e;
-  Real pte_rel_tolerance_v_sufficient = 1.e2 * pte_rel_tolerance_v;
-  Real pte_abs_tolerance_p_sufficient = 1.e2 * pte_abs_tolerance_p;
-  Real pte_abs_tolerance_t_sufficient = 10 * pte_abs_tolerance_t;
+    Real pte_slow_convergence_thresh = 0.99;
+    Real pte_rel_tolerance_p_sufficient = 1.e2 * pte_rel_tolerance_p;
+    Real pte_rel_tolerance_t_sufficient = 10 * pte_rel_tolerance_t;
+    Real pte_rel_tolerance_e_sufficient = 1.e2 * pte_rel_tolerance_e;
+    Real pte_rel_tolerance_v_sufficient = 1.e2 * pte_rel_tolerance_v;
+    Real pte_abs_tolerance_p_sufficient = 1.e2 * pte_abs_tolerance_p;
+    Real pte_abs_tolerance_t_sufficient = 10 * pte_abs_tolerance_t;
 
-  std::size_t pte_max_iter_per_mat = 128;
-  Real line_search_alpha = 1.e-2;
-  std::size_t line_search_max_iter = 6;
-  Real line_search_fac = 0.5;
-  Real vfrac_safety_fac = 0.95;
-  Real temperature_limit = 1.0e15;
-  Real default_tguess = 300.;
-  Real min_dtde = 1.0e-16;
-  std::size_t pte_small_step_tries = 2;
-  Real pte_small_step_thresh = 1e-16;
-  Real pte_max_dpdv = -1e-8;
-
-  // choose index with largest volume fraction
-  std::int64_t pte_reduced_system_exclude_idx = -1;
-};
+    std::size_t pte_max_iter_per_mat = 128;
+    Real line_search_alpha = 1.e-2;
+    std::size_t line_search_max_iter = 6;
+    Real line_search_fac = 0.5;
+    Real vfrac_safety_fac = 0.95;
+    Real temperature_limit = 1.0e15;
+    Real default_tguess = 300.;
+    Real min_dtde = 1.0e-16;
+    std::size_t pte_small_step_tries = 2;
+    Real pte_small_step_thresh = 1e-16;
+    Real pte_max_dpdv = -1e-8;
+  
+    // choose index with largest volume fraction
+    std::int64_t pte_reduced_system_exclude_idx = -1;
+  };
 
 where here ``verbose`` enables verbose output in the PTE solve is,
 ``derivative_eps`` is the spacing used for finite differences
-evaluations of equations of state when building a jacobian. The
+evaluations of equations of state when building a Jacobian. The
 ``pte_rel_tolerance_p``, ``pte_rel_tolerance_e``, and
 ``pte_rel_tolerance_t`` variables are relative tolerances for the
 error in the pressure, energy, temperature respectively. The
@@ -720,7 +720,7 @@ variables. If between two iterations the residual does not decrease to
 ``pte_slow_convergence_thresh`` times its previous value or smaller,
 **and** the errors in the relevant variables are within the
 ``_sufficient`` tolerances, the solver will consider that "good
-enough" and report succesful convergence. In general these should be
+enough" and report successful convergence. In general these should be
 set to an order of magnitude or two less strict than the desired
 tolerance.
 
@@ -737,12 +737,12 @@ materials used. ``line_search_alpha`` is used as a safety factor in
 the line search. ``line_search_max_iter`` is the maximum number of
 iterations the solver is allowed to take in the line
 search. ``line_search_fac`` is the step size in the line
-search. ``vfrac_safety_fac`` limites the relative amount the volume
+search. ``vfrac_safety_fac`` limits the relative amount the volume
 fraction can take in a given iteration. ``temperature_limit`` is the
 maximum temperature allowed by the solver. ``default_tguess`` is used
 as an initial guess for temperature if a better guess is not passed in
-or cannot be inferred. ``min_dtde`` is the minmum that temperature is
-allowed to change with respect to energy when computing Jacobians.
+or cannot be inferred. ``min_dtde`` is the minimum allowed change to
+temperature with respect to energy when computing Jacobians.
 
 The parameters ``pte_small_step_tries`` and ``pte_small_step_thresh``
 guard against the PTE solver taking tiny steps forever and not
@@ -786,9 +786,9 @@ The constructor for the ``PTESolverRhoU`` has the same structure:
                 Real_t &&temp, Real_t &&press, Lambda_t &&lambda, Real *scratch,
                 const Real Tnorm = 0, const MixParams &params = MixParams());
 
-Both constructors are callable on host or device. In gerneral,
+Both constructors are callable on host or device. In general,
 densities and internal energies are the required inputs. However, all
-indexer quantities are asusmed to be input/output, as the PTE solver
+indexer quantities are assumed to be input/output, as the PTE solver
 may use unknowns, such as pressure and temperature, as initial guesses
 and may reset input quantities, such as material densities, to be
 thermodynamically consistent with the equilibrium solution.
@@ -826,7 +826,7 @@ Initial Guesses for PTE Solvers
 
 As is always the case when solving systems of nonlinear equations, good initial
 guesses are important to ensure rapid convergence to the solution.  For the PTE
-solvers, this means providing intial guesses for the material densities and the
+solvers, this means providing initial guesses for the material densities and the
 equilibrium temperature.  For material densities, a good initial guess is often
 the previous value obtained from a prior call to the solver. ``singularity-eos``
 does not provide any mechanism to cache these values from call to call, so it is

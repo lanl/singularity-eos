@@ -857,7 +857,7 @@ provides some internal transformation on inputs and outputs. For
 example the ``ShiftedEOS`` modifier changes the reference energy of a
 given EOS model by shifting all energies up or down. Modifiers can be
 used to, for example, production-harden a model. Only certain
-combinations of ``EOS`` and ``modifier`` are permitted by the defualt
+combinations of ``EOS`` and ``modifier`` are permitted by the default
 ``Variant``. For example, only ``IdealGas``, ``SpinerEOS``, and
 ``StellarCollapse`` support the ``RelativisticEOS`` and ``UnitSystem``
 modifiers. All models support the ``ShiftedEOS`` and ``ScaledEOS``
@@ -910,7 +910,7 @@ unmodified EOS model, call
 
 The return value here will be either the type of the ``EOS`` variant
 type or the unmodified model (for example ``IdealGas``), depending
-on whether this method was callled within a variant or on a standalone
+on whether this method was called within a variant or on a standalone
 model outside a variant.
 
 If you have chained modifiers, e.g.,
@@ -934,7 +934,7 @@ required by the modifier is appended to the end of the lambda
 indexer. For example, the ``StellarCollapse`` EOS model requires
 ``nlambda=2``. The ``ZSplitI`` modifier rquires
 ``nlambda=1``. Together, ``ZSplitI<StellarCollapse>`` requires a
-lambda indexer of length 3, an the ordering is two parameters for
+lambda indexer of length 3, and the ordering is two parameters for
 ``StellarCollapse`` first, and then the parameter required by
 ``ZSplitI``.
 
@@ -1155,7 +1155,7 @@ Note that for relativistic models,
 
    c_s^2 = \frac{B_S}{w}
 
-where :math:`w = \rho h` for specific entalpy :math:`h` is the
+where :math:`w = \rho h` for specific enthalpy :math:`h` is the
 enthalpy by volume. The sound speed may also differ for, e.g., porous
 models, where the pressure is less directly correlated with the
 density.
@@ -1346,19 +1346,19 @@ The function
                 const unsigned long output,
                 Indexer_t &&lambda = nullptr) const;
 
-is a a bit of a special case. ``output`` is a bitfield represented as
+is a bit of a special case. ``output`` is a bitfield represented as
 an unsigned 64 bit number. Quantities such ``pressure`` and
 ``specific_internal_energy`` can be represented in the ``output``
 field by flipping the appropriate bits. There is one bit per
 quantity. ``FillEos`` sets all parameters (passed in by reference)
-requested in the ``output`` field utilizing all paramters not
+requested in the ``output`` field utilizing all parameters not
 requested in the ``output`` flag, which are assumed to be input.
 
 The ``output`` variable uses the same ``thermalqs`` flags as the
 ``PreferredInput`` method. If an insufficient number of variables are
 passed in as input, or if the input is not a combination supported by
 a given model, the function is expected to raise an error. The exact
-combinations of inputs and ouptuts supported is model
+combinations of inputs and outputs supported is model
 dependent. However, the user will always be able to use density and
 temperature or internal energy as inputs and get all other
 quantities as outputs.

@@ -29,7 +29,7 @@
 #ifdef SINGULARITY_USE_KOKKOSKERNELS
 #include <KokkosBatched_ApplyQ_Decl.hpp>
 #include <KokkosBatched_QR_Decl.hpp>
-#include <KokkosBatched_Trsv_Decl.hpp>
+#include <KokkosBatched_Trsm_Decl.hpp>
 #else
 #include <Eigen/Dense>
 #endif // SINGULARITY_USE_KOKKOSKERNELS
@@ -170,12 +170,12 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
     using ApQ_alg = KokkosBatched::Algo::ApplyQ::Unblocked;
     using UP = KokkosBatched::Uplo::Upper;
     using NonU = KokkosBatched::Diag::NonUnit;
-    using Tr_alg = KokkosBatched::Algo::Trsv::Unblocked;
+    using Tr_alg = KokkosBatched::Algo::Trsm::Unblocked;
     // aliases for solver structs ('invoke' member of the struct is the
     // actual function call)
     using QR_factor = KokkosBatched::SerialQR<QR_alg>;
     using ApplyQ_transpose = KokkosBatched::SerialApplyQ<Lft, Trs, ApQ_alg>;
-    using InvertR = KokkosBatched::SerialTrsv<UP, nTrs, NonU, Tr_alg>;
+    using InvertR = KokkosBatched::SerialTrsm<Lft, UP, nTrs, NonU, Tr_alg>;
     // view of matrix
     Kokkos::View<Real **, Lrgt, Unmgd> A(a, n, n);
     // view of RHS

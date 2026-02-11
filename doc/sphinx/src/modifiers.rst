@@ -11,7 +11,7 @@ given EOS model by shifting all energies up or down. Modifiers can be
 used to, for example, production-harden a model.
 
 Only certain combinations of ``EOS`` and ``modifier`` are permitted by
-the defualt ``Variant``. For example, only ``IdealGas``,
+the default ``Variant``. For example, only ``IdealGas``,
 ``SpinerEOS``, and ``StellarCollapse`` support the ``RelativisticEOS``
 and ``UnitSystem`` modifiers. All models support the ``ShiftedEOS``
 and ``ScaledEOS`` modifiers. However, note that modifiers do not
@@ -59,7 +59,7 @@ To understand the scaled EOS, consider the pressure for an ideal gas:
 
   P = \Gamma \rho \varepsilon
 
-where here :math:`\Gamma` is the Gruneien parameter, :math:`\rho` is
+where here :math:`\Gamma` is the Gruneisen parameter, :math:`\rho` is
 the density, and :math:`\varepsilon` is the specific internal
 energy. The pressure is unchanged under the operation
 
@@ -99,7 +99,7 @@ this scaling to the definition of the Helmholtz free energy yields
   F_\mathrm{eos} = e_\mathrm{eos} - TS_\mathrm{eos} = \frac{1}{R} F_\mathrm{in}
     = \frac{1}{R}e_\mathrm{in} - T\left(\frac{1}{R}S_\mathrm{in}\right),
 
-where the implicaiton is that this inverse the scaling ratio should also be
+where the implication is that this inverse the scaling ratio should also be
 applied to energy. The inverse scaling ratio must be applied to the entropy
 here in order to ensure that all other thermodynamic potentials
 (energy, entropy, and the Gibbs free energy) scale similarly.
