@@ -294,7 +294,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 
   // TODO(JMM): Could unify declarations and macro below by using
   // reference_wrapper instead of pointers... worth it?
-  DataBox P_, sie_, bMod_, dPdRho_, dPdE_, dTdRho_, dTdE_, dEdRho_, dEdT_;
+  DataBox P_, sie_, bMod_, dPdRho_, dPdE_, dTdRho_, dTdE_, dEdRho_, dEdT_, mF_;
   DataBox PMax_, sielTMax_, dEdTMax_, gm1Max_;
   DataBox lTColdCrit_;
   DataBox PCold_, sieCold_, bModCold_;
@@ -303,9 +303,10 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 
   // TODO(JMM): Pointers here? or reference_wrapper? IMO the pointers are more clear
 #define DBLIST                                                                           \
-  &P_, &sie_, &bMod_, &dPdRho_, &dPdE_, &dTdRho_, &dTdE_, &dEdRho_, &dEdT_, &PMax_,      \
-      &sielTMax_, &dEdTMax_, &gm1Max_, &lTColdCrit_, &PCold_, &sieCold_, &bModCold_,     \
-      &dPdRhoCold_, &dPdECold_, &dTdRhoCold_, &dTdECold_, &dEdTCold_, &rho_at_pmin_
+  &P_, &sie_, &bMod_, &dPdRho_, &dPdE_, &dTdRho_, &dTdE_, &dEdRho_, &dEdT_, &mF_,        \
+      &PMax_, &sielTMax_, &dEdTMax_, &gm1Max_, &lTColdCrit_, &PCold_, &sieCold_,         \
+      &bModCold_, &dPdRhoCold_, &dPdECold_, &dTdRhoCold_, &dTdECold_, &dEdTCold_,        \
+      &rho_at_pmin_
   auto GetDataBoxPointers_() const { return std::vector<const DataBox *>{DBLIST}; }
   auto GetDataBoxPointers_() { return std::vector<DataBox *>{DBLIST}; }
 #undef DBLIST
@@ -318,6 +319,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   Real CvNormal_, bModNormal_, dPdENormal_, dVdTNormal_;
   Real lRhoOffset_, lTOffset_; // offsets must be non-negative
   MeanAtomicProperties AZbar_;
+  bool has_mf = false;
   int matid_;
   TableSplit split_;
   bool reproducible_ = false;
@@ -339,21 +341,19 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, i
       pmin_vapor_dome_(pmin_vapor_dome), memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str = std::to_string(matid);
-  hid_t file, matGroup, lTGroup, coldGroup;
-  herr_t status = H5_SUCCESS;
 
   H5Eset_auto(H5E_DEFAULT, spiner_common::aborting_error_handler, NULL);
 
-  file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+  hid_t file =
+      spiner_common::h5_safe_fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   int log_type = FastMath::LogType::NQT1;
-  if (H5LTfind_attribute(file, SP5::logType)) {
-    H5LTget_attribute_int(file, "/", SP5::logType, &log_type);
-  }
+  spiner_common::h5_safe_get_attribute<int>(file, "/", SP5::logType, &log_type, true);
+
   PORTABLE_ALWAYS_REQUIRE(
       log_type == FastMath::Settings::log_type,
       "Log mode used at runtime must be identical to the one used to generate the file!");
 
-  matGroup = H5Gopen(file, matid_str.c_str(), H5P_DEFAULT);
+  hid_t matGroup = spiner_common::h5_safe_gopen(file, matid_str.c_str(), H5P_DEFAULT);
 
   std::string lTGroupName = SP5::Depends::logRhoLogT;
   if (split == TableSplit::ElectronOnly) {
@@ -361,19 +361,17 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, i
   } else if (split == TableSplit::IonCold) {
     lTGroupName += (std::string("/") + SP5::SubTable::ionCold);
   }
-  lTGroup = H5Gopen(matGroup, lTGroupName.c_str(), H5P_DEFAULT);
-  coldGroup = H5Gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);
+  hid_t lTGroup =
+      spiner_common::h5_safe_gopen(matGroup, lTGroupName.c_str(), H5P_DEFAULT);
+  hid_t coldGroup =
+      spiner_common::h5_safe_gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);
 
-  status += loadDataboxes_(matid_str, file, lTGroup, coldGroup);
+  loadDataboxes_(matid_str, file, lTGroup, coldGroup);
 
-  status += H5Gclose(lTGroup);
-  status += H5Gclose(coldGroup);
-  status += H5Gclose(matGroup);
-  status += H5Fclose(file);
-
-  if (status != H5_SUCCESS) {
-    EOS_ERROR("SpinerDependsRhoT: HDF5 error\n"); // TODO: make this better
-  }
+  spiner_common::h5_safe_gclose(lTGroup);
+  spiner_common::h5_safe_gclose(coldGroup);
+  spiner_common::h5_safe_gclose(matGroup);
+  spiner_common::h5_safe_fclose(file);
 
   CheckParams();
 }
@@ -387,13 +385,12 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
       pmin_vapor_dome_(pmin_vapor_dome), memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str;
-  hid_t file, matGroup, lTGroup, coldGroup;
-  herr_t status = H5_SUCCESS;
 
   H5Eset_auto(H5E_DEFAULT, spiner_common::aborting_error_handler, NULL);
 
-  file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-  matGroup = H5Gopen(file, materialName.c_str(), H5P_DEFAULT);
+  hid_t file =
+      spiner_common::h5_safe_fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+  hid_t matGroup = spiner_common::h5_safe_gopen(file, materialName.c_str(), H5P_DEFAULT);
 
   std::string lTGroupName = SP5::Depends::logRhoLogT;
   if (split == TableSplit::ElectronOnly) {
@@ -401,23 +398,22 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
   } else if (split == TableSplit::IonCold) {
     lTGroupName += (std::string("/") + SP5::SubTable::ionCold);
   }
-  lTGroup = H5Gopen(matGroup, lTGroupName.c_str(), H5P_DEFAULT);
-  coldGroup = H5Gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);
 
-  status +=
-      H5LTget_attribute_int(file, materialName.c_str(), SP5::Material::matid, &matid_);
+  hid_t lTGroup =
+      spiner_common::h5_safe_gopen(matGroup, lTGroupName.c_str(), H5P_DEFAULT);
+  hid_t coldGroup =
+      spiner_common::h5_safe_gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);
+
+  spiner_common::h5_safe_get_attribute<int>(file, materialName.c_str(),
+                                            SP5::Material::matid, &matid_);
   matid_str = std::to_string(matid_);
 
-  status += loadDataboxes_(matid_str, file, lTGroup, coldGroup);
+  loadDataboxes_(matid_str, file, lTGroup, coldGroup);
 
-  status += H5Gclose(lTGroup);
-  status += H5Gclose(coldGroup);
-  status += H5Gclose(matGroup);
-  status += H5Fclose(file);
-
-  if (status != H5_SUCCESS) {
-    EOS_ERROR("SpinerDependsRhoT: HDF5 error\n");
-  }
+  spiner_common::h5_safe_gclose(lTGroup);
+  spiner_common::h5_safe_gclose(coldGroup);
+  spiner_common::h5_safe_gclose(matGroup);
+  spiner_common::h5_safe_fclose(file);
 
   CheckParams();
 }
@@ -448,21 +444,21 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
   herr_t status = H5_SUCCESS;
 
   // offsets
-  status +=
-      H5LTget_attribute_double(file, matid_str.c_str(), SP5::Offsets::rho, &lRhoOffset_);
-  status +=
-      H5LTget_attribute_double(file, matid_str.c_str(), SP5::Offsets::T, &lTOffset_);
+  spiner_common::h5_safe_get_attribute<double>(file, matid_str.c_str(), SP5::Offsets::rho,
+                                               &lRhoOffset_);
+  spiner_common::h5_safe_get_attribute<double>(file, matid_str.c_str(), SP5::Offsets::T,
+                                               &lTOffset_);
   lRhoOffset_ = std::abs(lRhoOffset_);
   lTOffset_ = std::abs(lTOffset_);
   // normal density
-  status += H5LTget_attribute_double(file, matid_str.c_str(),
-                                     SP5::Material::normalDensity, &rhoNormal_);
+  spiner_common::h5_safe_get_attribute<double>(file, matid_str.c_str(),
+                                               SP5::Material::normalDensity, &rhoNormal_);
   rhoNormal_ = std::abs(rhoNormal_);
   // Mean atomic mass and mean atomic number
-  status += H5LTget_attribute_double(file, matid_str.c_str(),
-                                     SP5::Material::meanAtomicMass, &(AZbar_.Abar));
-  status += H5LTget_attribute_double(file, matid_str.c_str(),
-                                     SP5::Material::meanAtomicNumber, &(AZbar_.Zbar));
+  spiner_common::h5_safe_get_attribute<double>(
+      file, matid_str.c_str(), SP5::Material::meanAtomicMass, &(AZbar_.Abar));
+  spiner_common::h5_safe_get_attribute<double>(
+      file, matid_str.c_str(), SP5::Material::meanAtomicNumber, &(AZbar_.Zbar));
 
   // tables
   status += P_.loadHDF(lTGroup, SP5::Fields::P);
