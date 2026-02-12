@@ -294,7 +294,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 
   // TODO(JMM): Could unify declarations and macro below by using
   // reference_wrapper instead of pointers... worth it?
-  DataBox P_, sie_, bMod_, dPdRho_, dPdE_, dTdRho_, dTdE_, dEdRho_, dEdT_, mF_;
+  DataBox P_, sie_, bMod_, dPdRho_, dPdE_, dTdRho_, dTdE_, dEdRho_, dEdT_;
   DataBox PMax_, sielTMax_, dEdTMax_, gm1Max_;
   DataBox lTColdCrit_;
   DataBox PCold_, sieCold_, bModCold_;
@@ -303,10 +303,9 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 
   // TODO(JMM): Pointers here? or reference_wrapper? IMO the pointers are more clear
 #define DBLIST                                                                           \
-  &P_, &sie_, &bMod_, &dPdRho_, &dPdE_, &dTdRho_, &dTdE_, &dEdRho_, &dEdT_, &mF_,        \
-      &PMax_, &sielTMax_, &dEdTMax_, &gm1Max_, &lTColdCrit_, &PCold_, &sieCold_,         \
-      &bModCold_, &dPdRhoCold_, &dPdECold_, &dTdRhoCold_, &dTdECold_, &dEdTCold_,        \
-      &rho_at_pmin_
+  &P_, &sie_, &bMod_, &dPdRho_, &dPdE_, &dTdRho_, &dTdE_, &dEdRho_, &dEdT_, &PMax_,      \
+      &sielTMax_, &dEdTMax_, &gm1Max_, &lTColdCrit_, &PCold_, &sieCold_, &bModCold_,     \
+      &dPdRhoCold_, &dPdECold_, &dTdRhoCold_, &dTdECold_, &dEdTCold_, &rho_at_pmin_
   auto GetDataBoxPointers_() const { return std::vector<const DataBox *>{DBLIST}; }
   auto GetDataBoxPointers_() { return std::vector<DataBox *>{DBLIST}; }
 #undef DBLIST
@@ -319,7 +318,6 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   Real CvNormal_, bModNormal_, dPdENormal_, dVdTNormal_;
   Real lRhoOffset_, lTOffset_; // offsets must be non-negative
   MeanAtomicProperties AZbar_;
-  bool has_mf = false;
   int matid_;
   TableSplit split_;
   bool reproducible_ = false;
