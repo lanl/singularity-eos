@@ -155,21 +155,17 @@ template <typename T>
 inline void h5_safe_get_attribute(hid_t &file, const char *grp, const char *name,
                                   T *output, const bool optional = false) {
   herr_t status = H5_SUCCESS;
-
-  if (H5LTfind_attribute(file, name)) {
-    if constexpr (std::is_same_v<T, int>) {
-      status = H5LTget_attribute_int(file, grp, name, output);
-    } else if constexpr (std::is_same_v<T, double>) {
-      status = H5LTget_attribute_double(file, grp, name, output);
-    } else if constexpr (std::is_same_v<T, char>) {
-      status = H5LTget_attribute_char(file, grp, name, output);
-    } else {
-      EOS_ERROR("Unsupported attribute type in h5_safe_get_attribute");
-    }
-  } else if (!optional) {
-    status = -1;
+  if constexpr (std::is_same_v<T, int>) {
+    status = H5LTget_attribute_int(file, grp, name, output);
+  } else if constexpr (std::is_same_v<T, double>) {
+    status = H5LTget_attribute_double(file, grp, name, output);
+  } else if constexpr (std::is_same_v<T, char>) {
+    status = H5LTget_attribute_char(file, grp, name, output);
+  } else {
+    EOS_ERROR("Unsupported attribute type in h5_safe_get_attribute");
   }
-  if (status != H5_SUCCESS) {
+
+  if ((!optional) && (status != H5_SUCCESS)) {
     std::string msg =
         "Attribute " + std::string(name) + " in group " + std::string(grp) + " not found";
     EOS_ERROR(msg);
