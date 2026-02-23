@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2025. Triad National Security, LLC. All rights reserved.  This
+// © 2025-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -17,7 +17,9 @@
 
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 
+#include <filesystem>
 #include <limits>
+#include <type_traits>
 
 #include <hdf5.h>
 #include <hdf5_hl.h>
@@ -33,6 +35,7 @@
 #include <spiner/spiner_types.hpp>
 
 // singularity-eos
+#include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 
@@ -120,6 +123,54 @@ inline herr_t aborting_error_handler(hid_t stack, void *client_data) {
   H5Eprint2(stack, stderr);
   PORTABLE_ALWAYS_THROW_OR_ABORT("HDF5 error detected! Erroring out!");
   return -1;
+}
+
+inline hid_t h5_safe_fopen(const char *filename, hid_t mode, hid_t property) {
+  if (!std::filesystem::exists(filename)) {
+    std::string msg = "Failed to open file " + std::string(filename);
+    EOS_ERROR(msg);
+  }
+  return H5Fopen(filename, mode, property);
+}
+inline void h5_safe_fclose(hid_t &file) {
+  if (H5Fclose(file) != H5_SUCCESS) {
+    EOS_ERROR("Error closing hdf5 file");
+  }
+}
+inline void h5_safe_gclose(hid_t &grp) {
+  if (H5Gclose(grp) != H5_SUCCESS) {
+    EOS_ERROR("Error closing hdf5 group");
+  }
+}
+
+inline hid_t h5_safe_gopen(hid_t &file, const char *name, hid_t property) {
+  if (!H5Lexists(file, name, property)) {
+    std::string msg = "Failed to open group " + std::string(name);
+    EOS_ERROR(msg);
+  }
+  return H5Gopen(file, name, property);
+}
+
+template <typename T>
+inline void h5_safe_get_attribute(hid_t &file, const char *grp, const char *name,
+                                  T *output, const bool optional = false) {
+  herr_t status = H5_SUCCESS;
+  if constexpr (std::is_same_v<T, int>) {
+    status = H5LTget_attribute_int(file, grp, name, output);
+  } else if constexpr (std::is_same_v<T, double>) {
+    status = H5LTget_attribute_double(file, grp, name, output);
+  } else if constexpr (std::is_same_v<T, char>) {
+    status = H5LTget_attribute_char(file, grp, name, output);
+  } else {
+    EOS_ERROR("Unsupported attribute type in h5_safe_get_attribute");
+  }
+
+  if ((!optional) && (status != H5_SUCCESS)) {
+    std::string msg =
+        "Attribute " + std::string(name) + " in group " + std::string(grp) + " not found";
+    EOS_ERROR(msg);
+  }
+  return;
 }
 
 } // namespace spiner_common

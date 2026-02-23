@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -345,13 +345,13 @@ inline SpinerEOSDependsRhoSieTransformable<
       pmin_vapor_dome_(pmin_vapor_dome), memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str;
-  hid_t file, matGroup, lTGroup, lEGroup, coldGroup;
   herr_t status = H5_SUCCESS;
 
   H5Eset_auto(H5E_DEFAULT, spiner_common::aborting_error_handler, NULL);
 
-  file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-  matGroup = H5Gopen(file, materialName.c_str(), H5P_DEFAULT);
+  hid_t file =
+      spiner_common::h5_safe_fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+  hid_t matGroup = spiner_common::h5_safe_gopen(file, materialName.c_str(), H5P_DEFAULT);
 
   std::string lTGroupName = SP5::Depends::logRhoLogT;
   std::string lEGroupName = SP5::Depends::logRhoLogSie;
@@ -363,27 +363,26 @@ inline SpinerEOSDependsRhoSieTransformable<
     lEGroupName += (std::string("/") + SP5::SubTable::ionCold);
   }
 
-  lTGroup = H5Gopen(matGroup, lTGroupName.c_str(), H5P_DEFAULT);
-  lEGroup = H5Gopen(matGroup, lEGroupName.c_str(), H5P_DEFAULT);
-  coldGroup = H5Gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);
+  hid_t lTGroup =
+      spiner_common::h5_safe_gopen(matGroup, lTGroupName.c_str(), H5P_DEFAULT);
+  hid_t lEGroup =
+      spiner_common::h5_safe_gopen(matGroup, lEGroupName.c_str(), H5P_DEFAULT);
+  hid_t coldGroup =
+      spiner_common::h5_safe_gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);
 
-  status +=
-      H5LTget_attribute_int(file, materialName.c_str(), SP5::Material::matid, &matid_);
+  spiner_common::h5_safe_get_attribute<int>(file, materialName.c_str(),
+                                            SP5::Material::matid, &matid_);
   matid_str = std::to_string(matid_);
 
   status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
 
   InitializeTransformer();
 
-  status += H5Gclose(lTGroup);
-  status += H5Gclose(lEGroup);
-  status += H5Gclose(matGroup);
-  status += H5Gclose(coldGroup);
-  status += H5Fclose(file);
-
-  if (status != H5_SUCCESS) {
-    EOS_ERROR("SpinerDependsRhoSie: HDF5 error\n");
-  }
+  spiner_common::h5_safe_gclose(lTGroup);
+  spiner_common::h5_safe_gclose(lEGroup);
+  spiner_common::h5_safe_gclose(matGroup);
+  spiner_common::h5_safe_gclose(coldGroup);
+  spiner_common::h5_safe_fclose(file);
 }
 template <template <class> class TransformerT>
 herr_t SpinerEOSDependsRhoSieTransformable<TransformerT>::loadDataboxes_(
@@ -393,25 +392,25 @@ herr_t SpinerEOSDependsRhoSieTransformable<TransformerT>::loadDataboxes_(
   herr_t status = H5_SUCCESS;
 
   // offsets
-  status +=
-      H5LTget_attribute_double(file, matid_str.c_str(), SP5::Offsets::rho, &lRhoOffset_);
-  status +=
-      H5LTget_attribute_double(file, matid_str.c_str(), SP5::Offsets::T, &lTOffset_);
-  status +=
-      H5LTget_attribute_double(file, matid_str.c_str(), SP5::Offsets::sie, &lEOffset_);
+  spiner_common::h5_safe_get_attribute<double>(file, matid_str.c_str(), SP5::Offsets::rho,
+                                               &lRhoOffset_);
+  spiner_common::h5_safe_get_attribute<double>(file, matid_str.c_str(), SP5::Offsets::T,
+                                               &lTOffset_);
+  spiner_common::h5_safe_get_attribute<double>(file, matid_str.c_str(), SP5::Offsets::sie,
+                                               &lEOffset_);
   lRhoOffset_ = std::abs(lRhoOffset_);
   lTOffset_ = std::abs(lTOffset_);
   lEOffset_ = std::abs(lEOffset_);
 
   // normal density
-  status += H5LTget_attribute_double(file, matid_str.c_str(),
-                                     SP5::Material::normalDensity, &rhoNormal_);
+  spiner_common::h5_safe_get_attribute<double>(file, matid_str.c_str(),
+                                               SP5::Material::normalDensity, &rhoNormal_);
   rhoNormal_ = std::abs(rhoNormal_);
   // Mean atomic mass and mean atomic number
-  status += H5LTget_attribute_double(file, matid_str.c_str(),
-                                     SP5::Material::meanAtomicMass, &(AZbar_.Abar));
-  status += H5LTget_attribute_double(file, matid_str.c_str(),
-                                     SP5::Material::meanAtomicNumber, &(AZbar_.Zbar));
+  spiner_common::h5_safe_get_attribute<double>(
+      file, matid_str.c_str(), SP5::Material::meanAtomicMass, &(AZbar_.Abar));
+  spiner_common::h5_safe_get_attribute<double>(
+      file, matid_str.c_str(), SP5::Material::meanAtomicNumber, &(AZbar_.Zbar));
 
   // sometimes independent variables
   status += sie_.loadHDF(lTGroup, SP5::Fields::sie);
@@ -818,13 +817,13 @@ inline SpinerEOSDependsRhoSieTransformable<
       pmin_vapor_dome_(pmin_vapor_dome), memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str = std::to_string(matid);
-  hid_t file, matGroup, lTGroup, lEGroup, coldGroup;
   herr_t status = H5_SUCCESS;
 
   H5Eset_auto(H5E_DEFAULT, spiner_common::aborting_error_handler, NULL);
 
-  file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-  matGroup = H5Gopen(file, matid_str.c_str(), H5P_DEFAULT);
+  hid_t file =
+      spiner_common::h5_safe_fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+  hid_t matGroup = spiner_common::h5_safe_gopen(file, matid_str.c_str(), H5P_DEFAULT);
 
   std::string lTGroupName = SP5::Depends::logRhoLogT;
   std::string lEGroupName = SP5::Depends::logRhoLogSie;
@@ -836,9 +835,12 @@ inline SpinerEOSDependsRhoSieTransformable<
     lEGroupName += (std::string("/") + SP5::SubTable::ionCold);
   }
 
-  lTGroup = H5Gopen(matGroup, lTGroupName.c_str(), H5P_DEFAULT);
-  lEGroup = H5Gopen(matGroup, lEGroupName.c_str(), H5P_DEFAULT);
-  coldGroup = H5Gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);
+  hid_t lTGroup =
+      spiner_common::h5_safe_gopen(matGroup, lTGroupName.c_str(), H5P_DEFAULT);
+  hid_t lEGroup =
+      spiner_common::h5_safe_gopen(matGroup, lEGroupName.c_str(), H5P_DEFAULT);
+  hid_t coldGroup =
+      spiner_common::h5_safe_gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);
 
   status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
 
@@ -846,15 +848,11 @@ inline SpinerEOSDependsRhoSieTransformable<
 
   transformer_ = Transformer(TransformDataContainer_);
 
-  status += H5Gclose(lTGroup);
-  status += H5Gclose(lEGroup);
-  status += H5Gclose(matGroup);
-  status += H5Gclose(coldGroup);
-  status += H5Fclose(file);
-
-  if (status != H5_SUCCESS) {
-    EOS_ERROR("SpinerDependsRhoSIE: HDF5 error\n");
-  }
+  spiner_common::h5_safe_gclose(lTGroup);
+  spiner_common::h5_safe_gclose(lEGroup);
+  spiner_common::h5_safe_gclose(matGroup);
+  spiner_common::h5_safe_gclose(coldGroup);
+  spiner_common::h5_safe_fclose(file);
 }
 
 using SpinerEOSDependsRhoSie =

@@ -11,6 +11,7 @@
 - [[PR601]](https://github.com/lanl/singularity-eos/pull/601) Make Serialize() return a smart pointer
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR605]](https://github.com/lanl/singularity-eos/pull/605) Improve HDF5 erorr handling when reading tables
 - [[PR604]](https://github.com/lanl/singularity-eos/pull/604) Update kokkos kernels linalg call after kokkos kernels became more strict
 
 ### Removed (removing behavior/API/varaibles/...)
