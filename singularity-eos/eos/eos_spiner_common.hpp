@@ -151,7 +151,7 @@ inline hid_t h5_safe_gopen(hid_t &file, const char *name, hid_t property) {
   return H5Gopen(file, name, property);
 }
 
-inline hid_t h5_safe_read_string(hid_t &file, const char *grp, const char *name,
+inline void h5_safe_read_string(hid_t &file, const char *grp, const char *name,
                                  char *buffer, size_t maxlen) {
   if (!buffer || maxlen <= 1) {
     std::string msg = "Buffer pased into h5_safe_read_string is not large enough for " +
