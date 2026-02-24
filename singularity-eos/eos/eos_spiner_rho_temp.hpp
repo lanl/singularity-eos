@@ -177,6 +177,14 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void MassFractionsFromDensityTemperature(
+      const Real rho, const Real temperature, Real *scratch,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void MassFractionsFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *scratch,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                        Indexer_t &&lambda, Real &rho, Real &sie) const;
@@ -221,6 +229,9 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumPressure() const { return PMin_; }
 
+  PORTABLE_FORCEINLINE_FUNCTION int GetNumberofPhases() const { return numphases; }
+  const char *GetPhaseNames() const { return phase_names; }
+
   constexpr static inline int nlambda() noexcept { return _n_lambda; }
   template <typename T>
   static inline constexpr bool NeedsLambda() {
@@ -234,7 +245,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 
  private:
   herr_t loadDataboxes_(const std::string &matid_str, hid_t file, hid_t lTGroup,
-                        hid_t coldGroup);
+                        hid_t coldGroup, hid_t mfGroup);
   inline void fixBulkModulus_();
   inline void setlTColdCrit_();
 
@@ -294,7 +305,8 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 
   // TODO(JMM): Could unify declarations and macro below by using
   // reference_wrapper instead of pointers... worth it?
-  DataBox P_, sie_, bMod_, dPdRho_, dPdE_, dTdRho_, dTdE_, dEdRho_, dEdT_;
+
+  DataBox P_, sie_, bMod_, dPdRho_, dPdE_, dTdRho_, dTdE_, dEdRho_, dEdT_, mF_;
   DataBox PMax_, sielTMax_, dEdTMax_, gm1Max_;
   DataBox lTColdCrit_;
   DataBox PCold_, sieCold_, bModCold_;
@@ -303,9 +315,10 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 
   // TODO(JMM): Pointers here? or reference_wrapper? IMO the pointers are more clear
 #define DBLIST                                                                           \
-  &P_, &sie_, &bMod_, &dPdRho_, &dPdE_, &dTdRho_, &dTdE_, &dEdRho_, &dEdT_, &PMax_,      \
-      &sielTMax_, &dEdTMax_, &gm1Max_, &lTColdCrit_, &PCold_, &sieCold_, &bModCold_,     \
-      &dPdRhoCold_, &dPdECold_, &dTdRhoCold_, &dTdECold_, &dEdTCold_, &rho_at_pmin_
+  &P_, &sie_, &bMod_, &dPdRho_, &dPdE_, &dTdRho_, &dTdE_, &dEdRho_, &dEdT_, &mF_,        \
+      &PMax_, &sielTMax_, &dEdTMax_, &gm1Max_, &lTColdCrit_, &PCold_, &sieCold_,         \
+      &bModCold_, &dPdRhoCold_, &dPdECold_, &dTdRhoCold_, &dTdECold_, &dEdTCold_,        \
+      &rho_at_pmin_
   auto GetDataBoxPointers_() const { return std::vector<const DataBox *>{DBLIST}; }
   auto GetDataBoxPointers_() { return std::vector<DataBox *>{DBLIST}; }
 #undef DBLIST
@@ -322,6 +335,12 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   TableSplit split_;
   bool reproducible_ = false;
   bool pmin_vapor_dome_ = false;
+  bool has_mf = false;
+  // Need to hold the phase names for multiphase EOS
+  // This isn't great, but the class needs to be trivially copyable
+  // I've chosen something reasonable, e.g., 15 phases with 32 character names
+  char phase_names[480];
+  int numphases = 1;
   static constexpr const Real ROOT_THRESH = 1e-14;
   static constexpr const Real SOFT_THRESH = 1e-8;
   // only used to exclude vapor dome
@@ -364,8 +383,18 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, i
   hid_t coldGroup =
       spiner_common::h5_safe_gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);
 
-  loadDataboxes_(matid_str, file, lTGroup, coldGroup);
+  // mass fractions
+  has_mf = H5Lexists(matGroup, SP5::Depends::massFrac, H5P_DEFAULT);
+  hid_t mfGroup = -1;
+  if (has_mf) {
+    mfGroup = spiner_common::h5_safe_gopen(matGroup, SP5::Depends::massFrac, H5P_DEFAULT);
+  }
 
+  loadDataboxes_(matid_str, file, lTGroup, coldGroup, mfGroup);
+
+  if (has_mf) {
+    spiner_common::h5_safe_gclose(mfGroup);
+  }
   spiner_common::h5_safe_gclose(lTGroup);
   spiner_common::h5_safe_gclose(coldGroup);
   spiner_common::h5_safe_gclose(matGroup);
@@ -406,8 +435,18 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
                                             SP5::Material::matid, &matid_);
   matid_str = std::to_string(matid_);
 
-  loadDataboxes_(matid_str, file, lTGroup, coldGroup);
+  // mass fractions
+  has_mf = H5Lexists(matGroup, SP5::Depends::massFrac, H5P_DEFAULT);
+  hid_t mfGroup = -1;
+  if (has_mf) {
+    mfGroup = spiner_common::h5_safe_gopen(matGroup, SP5::Depends::massFrac, H5P_DEFAULT);
+  }
 
+  loadDataboxes_(matid_str, file, lTGroup, coldGroup, mfGroup);
+
+  if (has_mf) {
+    spiner_common::h5_safe_gclose(mfGroup);
+  }
   spiner_common::h5_safe_gclose(lTGroup);
   spiner_common::h5_safe_gclose(coldGroup);
   spiner_common::h5_safe_gclose(matGroup);
@@ -437,7 +476,7 @@ SpinerEOSDependsRhoT::SetDynamicMemory(char *src, const SharedMemSettings &stngs
 
 inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
                                                    hid_t file, hid_t lTGroup,
-                                                   hid_t coldGroup) {
+                                                   hid_t coldGroup, hid_t mfGroup) {
   using namespace spiner_common;
   herr_t status = H5_SUCCESS;
 
@@ -474,6 +513,17 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
   status += sieCold_.loadHDF(coldGroup, SP5::Fields::sie);
   status += bModCold_.loadHDF(coldGroup, SP5::Fields::bMod);
   status += dPdRhoCold_.loadHDF(coldGroup, SP5::Fields::dPdRho);
+
+  // mass fractions
+  if (mfGroup != -1) {
+    status += mF_.loadHDF(mfGroup, SP5::Fields::massFrac);
+    spiner_common::h5_safe_get_attribute<int>(mfGroup, ".", "numphases", &numphases);
+    spiner_common::h5_safe_read_string(mfGroup, ".", "phase names", phase_names,
+                                       sizeof(phase_names));
+  } else {
+    numphases = 1;
+    phase_names[0] = '\0';
+  }
 
   numRho_ = bMod_.dim(2);
   numT_ = bMod_.dim(1);
@@ -807,6 +857,37 @@ SpinerEOSDependsRhoT::GruneisenParamFromDensityInternalEnergy(const Real rho,
     gm1 = robust::ratio(std::abs(dpde), std::abs(rho));
   }
   return gm1;
+}
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void SpinerEOSDependsRhoT::MassFractionsFromDensityTemperature(
+    const Real rho, const Real temp, Real *scratch, Indexer_t &&lambda) const {
+  if (!has_mf) {
+    *scratch = 1.0;
+    return;
+  }
+
+  Real lRho, lT;
+  getLogsRhoT_(rho, temp, lRho, lT, lambda);
+
+  DataBox mf1d(scratch, numphases);
+  mf1d.interpFromDB(mF_, lRho, lT);
+}
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+SpinerEOSDependsRhoT::MassFractionsFromDensityInternalEnergy(const Real rho,
+                                                             const Real sie,
+                                                             Real *scratch,
+                                                             Indexer_t &&lambda) const {
+  if (!has_mf) {
+    *scratch = 1.0;
+    return;
+  }
+  TableStatus whereAmI;
+  const Real lRho = lRho_(rho);
+  const Real lT = lTFromlRhoSie_(lRho, sie, whereAmI, lambda);
+
+  DataBox mf1d(scratch, numphases);
+  mf1d.interpFromDB(mF_, lRho, lT);
 }
 
 // TODO(JMM): This would be faster with hand-tuned code
