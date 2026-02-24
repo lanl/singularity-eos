@@ -151,6 +151,47 @@ inline hid_t h5_safe_gopen(hid_t &file, const char *name, hid_t property) {
   return H5Gopen(file, name, property);
 }
 
+inline hid_t h5_safe_read_string(hid_t &file, const char *grp, const char *name,
+                                 char *buffer, size_t maxlen) {
+  if (!buffer || maxlen <= 1) {
+    std::string msg = "Buffer pased into h5_safe_read_string is not large enough for " +
+                      std::string(name);
+    EOS_ERROR(msg);
+    return;
+  }
+  buffer[0] = '\0';
+
+  hsize_t dims[1] = {0};
+  H5T_class_t attr_type;
+  size_t strlen = 0;
+  if (H5LTget_attribute_info(file, grp, name, dims, &attr_type, &strlen) != H5_SUCCESS) {
+    std::string msg = "Could not read the string " + std::string(name);
+    EOS_ERROR(msg);
+    return;
+  }
+  if (attr_type != H5T_STRING) {
+    std::string msg = "Attribute type is NOT a string for " + std::string(name);
+    EOS_ERROR(msg);
+    return;
+  }
+  // We have to allocate sadly
+  char *tmp = new char[strlen + 1];
+  std::memset(tmp, 0, strlen + 1);
+
+  if (H5LTget_attribute_string(file, grp, name, tmp) != H5_SUCCESS) {
+    std::string msg = "Error reading string attribute for " + std::string(name);
+    delete[] tmp;
+    EOS_ERROR(msg);
+    return;
+  }
+
+  // copy this into our fixed size buffer
+  tmp[strlen] = '\0';
+  std::strncpy(buffer, tmp, maxlen - 1);
+  buffer[maxlen - 1] = '\0';
+  delete[] tmp;
+}
+
 template <typename T>
 inline void h5_safe_get_attribute(hid_t &file, const char *grp, const char *name,
                                   T *output, const bool optional = false) {
