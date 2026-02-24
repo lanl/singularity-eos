@@ -186,6 +186,7 @@ pre_test_steps() {
   source ${BUILD_ENV}
   pushd ${BUILD_DIR}
   if [[ -f ./sesame2spiner/sesame2spiner ]]; then
+  echo "/usr/projects/data/eos/eos-developmental/Sn2162/v01/sn2162-v01.bin" > sesameFilesDir.txt
   ./sesame2spiner/sesame2spiner -s materials.sp5 ../sesame2spiner/examples/unit_tests/*.dat;
   ./sesame2spiner/sesame2spiner -s duplicates.sp5 ../sesame2spiner/examples/duplicate-test/*.dat;
   fi

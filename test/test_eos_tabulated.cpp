@@ -50,6 +50,7 @@ using singularity::variadic_utils::np;
 const std::string eosName = "../materials.sp5";
 const std::string airName = "air";
 const std::string steelName = "stainless steel 347";
+const std::string tinName = "tin";
 
 #ifdef SPINER_USE_HDF
 #ifdef SINGULARITY_TEST_SESAME
@@ -58,6 +59,7 @@ constexpr int airID = 5030;
 constexpr int DTID = 5267;
 constexpr int gID = 2700;
 constexpr int titaniumID = 2961;
+constexpr int tinID = 2162;
 constexpr Real ev2k = 1.160451812e4;
 #endif // SINGULARITY_TEST_SESAME
 #endif // SPINER_USE_HDF
@@ -318,6 +320,90 @@ SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS][DependsRhoSie]") {
     // this can be removed with with reference counting or other tricks
     steelEOS_host.Finalize(); // cleans up host memory
     steelEOS.Finalize();      // cleans up device memory
+  }
+}
+
+SCENARIO("SpinerEOS with multiphase fields") {
+  GIVEN("EOS initialized with matid") {
+    SpinerEOSDependsRhoT eosrt = SpinerEOSDependsRhoT(eosName, tinID);
+    SpinerEOSDependsRhoSie eosre = SpinerEOSDependsRhoSie(eosName, tinID);
+    THEN("We can recover the phase names") {
+      REQUIRE(eosrt.GetNumberofPhases() == 5);
+      REQUIRE(eosre.GetNumberofPhases() == 5);
+      std::string phase_names_rt = eosrt.GetPhaseNames();
+      REQUIRE(phase_names_rt.size() > 0);
+      REQUIRE(phase_names_rt.c_str()[0] == '5');
+      std::string phase_names_re = eosrt.GetPhaseNames();
+      REQUIRE(phase_names_re.size() > 0);
+      REQUIRE(phase_names_re.c_str()[0] == '5');
+      // split the phase names on spaces and make sure there is 5 + 1
+      std::cout << phase_names_rt << "\n";
+      std::cout << phase_names_re << "\n";
+    }
+    THEN("We can recover the mass fractions on host") {
+      Real frac_rt[5], frac_re[5];
+      Real rho = 1.0; // g/cc
+      Real T = 1000;  // K
+      eosrt.MassFractionsFromDensityTemperature(rho, T, frac_rt);
+      eosre.MassFractionsFromDensityTemperature(rho, T, frac_re);
+      Real sum_rt = 0.0;
+      Real sum_re = 0.0;
+      for (int i = 0; i < 5; i++) {
+        REQUIRE(frac_rt[i] >= 0.0);
+        REQUIRE(frac_rt[i] <= 1.0);
+        sum_rt += frac_rt[i];
+        REQUIRE(frac_re[i] >= 0.0);
+        REQUIRE(frac_re[i] <= 1.0);
+        sum_re += frac_re[i];
+      }
+      REQUIRE(isClose(sum_re, 1.0));
+      REQUIRE(isClose(sum_rt, 1.0));
+    }
+    THEN("We can recover the mass fractions on device") {
+
+      constexpr size_t ntot = 16 * 5; // 4x4 grid of 5 phases
+      constexpr size_t bytes = ntot * sizeof(Real);
+
+      std::vector<Real> frac_rt(ntot);
+      std::vector<Real> frac_re(ntot);
+      Real *frac_rt_d = (Real *)PORTABLE_MALLOC(bytes);
+      Real *frac_re_d = (Real *)PORTABLE_MALLOC(bytes);
+
+      portableCopyToDevice(frac_rt_d, frac_rt.data(), bytes);
+      portableCopyToDevice(frac_re_d, frac_re.data(), bytes);
+
+      std::array<Real, 4> rho{0.03, 0.1, 0.3, 1.0};
+      std::array<Real, 4> T{300., 1000., 3000., 1e4};
+      portableFor(
+          "calc mass fractions", 0, 16, PORTABLE_LAMBDA(const int &idx) {
+            const int i = idx % 4;
+            const int j = idx / 4;
+            eosrt.MassFractionsFromDensityTemperature(rho[i], T[j], &frac_rt_d[idx * 5]);
+            eosre.MassFractionsFromDensityTemperature(rho[i], T[j], &frac_re_d[idx * 5]);
+          });
+      PORTABLE_FENCE()
+      portableCopyToHost(frac_rt.data(), frac_rt_d, bytes);
+      portableCopyToHost(frac_re.data(), frac_re_d, bytes);
+
+      // Now check for correctness
+      for (int j = 0; j < 16; j++) {
+        Real sum_rt = 0.0;
+        Real sum_re = 0.0;
+        for (int i = 0; i < 5; i++) {
+          const int idx = i + 5 * j;
+          REQUIRE(frac_rt[idx] >= 0.0);
+          REQUIRE(frac_rt[idx] <= 1.0);
+          sum_rt += frac_rt[idx];
+          REQUIRE(frac_re[idx] >= 0.0);
+          REQUIRE(frac_re[idx] <= 1.0);
+          sum_re += frac_re[idx];
+        }
+        REQUIRE(isClose(sum_re, 1.0));
+        REQUIRE(isClose(sum_rt, 1.0));
+      }
+      PORTABLE_FREE(frac_rt_d);
+      PORTABLE_FREE(frac_re_d);
+    }
   }
 }
 
