@@ -381,7 +381,7 @@ SCENARIO("SpinerEOS with multiphase fields") {
             eosrt.MassFractionsFromDensityTemperature(rho[i], T[j], &frac_rt_d[idx * 5]);
             eosre.MassFractionsFromDensityTemperature(rho[i], T[j], &frac_re_d[idx * 5]);
           });
-      PORTABLE_FENCE()
+      PORTABLE_FENCE();
       portableCopyToHost(frac_rt.data(), frac_rt_d, bytes);
       portableCopyToHost(frac_re.data(), frac_re_d, bytes);
 
