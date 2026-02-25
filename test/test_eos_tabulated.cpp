@@ -325,27 +325,24 @@ SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS][DependsRhoSie]") {
 
 SCENARIO("SpinerEOS with multiphase fields") {
   GIVEN("EOS initialized with matid") {
-    SpinerEOSDependsRhoT eosrt = SpinerEOSDependsRhoT(eosName, tinID);
-    SpinerEOSDependsRhoSie eosre = SpinerEOSDependsRhoSie(eosName, tinID);
+    SpinerEOSDependsRhoT eosrt_h = SpinerEOSDependsRhoT(eosName, tinID);
+    SpinerEOSDependsRhoSie eosre_h = SpinerEOSDependsRhoSie(eosName, tinID);
     THEN("We can recover the phase names") {
-      REQUIRE(eosrt.GetNumberofPhases() == 5);
-      REQUIRE(eosre.GetNumberofPhases() == 5);
-      std::string phase_names_rt = eosrt.GetPhaseNames();
+      REQUIRE(eosrt_h.GetNumberofPhases() == 5);
+      REQUIRE(eosre_h.GetNumberofPhases() == 5);
+      std::string phase_names_rt = eosrt_h.GetPhaseNames();
       REQUIRE(phase_names_rt.size() > 0);
       REQUIRE(phase_names_rt.c_str()[0] == '5');
-      std::string phase_names_re = eosrt.GetPhaseNames();
+      std::string phase_names_re = eosrt_h.GetPhaseNames();
       REQUIRE(phase_names_re.size() > 0);
       REQUIRE(phase_names_re.c_str()[0] == '5');
-      // split the phase names on spaces and make sure there is 5 + 1
-      std::cout << phase_names_rt << "\n";
-      std::cout << phase_names_re << "\n";
     }
     THEN("We can recover the mass fractions on host") {
       Real frac_rt[5], frac_re[5];
       Real rho = 1.0; // g/cc
       Real T = 1000;  // K
-      eosrt.MassFractionsFromDensityTemperature(rho, T, frac_rt);
-      eosre.MassFractionsFromDensityTemperature(rho, T, frac_re);
+      eosrt_h.MassFractionsFromDensityTemperature(rho, T, frac_rt);
+      eosre_h.MassFractionsFromDensityTemperature(rho, T, frac_re);
       Real sum_rt = 0.0;
       Real sum_re = 0.0;
       for (int i = 0; i < 5; i++) {
@@ -372,8 +369,10 @@ SCENARIO("SpinerEOS with multiphase fields") {
       portableCopyToDevice(frac_rt_d, frac_rt.data(), bytes);
       portableCopyToDevice(frac_re_d, frac_re.data(), bytes);
 
-      std::array<Real, 4> rho{0.03, 0.1, 0.3, 1.0};
+      std::array<Real, 4> rho{1.0, 3.0, 10.0, 30.0};
       std::array<Real, 4> T{300., 1000., 3000., 1e4};
+      auto eosrt = eosrt_h.GetOnDevice();
+      auto eosre = eosre_h.GetOnDevice();
       portableFor(
           "calc mass fractions", 0, 16, PORTABLE_LAMBDA(const int &idx) {
             const int i = idx % 4;
