@@ -470,8 +470,8 @@ herr_t SpinerEOSDependsRhoSieTransformable<TransformerT>::loadDataboxes_(
   if (mfGroup != -1) {
     status += mF_.loadHDF(mfGroup, SP5::Fields::massFrac);
     spiner_common::h5_safe_get_attribute<int>(mfGroup, ".", "numphases", &numphases);
-    spiner_common::h5_safe_read_string(mfGroup, ".", "phase names", phase_names,
-                                       sizeof(phase_names));
+    spiner_common::h5_safe_read_attr_string(mfGroup, ".", "phase names", phase_names,
+                                            sizeof(phase_names));
   } else {
     numphases = 1;
     phase_names[0] = '\0';
