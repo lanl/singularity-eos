@@ -350,6 +350,9 @@ bool eosMassFraction(int matid, const Bounds &lRhoBounds, const Bounds &lTBounds
   }
   // indep vars
   // Reuses the EOS log temp and log rho bounds
+  // TODO(@adempsey): Use a different grid for mass fractions:
+  //   - Linear in rho and T
+  //   - Windowed grids for each phase
   std::vector<EOS_REAL> rhos, Ts, phs;
   makeInterpPoints(rhos, lRhoBounds);
   makeInterpPoints(Ts, lTBounds);
