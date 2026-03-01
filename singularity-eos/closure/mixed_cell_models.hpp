@@ -532,6 +532,26 @@ class PTESolverBase {
     return P;
   }
 
+  // Uses temperature always. Sometimes uses P sometimes uses rho
+  // depending on what the EOS wants.
+  template <typename EOS_t, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION static void
+  GetSieCvFromTAndPreferred(const EOS_t &eos, const Real rho, const Real P, const Real T,
+                            Indexer_t lambda, Real &sie, Real &cv) {
+    Real P{};
+    if (eos.PreferredInput() ==
+        (thermalqs::density | thermalqs::specific_internal_energy)) {
+      if (do_e_lookup) {
+        sie = eos.InternalEnergyFromDensityTemperature(rho, T, lambda);
+      }
+      P = eos.PressureFromDensityInternalEnergy(rho, sie, lambda);
+    } else if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
+      P = eos.PressureFromDensityTemperature(rho, T, lambda);
+    }
+    return P;
+  }
+
+
   // Initialize the volume fractions, avg densities, temperatures, energies, and
   // pressures of the materials.  Compute the total density and internal energy.
   // Scale the energy densities u = rho sie and pressures with the total internal energy
