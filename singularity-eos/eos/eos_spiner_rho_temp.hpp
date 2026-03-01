@@ -181,9 +181,17 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
       const Real rho, const Real temperature, Real *scratch,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION void MassFractionsFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *scratch,
+  PORTABLE_INLINE_FUNCTION void MassFractionsFromDensityTemperature(
+      const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  MassFractionsFromDensityInternalEnergy(const Real rho, const Real sie, Real *scratch,
+                                         Indexer_t &&lambda) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  MassFractionsFromDensityInternalEnergy(const Real rho, const Real sie,
+                                         Indexer_t &&lambda) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
@@ -874,6 +882,21 @@ PORTABLE_INLINE_FUNCTION void SpinerEOSDependsRhoT::MassFractionsFromDensityTemp
 }
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void
+SpinerEOSDependsRhoT::MassFractionsFromDensityTemperature(const Real rho, const Real temp,
+                                                          Indexer_t &&lambda) const {
+  if (!has_mf) {
+    lambda[0] = 1.0;
+    return;
+  }
+  Real lRho, lT;
+  getLogsRhoT_(rho, temp, lRho, lT, lambda);
+
+  for (int n = 0; n < numphases; n++) {
+    lambda[n] = mF_.interpToReal(lRho, lT, n);
+  }
+}
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
 SpinerEOSDependsRhoT::MassFractionsFromDensityInternalEnergy(const Real rho,
                                                              const Real sie,
                                                              Real *scratch,
@@ -889,7 +912,23 @@ SpinerEOSDependsRhoT::MassFractionsFromDensityInternalEnergy(const Real rho,
   DataBox mf1d(scratch, numphases);
   mf1d.interpFromDB(mF_, lRho, lT);
 }
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+SpinerEOSDependsRhoT::MassFractionsFromDensityInternalEnergy(const Real rho,
+                                                             const Real sie,
+                                                             Indexer_t &&lambda) const {
+  if (!has_mf) {
+    lambda[0] = 1.0;
+    return;
+  }
+  TableStatus whereAmI;
+  const Real lRho = lRho_(rho);
+  const Real lT = lTFromlRhoSie_(lRho, sie, whereAmI, lambda);
 
+  for (int n = 0; n < numphases; n++) {
+    lambda[n] = mF_.interpToReal(lRho, lT, n);
+  }
+}
 // TODO(JMM): This would be faster with hand-tuned code
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void SpinerEOSDependsRhoT::DensityEnergyFromPressureTemperature(

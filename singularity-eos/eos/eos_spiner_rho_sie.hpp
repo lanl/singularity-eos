@@ -200,9 +200,17 @@ class SpinerEOSDependsRhoSieTransformable
       const Real rho, const Real T, Real *scratch,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  MassFractionsFromDensityTemperature(const Real rho, const Real T,
+                                      Indexer_t &&lambda) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void MassFractionsFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *scratch,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  MassFractionsFromDensityInternalEnergy(const Real rho, const Real sie,
+                                         Indexer_t &&lambda) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
@@ -704,7 +712,22 @@ SpinerEOSDependsRhoSieTransformable<TransformerT>::MassFractionsFromDensityTempe
   DataBox mf1d(scratch, numphases);
   mf1d.interpFromDB(mF_, lRho, lT);
 }
-
+template <template <class> class TransformerT>
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+SpinerEOSDependsRhoSieTransformable<TransformerT>::MassFractionsFromDensityTemperature(
+    const Real rho, const Real T, Indexer_t &&lambda) const {
+  if (!has_mf) {
+    lambda[0] = 1.0;
+    return;
+  }
+  const Real lRho = spiner_common::to_log(rho, lRhoOffset_);
+  const Real lT = spiner_common::to_log(T, lTOffset_);
+  IndexerUtils::SafeSet<IndexableTypes::LogDensity>(lambda, Lambda::lRho, lRho);
+  for (int n = 0; n < numphases; n++) {
+    lambda[n] = mF_.interpToReal(lRho, lT, n);
+  }
+}
 template <template <class> class TransformerT>
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void
@@ -721,7 +744,23 @@ SpinerEOSDependsRhoSieTransformable<TransformerT>::MassFractionsFromDensityInter
   DataBox mf1d(scratch, numphases);
   mf1d.interpFromDB(mF_, lRho, lT);
 }
-
+template <template <class> class TransformerT>
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+SpinerEOSDependsRhoSieTransformable<TransformerT>::MassFractionsFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
+  if (!has_mf) {
+    lambda[0] = 1.0;
+    return;
+  }
+  const Real lRho = spiner_common::to_log(rho, lRhoOffset_);
+  const Real lE = spiner_common::to_log(sie, lEOffset_);
+  const Real T = T_.interpToReal(lRho, lE);
+  const Real lT = spiner_common::to_log(T, lTOffset_);
+  for (int n = 0; n < numphases; n++) {
+    lambda[n] = mF_.interpToReal(lRho, lT, n);
+  }
+}
 template <template <class> class TransformerT>
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void
