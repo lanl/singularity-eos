@@ -349,8 +349,9 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   bool has_mf = false;
   // Need to hold the phase names for multiphase EOS
   // This isn't great, but the class needs to be trivially copyable
-  // I've chosen something reasonabl , e.g., 15 phases with 32 character names
-  char phase_names[480];
+  char *phase_names = nullptr;
+  std::size_t len_phase_names = 0;
+  DataStatus phase_names_status = DataStatus::Deallocated;
   int numphases = 1;
   static constexpr const Real ROOT_THRESH = 1e-14;
   static constexpr const Real SOFT_THRESH = 1e-8;
@@ -467,22 +468,70 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
 }
 
 inline SpinerEOSDependsRhoT SpinerEOSDependsRhoT::GetOnDevice() {
-  return SpinerTricks::GetOnDevice(this);
+  auto eos_d = SpinerTricks::GetOnDevice(this);
+  if (len_phase_names > 0) {
+    PORTABLE_ALWAYS_REQUIRE(phase_names != nullptr, "phase_names NULL but len > 0");
+
+    char *dev = (char *)(PORTABLE_MALLOC(len_phase_names));
+    portableCopyToDevice<char>(dev, phase_names, len_phase_names);
+
+    eos_d.phase_names = dev;
+    eos_d.len_phase_names = len_phase_names;
+    eos_d.phase_names_status = DataStatus::OnDevice;
+  } else {
+    eos_d.phase_names = nullptr;
+    eos_d.len_phase_names = 0;
+    eos_d.phase_names_status = DataStatus::Deallocated;
+  }
+  return eos_d;
 }
 
-void SpinerEOSDependsRhoT::Finalize() { SpinerTricks::Finalize(this); }
+void SpinerEOSDependsRhoT::Finalize() {
+  SpinerTricks::Finalize(this);
+
+  if ((phase_names_status != DataStatus::UnManaged) && (phase_names != nullptr)) {
+    if (phase_names_status == DataStatus::OnHost) {
+      delete[] phase_names;
+    } else if (phase_names_status == DataStatus::OnDevice) {
+      PORTABLE_FREE(phase_names);
+    }
+  }
+  phase_names = nullptr;
+  len_phase_names = 0;
+  phase_names_status = DataStatus::Deallocated;
+}
 
 inline std::size_t SpinerEOSDependsRhoT::DynamicMemorySizeInBytes() const {
-  return SpinerTricks::DynamicMemorySizeInBytes(this);
+  return SpinerTricks::DynamicMemorySizeInBytes(this) + len_phase_names;
 }
 
 inline std::size_t SpinerEOSDependsRhoT::DumpDynamicMemory(char *dst) {
-  return SpinerTricks::DumpDynamicMemory(dst, this);
+  std::size_t offst = SpinerTricks::DumpDynamicMemory(dst, this);
+
+  if (len_phase_names > 0) {
+    PORTABLE_ALWAYS_REQUIRE(phase_names != nullptr,
+                            "phase_names null but len_phase_names > 0");
+    std::memcpy(dst + offst, phase_names, len_phase_names);
+    offst += len_phase_names;
+  }
+  return offst;
 }
 
 inline std::size_t
 SpinerEOSDependsRhoT::SetDynamicMemory(char *src, const SharedMemSettings &stngs) {
-  return SpinerTricks::SetDynamicMemory((stngs.data == nullptr) ? src : stngs.data, this);
+  char *base = (stngs.data == nullptr) ? src : stngs.data;
+  std::size_t offst = SpinerTricks::SetDynamicMemory(base, this);
+
+  if (len_phase_names > 0) {
+    phase_names = base + offst;
+    phase_names_status = DataStatus::UnManaged;
+    offst += len_phase_names;
+  } else {
+    phase_names = nullptr;
+    len_phase_names = 0;
+    phase_names_status = DataStatus::Deallocated;
+  }
+  return offst;
 }
 
 inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
@@ -529,11 +578,11 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
   if (mfGroup != -1) {
     status += mF_.loadHDF(mfGroup, SP5::Fields::massFrac);
     spiner_common::h5_safe_get_attribute<int>(mfGroup, ".", "numphases", &numphases);
-    spiner_common::h5_safe_read_attr_string(mfGroup, ".", "phase names", phase_names,
-                                            sizeof(phase_names));
-  } else {
-    numphases = 1;
-    phase_names[0] = '\0';
+    spiner_common::h5_safe_read_attr_string(mfGroup, ".", "phase names", &phase_names,
+                                            len_phase_names);
+    if ((phase_names != nullptr) && (len_phase_names > 0)) {
+      phase_names_status = DataStatus::OnHost;
+    }
   }
 
   numRho_ = bMod_.dim(2);
