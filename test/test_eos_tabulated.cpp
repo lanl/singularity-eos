@@ -75,17 +75,16 @@ struct MassFracIndexer {
   constexpr static bool is_type_indexable = true;
 
   PORTABLE_FORCEINLINE_FUNCTION
-  MassFracIndexer(Real *x_, Real &lr_, Real &lt_) : x(x_), lr(lr_), lt(lt_) {}
+  MassFracIndexer(Real *x_, Real *l_) : x(x_), l(l_) {}
   PORTABLE_FORCEINLINE_FUNCTION
-  Real &operator[](IndexableTypes::LogDensity t) { return lr; }
+  Real &operator[](IndexableTypes::LogDensity t) const { return l[0]; }
   PORTABLE_FORCEINLINE_FUNCTION
-  Real &operator[](IndexableTypes::LogTemperature t) { return lt; }
+  Real &operator[](IndexableTypes::LogTemperature t) const { return l[1]; }
   PORTABLE_FORCEINLINE_FUNCTION
-  Real &operator[](IndexableTypes::MassFractions t) { return x[t.index]; }
+  Real &operator[](IndexableTypes::MassFractions t) const { return x[t.n]; }
 
   Real *x;
-  Real &lr;
-  Real &lt;
+  Real *l;
 };
 
 SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS][DependsRhoT][EOSPAC]") {
@@ -376,8 +375,8 @@ SCENARIO("SpinerEOS with multiphase fields") {
       REQUIRE(isClose(sum_rt, 1.0));
     }
     THEN("We can recover the mass fractions on host using lambda") {
-      Real frac_rt[5], frac_re[5], lr, lt;
-      MassFracIndexer lam_rt(frac_rt, lr, lt);
+      Real frac_rt[5], frac_re[5], l[2];
+      MassFracIndexer lam_rt(frac_rt, l);
       FlatIndexer<Real *> lam_re(frac_re);
 
       Real rho = 1.0; // g/cc

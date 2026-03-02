@@ -694,7 +694,29 @@ The available types currently supported by default are:
   struct singularity::IndexableTypes::MeanAtomicNumber;
   struct singularity::IndexableTypes::ElectronFraction;
 
-However if you are not limited to these types. Any type will do and
+Additionally, indexable types may be "vector" quantities. The type
+
+.. code-block:: cpp
+
+  struct singularity::IndexableTypes::MassFractions;
+
+must be constructed with an index, e.g.,
+
+.. code-block:: cpp
+
+  eos.MassFractionsFromDensityTemperature(rho, T, lambda);
+  x0 = lambda[MassFractions(0)];
+
+and the default constructor is not supported. Finally, the structs
+
+.. code-block:: cpp
+
+  struct singularity::RootStatus;
+  struct singularity::TableStatus;
+  
+are mostly used for internal/debugging purposes.
+
+However you are not limited to these types. Any type will do and
 you can define your own as you like. For example:
 
 .. code-block::
@@ -736,10 +758,37 @@ which might be used as
 
 where ``MeanIonizationState`` is shorthand for index 2, since you
 defined that overload. Note that the ``operator[]`` must be marked
-``const``. To more easily enable mixing and matching integer-based
+``const``. "Vectorized" types such as ``MassFractions`` are expected
+to expose a public member field named ``n``, which can be utilized bya
+custom indexer class. For example:
+
+.. code-block:: cpp
+
+  class MyLambda_t {
+   public:
+    constexpr static bool is_type_indexable = true;
+    MyLambda_t() = default;
+    PORTABLE_FORCEINLINE_FUNCTION
+    Real &operator[](const MeanIonizationState &zbar) const {
+      return data_[0];
+    }
+    // x.n used as on offset within the underlying container
+    PORTABLE_FORCEINLINE_FUNCTION
+    Real &operator[](const MassFractions &x) const {
+      return data_[1 + x.n];
+    }
+   private:
+    std::array<Real, 3> data_;
+  };
+
+To more easily enable mixing and matching integer-based
 indexing with type-based indexing, the functions
 
 .. code-block:: cpp
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
+  bool SafeGet(Indexer_t const &lambda, const T &t, std::size_t const idx, Real &out);
 
   template <typename T, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION
@@ -749,19 +798,31 @@ indexing with type-based indexing, the functions
 
   template <typename T, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION
+  bool SafeGet(Indexer_t const &lambda, const T &t, Real &out);
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
   bool SafeGet(Indexer_t const &lambda, Real &out);
 
 .. code-block:: cpp
 
   template <typename T, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION
-  Real SafeMustGet(Indexer_t const &lambda, std::size_t const idx)
+  Real SafeMustGet(Indexer_t const &lambda, const T &t, std::size_t const idx);
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real SafeMustGet(Indexer_t const &lambda, std::size_t const idx);
 
 .. code-block:: cpp
 
   template <typename T, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION
-  Real SafeMustGet(Indexer_t const &lambda)
+  Real SafeMustGet(Indexer_t const &lambda, const T &t);
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real SafeMustGet(Indexer_t const &lambda);
 
 will update the value of ``out`` with the value at either the appropriate
 type-based index, ``T``, or the numerical index, ``idx``, if the ``Indexer_t``
@@ -790,9 +851,17 @@ Similarly, the functions
 
   template <typename T, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION
+  inline bool SafeSet(Indexer_t &lambda, const T &t, std::size_t const idx, Real const in);
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
   inline bool SafeSet(Indexer_t &lambda, std::size_t const idx, Real const in);
 
 .. code-block:: cpp
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
+  inline bool SafeSet(Indexer_t &lambda, const T &t, Real const in)
 
   template <typename T, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION
@@ -802,9 +871,17 @@ Similarly, the functions
 
   template <typename T, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION
+  inline bool SafeMustSet(Indexer_t &lambda, const T &t, std::size_t const idx, Real const in);
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
   inline bool SafeMustSet(Indexer_t &lambda, std::size_t const idx, Real const in);
 
 .. code-block:: cpp
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
+  inline bool SafeMustSet(Indexer_t &lambda, const T &t, Real const in)
 
   template <typename T, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION
