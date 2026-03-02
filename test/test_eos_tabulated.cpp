@@ -69,6 +69,8 @@ constexpr Real ev2k = 1.160451812e4;
 #ifdef SPINER_USE_HDF
 #ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_EOSPAC
+
+using singularity::IndexableTypes;
 using EOS = Variant<SpinerEOSDependsRhoSie, SpinerEOSDependsRhoT, EOSPAC>;
 
 struct MassFracIndexer {
@@ -375,9 +377,11 @@ SCENARIO("SpinerEOS with multiphase fields") {
       REQUIRE(isClose(sum_rt, 1.0));
     }
     THEN("We can recover the mass fractions on host using lambda") {
-      Real frac_rt[5], frac_re[5], l[2];
+      Real re_mem[SpinerEOSDependsRhoSie.nlambda() + 5];
+      Real frac_rt[5], l[2];
+      Real *frac_re = &re_mem[SpinerEOSDependsRhoSie.nlambda() + 0];
       MassFracIndexer lam_rt(frac_rt, l);
-      FlatIndexer<Real *> lam_re(frac_re);
+      FlatIndexer<Real *> lam_re(re_mem);
 
       Real rho = 1.0; // g/cc
       Real T = 1000;  // K

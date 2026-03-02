@@ -326,6 +326,7 @@ struct RootStatus {};
 struct TableStatus {};
 struct MassFractions {
   std::size_t n;
+  PORTABLE_FORCEINLINE_FUNCTION
   MassFractions(const std::size_t index_) : n(index_) {}
 };
 } // namespace IndexableTypes
