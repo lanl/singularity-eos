@@ -159,16 +159,17 @@ inline char *h5_safe_read_attr_string(hid_t &file, const char *grp, const char *
   if (H5LTget_attribute_info(file, grp, name, dims, &attr_type, &len) != H5_SUCCESS) {
     std::string msg = "Could not read the string " + std::string(name);
     EOS_ERROR(msg);
-    return;
+    return nullptr;
   }
   if (len <= 0) {
     std::string msg = "Length of string" + std::string(name) + " is 0";
     EOS_ERROR(msg);
+    return nullptr;
   }
   if (attr_type != H5T_STRING) {
     std::string msg = "Attribute type is NOT a string for " + std::string(name);
     EOS_ERROR(msg);
-    return;
+    return nullptr;
   }
   len += 1;
   char *buffer = (char *)malloc(len);
@@ -176,7 +177,7 @@ inline char *h5_safe_read_attr_string(hid_t &file, const char *grp, const char *
     std::string msg = "Error reading string attribute for " + std::string(name);
     free(buffer);
     EOS_ERROR(msg);
-    return;
+    return nullptr;
   }
   buffer[len - 1] = '\0';
   return buffer;
