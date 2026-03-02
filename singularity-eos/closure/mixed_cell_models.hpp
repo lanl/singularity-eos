@@ -538,20 +538,20 @@ class PTESolverBase {
   // depending on what the EOS wants.
   template <typename EOS_t, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION static void
-  GetSieCvFromTAndPreferred(const EOS_t &eos, const Real rho, const Real P, const Real T,
+  GetSieCvFromTAndPreferred(const EOS_t &eos, Real rho, const Real P, const Real T,
                             Indexer_t lambda, Real &sie, Real &cv) {
     if (eos.PreferredInput() & thermalqs::pressure) {
       Real Pmin = eos.MinimumPressure();
       Real Pmax = eos.MaximumPressureAtTemperature(T);
       Real Pguess;
-      if (std::isnan(P)) { // note this is dangerous
+      if (error_utils::bad_value(Pguess, "Pressure in GetSieCvFromTAndPreferred")) {
         Pguess = 0.5 * (Pmin + Pmax);
       } else {
         Pguess = std::max(Pmin, std::min(Pmax, P));
       }
-      eos.InternalEnergyFromDensityPressure(rho, Pguess, sie, lambda);
+      eos.DensityEnergyFromPressureTemperature(Pguess, T, lambda, rho, sie);
       cv = eos.SpecificHeatFromDensityInternalEnergy(rho, sie, lambda);
-    } else { // if (eos.PreferredInput() & thermalqs::temperature) {
+    } else { // use density, not pressure.
       sie = eos.InternalEnergyFromDensityTemperature(rho, T, lambda);
       cv = eos.SpecificHeatFromDensityTemperature(rho, T, lambda);
     }
