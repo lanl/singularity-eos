@@ -489,7 +489,7 @@ void SpinerEOSDependsRhoT::Finalize() {
 
   if ((phase_names_status != DataStatus::UnManaged) && (phase_names != nullptr)) {
     if (phase_names_status == DataStatus::OnHost) {
-      free)phase_names);
+      free(phase_names);
     } else if (phase_names_status == DataStatus::OnDevice) {
       PORTABLE_FREE(phase_names);
     }
