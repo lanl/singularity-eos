@@ -206,7 +206,8 @@ class IdealGas : public EosBase<IdealGas> {
   static constexpr const Real _P0 = ATMOSPHERIC_PRESSURE;
   // static constexpr const char _eos_type[] = {"IdealGas"};
   static constexpr const unsigned long _preferred_input =
-      thermalqs::density | thermalqs::specific_internal_energy;
+      thermalqs::density | thermalqs::specific_internal_energy | thermalqs::temperature |
+      thermalqs::pressure;
   // optional entropy reference state variables
   Real _EntropyT0, _EntropyRho0;
   // optional mean atomic mass and number

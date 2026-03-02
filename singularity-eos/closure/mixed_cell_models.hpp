@@ -462,10 +462,13 @@ class PTESolverBase {
       Real usum = 0;
       for (std::size_t m = 0; m < nmat; ++m) {
         Real rho_max = eos[m].MaximumDensity();
-        Real sie = eos[m].InternalEnergyFromDensityTemperature(std::min(rho[m], rho_max),
-                                                               T, lambda[m]);
-        Real cv = eos[m].SpecificHeatFromDensityTemperature(std::min(rho[m], rho_max), T,
-                                                            lambda[m]);
+
+        // TODO(JMM): Note that this assumes sensible pressures were
+        // passed in as an initial guess.
+        Real sie, cv;
+        GetSieCvFromTAndPreferred(eos[m], std::min(rho[m], rho_max), press[m], T,
+                                  lambda[m], sie, cv);
+
         usum += rhobar[m] * sie;
         dudt += rhobar[m] * cv;
       }
@@ -520,13 +523,12 @@ class PTESolverBase {
   GetPressureFromPreferred(const EOS_t &eos, const Real rho, const Real T, Real sie,
                            Indexer_t lambda, const bool do_e_lookup) {
     Real P{};
-    if (eos.PreferredInput() ==
-        (thermalqs::density | thermalqs::specific_internal_energy)) {
+    if (eos.PreferredInput() & thermalqs::specific_internal_energy) {
       if (do_e_lookup) {
         sie = eos.InternalEnergyFromDensityTemperature(rho, T, lambda);
       }
       P = eos.PressureFromDensityInternalEnergy(rho, sie, lambda);
-    } else if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
+    } else { // if (eos.PreferredInput() & thermalqs::temperature) {
       P = eos.PressureFromDensityTemperature(rho, T, lambda);
     }
     return P;
@@ -538,19 +540,22 @@ class PTESolverBase {
   PORTABLE_FORCEINLINE_FUNCTION static void
   GetSieCvFromTAndPreferred(const EOS_t &eos, const Real rho, const Real P, const Real T,
                             Indexer_t lambda, Real &sie, Real &cv) {
-    Real P{};
-    if (eos.PreferredInput() ==
-        (thermalqs::density | thermalqs::specific_internal_energy)) {
-      if (do_e_lookup) {
-        sie = eos.InternalEnergyFromDensityTemperature(rho, T, lambda);
+    if (eos.PreferredInput() & thermalqs::pressure) {
+      Real Pmin = eos.MinimumPressure();
+      Real Pmax = eos.MaximumPressureAtTemperature(T);
+      Real Pguess;
+      if (error_utils::bad_value(P, "pressure")) {
+        Pguess = 0.5 * (Pmin + Pmax);
+      } else {
+        Pguess = std::max(Pmin, std::min(Pmax, P));
       }
-      P = eos.PressureFromDensityInternalEnergy(rho, sie, lambda);
-    } else if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
-      P = eos.PressureFromDensityTemperature(rho, T, lambda);
+      eos.InternalEnergyFromDensityPressure(rho, Pguess, sie, lambda);
+      cv = eos.SpecificHeatFromDensityInternalEnergy(rho, sie, lambda);
+    } else { // if (eos.PreferredInput() & thermalqs::temperature) {
+      sie = eos.InternalEnergyFromDensityTemperature(rho, T, lambda);
+      cv = eos.SpecificHeatFromDensityTemperature(rho, T, lambda);
     }
-    return P;
   }
-
 
   // Initialize the volume fractions, avg densities, temperatures, energies, and
   // pressures of the materials.  Compute the total density and internal energy.
@@ -577,7 +582,11 @@ class PTESolverBase {
       temp[m] = 1.0;
       sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tguess, lambda[m]);
       // note the scaling of pressure
-      if (eos[m].PreferredInput() & thermalqs::pressure) {
+      auto prefinput = eos[m].PreferredInput();
+      if ((prefinput & thermalqs::pressure) &&
+          !((prefinput & thermalqs::density) &&
+            ((prefinput & thermalqs::specific_internal_energy) ||
+             (prefinput & thermalqs::temperature)))) {
         // Use pressure array for guesses without doing a lookup
         if (error_utils::bad_value(press[m], "press[m]")) {
           // Guess an arbitrary pressure to start things off
