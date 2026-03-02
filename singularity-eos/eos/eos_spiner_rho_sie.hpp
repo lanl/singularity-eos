@@ -348,7 +348,9 @@ class SpinerEOSDependsRhoSieTransformable
   // Need to hold the phase names for multiphase EOS
   // This isn't great, but the class needs to be trivially copyable
   // I've chosen something reasonable, e.g., 15 phases with 32 character names
-  char phase_names[480];
+  char *phase_names = nullptr;
+  std::size_t len_phase_names = 0;
+  DataStatus phase_names_status = DataStatus::Deallocated;
   int numphases = 1;
   // only used to exclude vapor dome
   static constexpr const Real VAPOR_DPDR_THRESH = 1e-8;
@@ -478,11 +480,11 @@ herr_t SpinerEOSDependsRhoSieTransformable<TransformerT>::loadDataboxes_(
   if (mfGroup != -1) {
     status += mF_.loadHDF(mfGroup, SP5::Fields::massFrac);
     spiner_common::h5_safe_get_attribute<int>(mfGroup, ".", "numphases", &numphases);
-    spiner_common::h5_safe_read_attr_string(mfGroup, ".", "phase names", phase_names,
-                                            sizeof(phase_names));
-  } else {
-    numphases = 1;
-    phase_names[0] = '\0';
+    spiner_common::h5_safe_read_attr_string(mfGroup, ".", "phase names", &phase_names,
+                                            len_phase_names);
+    if ((phase_names != nullptr) && (len_phase_names > 0)) {
+      phase_names_status = DataStatus::OnHost;
+    }
   }
 
   // Fix up bulk modulus
@@ -561,31 +563,74 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>
 SpinerEOSDependsRhoSieTransformable<TransformerT>::GetOnDevice() {
   auto eos_d = STricks::GetOnDevice(this);
   eos_d.InitializeTransformer();
+  if (len_phase_names > 0) {
+    PORTABLE_ALWAYS_REQUIRE(phase_names != nullptr, "phase_names NULL but len > 0");
+
+    char *dev = (char *)(PORTABLE_MALLOC(len_phase_names));
+    portableCopyToDevice<char>(dev, phase_names, len_phase_names);
+
+    eos_d.phase_names = dev;
+    eos_d.len_phase_names = len_phase_names;
+    eos_d.phase_names_status = DataStatus::OnDevice;
+  } else {
+    eos_d.phase_names = nullptr;
+    eos_d.len_phase_names = 0;
+    eos_d.phase_names_status = DataStatus::Deallocated;
+  }
   return eos_d;
 }
 
 template <template <class> class TransformerT>
 void SpinerEOSDependsRhoSieTransformable<TransformerT>::Finalize() {
   STricks::Finalize(this);
+
+  if ((phase_names_status != DataStatus::UnManaged) && (phase_names != nullptr)) {
+    if (phase_names_status == DataStatus::OnHost) {
+      delete[] phase_names;
+    } else if (phase_names_status == DataStatus::OnDevice) {
+      PORTABLE_FREE(phase_names);
+    }
+  }
+  phase_names = nullptr;
+  len_phase_names = 0;
+  phase_names_status = DataStatus::Deallocated;
 }
 
 template <template <class> class TransformerT>
 inline std::size_t
 SpinerEOSDependsRhoSieTransformable<TransformerT>::DynamicMemorySizeInBytes() const {
-  return STricks::DynamicMemorySizeInBytes(this);
+  return STricks::DynamicMemorySizeInBytes(this) + len_phase_names;
 }
 
 template <template <class> class TransformerT>
 inline std::size_t
 SpinerEOSDependsRhoSieTransformable<TransformerT>::DumpDynamicMemory(char *dst) {
-  return STricks::DumpDynamicMemory(dst, this);
+  std::size_t offst = STricks::DumpDynamicMemory(dst, this);
+
+  if (len_phase_names > 0) {
+    PORTABLE_ALWAYS_REQUIRE(phase_names != nullptr,
+                            "phase_names null but len_phase_names > 0");
+    std::memcpy(dst + offst, phase_names, len_phase_names);
+    offst += len_phase_names;
+  }
+  return offst;
 }
 
 template <template <class> class TransformerT>
 inline std::size_t SpinerEOSDependsRhoSieTransformable<TransformerT>::SetDynamicMemory(
     char *src, const SharedMemSettings &stngs) {
   if (stngs.data != nullptr) src = stngs.data;
-  return STricks::SetDynamicMemory(src, this);
+  std::size_t offst = STricks::SetDynamicMemory(src, this);
+  if (len_phase_names > 0) {
+    phase_names = src + offst;
+    phase_names_status = DataStatus::UnManaged;
+    offst += len_phase_names;
+  } else {
+    phase_names = nullptr;
+    len_phase_names = 0;
+    phase_names_status = DataStatus::Deallocated;
+  }
+  return offst;
 }
 
 template <template <class> class TransformerT>
