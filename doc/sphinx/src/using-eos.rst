@@ -759,7 +759,7 @@ which might be used as
 where ``MeanIonizationState`` is shorthand for index 2, since you
 defined that overload. Note that the ``operator[]`` must be marked
 ``const``. "Vectorized" types such as ``MassFractions`` are expected
-to expose a public member field named ``n``, which can be utilized bya
+to expose a public member field named ``n``, which can be utilized by a
 custom indexer class. For example:
 
 .. code-block:: cpp
