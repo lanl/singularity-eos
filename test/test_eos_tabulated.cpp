@@ -70,7 +70,7 @@ constexpr Real ev2k = 1.160451812e4;
 #ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_EOSPAC
 
-using singularity::IndexableTypes;
+namespace IndexableTypes = singularity::IndexableTypes;
 using EOS = Variant<SpinerEOSDependsRhoSie, SpinerEOSDependsRhoT, EOSPAC>;
 
 struct MassFracIndexer {
