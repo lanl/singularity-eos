@@ -544,7 +544,7 @@ class PTESolverBase {
       Real Pmin = eos.MinimumPressure();
       Real Pmax = eos.MaximumPressureAtTemperature(T);
       Real Pguess;
-      if (error_utils::bad_value(P, "pressure")) {
+      if (std::isnan(P)) { // note this is dangerous
         Pguess = 0.5 * (Pmin + Pmax);
       } else {
         Pguess = std::max(Pmin, std::min(Pmax, P));
