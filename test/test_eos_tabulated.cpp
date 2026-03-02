@@ -23,6 +23,7 @@
 #include <ports-of-call/portable_arrays.hpp>
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
@@ -69,6 +70,23 @@ constexpr Real ev2k = 1.160451812e4;
 #ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_EOSPAC
 using EOS = Variant<SpinerEOSDependsRhoSie, SpinerEOSDependsRhoT, EOSPAC>;
+
+struct MassFracIndexer {
+  constexpr static bool is_type_indexable = true;
+
+  PORTABLE_FORCEINLINE_FUNCTION
+  MassFracIndexer(Real *x_, Real &lr_, Real &lt_) : x(x_), lr(lr_), lt(lt_) {}
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real &operator[](IndexableTypes::LogDensity t) { return lr; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real &operator[](IndexableTypes::LogTemperature t) { return lt; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real &operator[](IndexableTypes::MassFractions t) { return x[t.index]; }
+
+  Real *x;
+  Real &lr;
+  Real &lt;
+};
 
 SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS][DependsRhoT][EOSPAC]") {
 
@@ -358,8 +376,8 @@ SCENARIO("SpinerEOS with multiphase fields") {
       REQUIRE(isClose(sum_rt, 1.0));
     }
     THEN("We can recover the mass fractions on host using lambda") {
-      Real frac_rt[5], frac_re[5];
-      FlatIndexer<Real *> lam_rt(frac_rt);
+      Real frac_rt[5], frac_re[5], lr, lt;
+      MassFracIndexer lam_rt(frac_rt, lr, lt);
       FlatIndexer<Real *> lam_re(frac_re);
 
       Real rho = 1.0; // g/cc

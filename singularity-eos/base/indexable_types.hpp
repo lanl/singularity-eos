@@ -44,6 +44,8 @@ enum class AllowedIndexing { Numeric, TypeOnly };
 // The "safe" version of Get(). This function will ONLY return a value IF that
 // type-based index is present in the Indexer OR if the Indexer doesn't support
 // type-based indexing.
+// TODO(JMM): Add SafeGet overloads that allow the indexable type to
+// be passed in by value, as SafeSet has.
 template <AllowedIndexing AI, typename T, typename Indexer_t>
 PORTABLE_FORCEINLINE_FUNCTION bool SafeGet(Indexer_t const &lambda, std::size_t const idx,
                                            Real &out) {
@@ -79,8 +81,8 @@ PORTABLE_FORCEINLINE_FUNCTION bool SafeGet(Indexer_t const &lambda, std::size_t 
 // the "safe" version needs to separate that functionality for setting the
 // values in a lambda
 template <AllowedIndexing AI, typename T, typename Indexer_t>
-PORTABLE_FORCEINLINE_FUNCTION bool SafeSet(Indexer_t &lambda, std::size_t const idx,
-                                           Real const in) {
+PORTABLE_FORCEINLINE_FUNCTION bool SafeSet(Indexer_t &lambda, const T &t,
+                                           std::size_t const idx, Real const in) {
   // If null then nothing happens
   if (variadic_utils::is_nullptr(lambda)) {
     return false;
@@ -88,7 +90,7 @@ PORTABLE_FORCEINLINE_FUNCTION bool SafeSet(Indexer_t &lambda, std::size_t const 
 
   // Return value if type index is available
   if constexpr (variadic_utils::is_indexable_v<Indexer_t, T>) {
-    lambda[T{}] = in;
+    lambda[t] = in;
     return true;
   }
 
@@ -107,6 +109,11 @@ PORTABLE_FORCEINLINE_FUNCTION bool SafeSet(Indexer_t &lambda, std::size_t const 
 
   // Something else...
   return false;
+}
+template <AllowedIndexing AI, typename T, typename Indexer_t>
+PORTABLE_FORCEINLINE_FUNCTION bool SafeSet(Indexer_t &lambda, std::size_t const idx,
+                                           Real const in) {
+  return SafeSet<AI, T, Indexer_t>(lambda, T{}, idx, in);
 }
 
 // Same as above but causes an error condition (static or dynamic) if the value
@@ -166,12 +173,22 @@ PORTABLE_FORCEINLINE_FUNCTION bool SafeSet(Indexer_t &lambda, std::size_t const 
                                            Real const in) {
   return impl::SafeSet<impl::AllowedIndexing::Numeric, T>(lambda, idx, in);
 }
+template <typename T, typename Indexer_t>
+PORTABLE_FORCEINLINE_FUNCTION bool SafeSet(Indexer_t &lambda, const T &t,
+                                           std::size_t const idx, Real const in) {
+  return impl::SafeSet<impl::AllowedIndexing::Numeric>(lambda, t, idx, in);
+}
 
 // Overload when numerical index isn't provided
 template <typename T, typename Indexer_t>
 PORTABLE_FORCEINLINE_FUNCTION bool SafeSet(Indexer_t &lambda, Real const in) {
   std::size_t idx = 0;
   return impl::SafeSet<impl::AllowedIndexing::TypeOnly, T>(lambda, idx, in);
+}
+template <typename T, typename Indexer_t>
+PORTABLE_FORCEINLINE_FUNCTION bool SafeSet(Indexer_t &lambda, const T &t, Real const in) {
+  std::size_t idx = 0;
+  return impl::SafeSet<impl::AllowedIndexing::TypeOnly, T>(lambda, t, idx, in);
 }
 
 // Overload when numerical index is provided
@@ -268,6 +285,10 @@ struct MeanAtomicNumber {};
 struct ElectronFraction {};
 struct RootStatus {};
 struct TableStatus {};
+struct MassFractions {
+  std::size_t index;
+  MassFractions(const std::size_t index_) : index(index_) {}
+};
 } // namespace IndexableTypes
 } // namespace singularity
 #endif // SINGULARITY_EOS_BASE_INDEXABLE_TYPES_
