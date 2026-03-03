@@ -178,7 +178,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void MassFractionsFromDensityTemperature(
-      const Real rho, const Real temperature, Real *scratch,
+      const Real rho, const Real temperature, Real *mass_fracs,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void MassFractionsFromDensityTemperature(
@@ -186,7 +186,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
-  MassFractionsFromDensityInternalEnergy(const Real rho, const Real sie, Real *scratch,
+  MassFractionsFromDensityInternalEnergy(const Real rho, const Real sie, Real *mass_fracs,
                                          Indexer_t &&lambda) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
@@ -240,7 +240,10 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   PORTABLE_FORCEINLINE_FUNCTION int GetNumberofPhases() const { return numphases; }
   const char *GetPhaseNames() const { return phase_names; }
 
+  // TODO(JMM): Should nlambda be made non-static so it can report the
+  // number of phases too?
   constexpr static inline int nlambda() noexcept { return _n_lambda; }
+
   template <typename T>
   static inline constexpr bool NeedsLambda() {
     using namespace IndexableTypes;
@@ -346,7 +349,6 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   bool has_mf = false;
   // Need to hold the phase names for multiphase EOS
   // This isn't great, but the class needs to be trivially copyable
-  // I've chosen something reasonable, e.g., 15 phases with 32 character names
   char *phase_names = nullptr;
   std::size_t len_phase_names = 0;
   DataStatus phase_names_status = DataStatus::Deallocated;
@@ -925,16 +927,16 @@ SpinerEOSDependsRhoT::GruneisenParamFromDensityInternalEnergy(const Real rho,
 }
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void SpinerEOSDependsRhoT::MassFractionsFromDensityTemperature(
-    const Real rho, const Real temp, Real *scratch, Indexer_t &&lambda) const {
+    const Real rho, const Real temp, Real *mass_fracs, Indexer_t &&lambda) const {
   if (!has_mf) {
-    *scratch = 1.0;
+    *mass_fracs = 1.0;
     return;
   }
 
   Real lRho, lT;
   getLogsRhoT_(rho, temp, lRho, lT, lambda);
 
-  DataBox mf1d(scratch, numphases);
+  DataBox mf1d(mass_fracs, numphases);
   mf1d.interpFromDB(mF_, lRho, lT);
 }
 template <typename Indexer_t>
@@ -942,31 +944,34 @@ PORTABLE_INLINE_FUNCTION void
 SpinerEOSDependsRhoT::MassFractionsFromDensityTemperature(const Real rho, const Real temp,
                                                           Indexer_t &&lambda) const {
   if (!has_mf) {
-    lambda[0] = 1.0;
+    // TODO(JMM): Should mass fraction be a required element of
+    // lambda? I don't love that...
+    IndexerUtils::SafeSet(lambda, IndexableTypes::MassFractions(0), _n_lambda, 1.0);
     return;
   }
   Real lRho, lT;
   getLogsRhoT_(rho, temp, lRho, lT, lambda);
 
   for (int n = 0; n < numphases; n++) {
-    lambda[n] = mF_.interpToReal(lRho, lT, n);
+    IndexerUtils::SafeSet(lambda, IndexableTypes::MassFractions(n), _n_lambda + n,
+                          mF_.interpToReal(lRho, lT, n));
   }
 }
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void
 SpinerEOSDependsRhoT::MassFractionsFromDensityInternalEnergy(const Real rho,
                                                              const Real sie,
-                                                             Real *scratch,
+                                                             Real *mass_fracs,
                                                              Indexer_t &&lambda) const {
   if (!has_mf) {
-    *scratch = 1.0;
+    *mass_fracs = 1.0;
     return;
   }
   TableStatus whereAmI;
   const Real lRho = lRho_(rho);
   const Real lT = lTFromlRhoSie_(lRho, sie, whereAmI, lambda);
 
-  DataBox mf1d(scratch, numphases);
+  DataBox mf1d(mass_fracs, numphases);
   mf1d.interpFromDB(mF_, lRho, lT);
 }
 template <typename Indexer_t>
@@ -975,7 +980,9 @@ SpinerEOSDependsRhoT::MassFractionsFromDensityInternalEnergy(const Real rho,
                                                              const Real sie,
                                                              Indexer_t &&lambda) const {
   if (!has_mf) {
-    lambda[0] = 1.0;
+    // TODO(JMM): Should mass fraction be a required element of
+    // lambda? I don't love that...
+    IndexerUtils::SafeSet(lambda, IndexableTypes::MassFractions(0), _n_lambda, 1.0);
     return;
   }
   TableStatus whereAmI;
@@ -983,7 +990,9 @@ SpinerEOSDependsRhoT::MassFractionsFromDensityInternalEnergy(const Real rho,
   const Real lT = lTFromlRhoSie_(lRho, sie, whereAmI, lambda);
 
   for (int n = 0; n < numphases; n++) {
-    lambda[n] = mF_.interpToReal(lRho, lT, n);
+    IndexerUtils::SafeSet(lambda, IndexableTypes::MassFractions(n), _n_lambda + n,
+                          mF_.interpToReal(lRho, lT, n));
+
   }
 }
 // TODO(JMM): This would be faster with hand-tuned code

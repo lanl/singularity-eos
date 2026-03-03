@@ -23,6 +23,7 @@
 #include <ports-of-call/portable_arrays.hpp>
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
@@ -68,7 +69,27 @@ constexpr Real ev2k = 1.160451812e4;
 #ifdef SPINER_USE_HDF
 #ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_EOSPAC
+
+namespace IndexableTypes = singularity::IndexableTypes;
 using EOS = Variant<SpinerEOSDependsRhoSie, SpinerEOSDependsRhoT, EOSPAC>;
+
+struct MassFracIndexer {
+  constexpr static bool is_type_indexable = true;
+
+  PORTABLE_FORCEINLINE_FUNCTION
+  MassFracIndexer(Real *x_, Real *l_) : x(x_), l(l_) {}
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real &operator[](IndexableTypes::LogDensity t) const { return l[0]; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real &operator[](IndexableTypes::LogTemperature t) const { return l[1]; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real &operator[](IndexableTypes::MassFractions t) const {
+    return x[t.n];
+  }
+
+  Real *x;
+  Real *l;
+};
 
 SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS][DependsRhoT][EOSPAC]") {
 
@@ -358,9 +379,12 @@ SCENARIO("SpinerEOS with multiphase fields") {
       REQUIRE(isClose(sum_rt, 1.0));
     }
     THEN("We can recover the mass fractions on host using lambda") {
-      Real frac_rt[5], frac_re[5];
-      FlatIndexer<Real *> lam_rt(frac_rt);
-      FlatIndexer<Real *> lam_re(frac_re);
+      Real frac_rt[5], l[2];
+      MassFracIndexer lam_rt(frac_rt, l);
+
+      Real re_mem[SpinerEOSDependsRhoSie::nlambda() + 5];
+      Real *frac_re = &re_mem[SpinerEOSDependsRhoSie::nlambda() + 0];
+      FlatIndexer<Real *> lam_re(re_mem);
 
       Real rho = 1.0; // g/cc
       Real T = 1000;  // K
@@ -448,8 +472,15 @@ SCENARIO("SpinerEOS with multiphase fields") {
           "calc mass fractions", 0, 16, PORTABLE_LAMBDA(const int &idx) {
             const int i = idx % 4;
             const int j = idx / 4;
-            FlatIndexer<Real *> lam_rt(j, i, 4, 5, frac_rt_d);
-            FlatIndexer<Real *> lam_re(j, i, 4, 5, frac_re_d);
+
+            // Properly this should be allocated outside the loop.
+            Real logs_rt[SpinerEOSDependsRhoT::nlambda()];
+            Real logs_re[SpinerEOSDependsRhoSie::nlambda()];
+
+            FlatIndexer<Real *> mem_rt(j, i, 4, 5, frac_rt_d);
+            FlatIndexer<Real *> mem_re(j, i, 4, 5, frac_re_d);
+            MassFracIndexer lam_rt(&mem_rt[0], logs_rt);
+            MassFracIndexer lam_re(&mem_re[0], logs_re);
             eosrt.MassFractionsFromDensityTemperature(rho[i], T[j], lam_rt);
             eosre.MassFractionsFromDensityTemperature(rho[i], T[j], lam_re);
           });

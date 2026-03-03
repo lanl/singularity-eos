@@ -197,7 +197,7 @@ class SpinerEOSDependsRhoSieTransformable
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void MassFractionsFromDensityTemperature(
-      const Real rho, const Real T, Real *scratch,
+      const Real rho, const Real T, Real *mass_frac,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
@@ -205,7 +205,7 @@ class SpinerEOSDependsRhoSieTransformable
                                       Indexer_t &&lambda) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void MassFractionsFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *scratch,
+      const Real rho, const Real sie, Real *mass_frac,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
@@ -263,7 +263,10 @@ class SpinerEOSDependsRhoSieTransformable
   PORTABLE_FORCEINLINE_FUNCTION int GetNumberofPhases() const { return numphases; }
   const char *GetPhaseNames() const { return phase_names; }
 
+  // TODO(JMM): Should nlambda be made non-static so it can report the
+  // number of phases too?
   constexpr static inline int nlambda() noexcept { return _n_lambda; }
+
   template <typename T>
   static inline constexpr bool NeedsLambda() {
     return std::is_same<T, IndexableTypes::LogDensity>::value;
@@ -753,15 +756,15 @@ template <template <class> class TransformerT>
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void
 SpinerEOSDependsRhoSieTransformable<TransformerT>::MassFractionsFromDensityTemperature(
-    const Real rho, const Real T, Real *scratch, Indexer_t &&lambda) const {
+    const Real rho, const Real T, Real *mass_frac, Indexer_t &&lambda) const {
   if (!has_mf) {
-    *scratch = 1.0;
+    *mass_frac = 1.0;
     return;
   }
   const Real lRho = spiner_common::to_log(rho, lRhoOffset_);
   const Real lT = spiner_common::to_log(T, lTOffset_);
   IndexerUtils::SafeSet<IndexableTypes::LogDensity>(lambda, Lambda::lRho, lRho);
-  DataBox mf1d(scratch, numphases);
+  DataBox mf1d(mass_frac, numphases);
   mf1d.interpFromDB(mF_, lRho, lT);
 }
 template <template <class> class TransformerT>
@@ -770,30 +773,33 @@ PORTABLE_INLINE_FUNCTION void
 SpinerEOSDependsRhoSieTransformable<TransformerT>::MassFractionsFromDensityTemperature(
     const Real rho, const Real T, Indexer_t &&lambda) const {
   if (!has_mf) {
-    lambda[0] = 1.0;
+    // TODO(JMM): Should mass fraction be a required element of
+    // lambda? I don't love that...
+    IndexerUtils::SafeSet(lambda, IndexableTypes::MassFractions(0), _n_lambda, 1.0);
     return;
   }
   const Real lRho = spiner_common::to_log(rho, lRhoOffset_);
   const Real lT = spiner_common::to_log(T, lTOffset_);
   IndexerUtils::SafeSet<IndexableTypes::LogDensity>(lambda, Lambda::lRho, lRho);
   for (int n = 0; n < numphases; n++) {
-    lambda[n] = mF_.interpToReal(lRho, lT, n);
+    IndexerUtils::SafeSet(lambda, IndexableTypes::MassFractions(n), _n_lambda + n,
+                          mF_.interpToReal(lRho, lT, n));
   }
 }
 template <template <class> class TransformerT>
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void
 SpinerEOSDependsRhoSieTransformable<TransformerT>::MassFractionsFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *scratch, Indexer_t &&lambda) const {
+    const Real rho, const Real sie, Real *mass_frac, Indexer_t &&lambda) const {
   if (!has_mf) {
-    *scratch = 1.0;
+    *mass_frac = 1.0;
     return;
   }
   const Real lRho = spiner_common::to_log(rho, lRhoOffset_);
   const Real lE = spiner_common::to_log(sie, lEOffset_);
   const Real T = T_.interpToReal(lRho, lE);
   const Real lT = spiner_common::to_log(T, lTOffset_);
-  DataBox mf1d(scratch, numphases);
+  DataBox mf1d(mass_frac, numphases);
   mf1d.interpFromDB(mF_, lRho, lT);
 }
 template <template <class> class TransformerT>
@@ -802,7 +808,9 @@ PORTABLE_INLINE_FUNCTION void
 SpinerEOSDependsRhoSieTransformable<TransformerT>::MassFractionsFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
   if (!has_mf) {
-    lambda[0] = 1.0;
+    // TODO(JMM): Should mass fraction be a required element of
+    // lambda? I don't love that...
+    IndexerUtils::SafeSet(lambda, IndexableTypes::MassFractions(0), _n_lambda, 1.0);
     return;
   }
   const Real lRho = spiner_common::to_log(rho, lRhoOffset_);
@@ -810,7 +818,8 @@ SpinerEOSDependsRhoSieTransformable<TransformerT>::MassFractionsFromDensityInter
   const Real T = T_.interpToReal(lRho, lE);
   const Real lT = spiner_common::to_log(T, lTOffset_);
   for (int n = 0; n < numphases; n++) {
-    lambda[n] = mF_.interpToReal(lRho, lT, n);
+    IndexerUtils::SafeSet(lambda, IndexableTypes::MassFractions(n), _n_lambda + n,
+                          mF_.interpToReal(lRho, lT, n));
   }
 }
 template <template <class> class TransformerT>
