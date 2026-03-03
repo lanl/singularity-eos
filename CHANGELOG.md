@@ -6,6 +6,7 @@
 - [[PR589]](https://github.com/lanl/singularity-eos/pull/589) InternalEnergyFromDensityPressure
 
 ### Fixed (Repair bugs, etc)
+- [[PR607]](https://github.com/lanl/singularity-eos/pull/607) Make the PTE solvers a little bit more adaptable to EOS models that prefer pressure as an input
 
 ### Changed (changing behavior/API/variables/...)
 - [[PR601]](https://github.com/lanl/singularity-eos/pull/601) Make Serialize() return a smart pointer
