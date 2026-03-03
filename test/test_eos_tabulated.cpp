@@ -83,7 +83,10 @@ struct MassFracIndexer {
   PORTABLE_FORCEINLINE_FUNCTION
   Real &operator[](IndexableTypes::LogTemperature t) const { return l[1]; }
   PORTABLE_FORCEINLINE_FUNCTION
-  Real &operator[](IndexableTypes::MassFractions t) const { return x[t.n]; }
+  Real &operator[](IndexableTypes::MassFractions t) const {
+    printf("t.n, x[t.n] = %d, %.14e\n", t.n, x[t.n]);
+    return x[t.n];
+  }
 
   Real *x;
   Real *l;
@@ -377,10 +380,11 @@ SCENARIO("SpinerEOS with multiphase fields") {
       REQUIRE(isClose(sum_rt, 1.0));
     }
     THEN("We can recover the mass fractions on host using lambda") {
-      Real re_mem[SpinerEOSDependsRhoSie::nlambda() + 5];
       Real frac_rt[5], l[2];
-      Real *frac_re = &re_mem[SpinerEOSDependsRhoSie::nlambda() + 0];
       MassFracIndexer lam_rt(frac_rt, l);
+
+      Real *frac_re = &re_mem[SpinerEOSDependsRhoSie::nlambda() + 0];
+      Real re_mem[SpinerEOSDependsRhoSie::nlambda() + 5];
       FlatIndexer<Real *> lam_re(re_mem);
 
       Real rho = 1.0; // g/cc
