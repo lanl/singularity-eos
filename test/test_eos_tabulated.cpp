@@ -383,8 +383,8 @@ SCENARIO("SpinerEOS with multiphase fields") {
       Real frac_rt[5], l[2];
       MassFracIndexer lam_rt(frac_rt, l);
 
-      Real *frac_re = &re_mem[SpinerEOSDependsRhoSie::nlambda() + 0];
       Real re_mem[SpinerEOSDependsRhoSie::nlambda() + 5];
+      Real *frac_re = &re_mem[SpinerEOSDependsRhoSie::nlambda() + 0];
       FlatIndexer<Real *> lam_re(re_mem);
 
       Real rho = 1.0; // g/cc
