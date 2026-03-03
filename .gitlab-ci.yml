@@ -3,6 +3,7 @@ stages:
 
 variables:
   PROJECT_NAME: singularity-eos
+  PROJECT_GROUP: oss
   ENABLE_CDASH: true
   GIT_SUBMODULE_STRATEGY: normal
 
@@ -10,27 +11,12 @@ include:
  - .gitlab/common.yml
 
 # Spack environments are defined in
-# https://re-git.lanl.gov/xcap/deployment/-/tree/xcap-spack-env/systems
+# https://re-git.lanl.gov/xcap/deployment/-/tree/develop/environments
 # for each system and for each XCAP project.
-#
-# The project configuration can be found at the top of
-# .gitlab/build_and_test.sh.
 #
 # Each environment is uniquely identified by
 # ${SYSTEM_NAME}/${PROJECT_GROUP}/${PROJECT_NAME}/${SPACK_ENV_NAME}
 #
-# For creating a new custom environment for testing use the special
-# 'custom-spec' or 'custom-file` environments.
-#
-# The 'custom-spec` environment allows you specify an arbitrary Spack spec to
-# be added to a system-specific empty Spack environment. Use the SPACK_ENV_SPEC
-# environment variable to define the spec you want to add.
-
-# The 'custom-file` environment allows you to manually define an environment
-# from scratch.  Use the SPACK_ENV_FILE environment variable to specify the
-# path to the YAML file you want to use. Note, the environment will be placed
-# in ${SYSTEM_NAME}/${PROJECT_GROUP}/${PROJECT_NAME}/custom-file/spack.yaml and
-# can therefore make relative includes to common configuration files.
 
 prereq_offline_deps:
   stage: build_n_test
