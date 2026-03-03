@@ -377,9 +377,9 @@ SCENARIO("SpinerEOS with multiphase fields") {
       REQUIRE(isClose(sum_rt, 1.0));
     }
     THEN("We can recover the mass fractions on host using lambda") {
-      Real re_mem[SpinerEOSDependsRhoSie.nlambda() + 5];
+      Real re_mem[SpinerEOSDependsRhoSie::nlambda() + 5];
       Real frac_rt[5], l[2];
-      Real *frac_re = &re_mem[SpinerEOSDependsRhoSie.nlambda() + 0];
+      Real *frac_re = &re_mem[SpinerEOSDependsRhoSie::nlambda() + 0];
       MassFracIndexer lam_rt(frac_rt, l);
       FlatIndexer<Real *> lam_re(re_mem);
 
