@@ -84,7 +84,6 @@ struct MassFracIndexer {
   Real &operator[](IndexableTypes::LogTemperature t) const { return l[1]; }
   PORTABLE_FORCEINLINE_FUNCTION
   Real &operator[](IndexableTypes::MassFractions t) const {
-    printf("t.n, x[t.n] = %d, %.14e\n", t.n, x[t.n]);
     return x[t.n];
   }
 
@@ -473,8 +472,15 @@ SCENARIO("SpinerEOS with multiphase fields") {
           "calc mass fractions", 0, 16, PORTABLE_LAMBDA(const int &idx) {
             const int i = idx % 4;
             const int j = idx / 4;
-            FlatIndexer<Real *> lam_rt(j, i, 4, 5, frac_rt_d);
-            FlatIndexer<Real *> lam_re(j, i, 4, 5, frac_re_d);
+
+            // Properly this should be allocated outside the loop.
+            Real logs_rt[SpinerEOSDependsRhoT::nlambda()];
+            Real logs_re[SpinerEOSDependsRhoSie::nlambda()];
+
+            FlatIndexer<Real *> mem_rt(j, i, 4, 5, frac_rt_d);
+            FlatIndexer<Real *> mem_re(j, i, 4, 5, frac_re_d);
+            MassFracIndexer lam_rt(&mem_rt[0], logs_rt);
+            MassFracIndexer lam_re(&mem_re[0], logs_re);
             eosrt.MassFractionsFromDensityTemperature(rho[i], T[j], lam_rt);
             eosre.MassFractionsFromDensityTemperature(rho[i], T[j], lam_re);
           });

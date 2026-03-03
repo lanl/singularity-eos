@@ -955,8 +955,7 @@ SpinerEOSDependsRhoT::MassFractionsFromDensityTemperature(const Real rho, const 
   for (int n = 0; n < numphases; n++) {
     IndexerUtils::SafeSet(lambda, IndexableTypes::MassFractions(n), _n_lambda + n,
                           mF_.interpToReal(lRho, lT, n));
-   printf("n, lambda[x.n] = %d %.14e\n",
-           n, lambda[IndexableTypes::MassFractions(n)]);  }
+  }
 }
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void
