@@ -6,6 +6,7 @@
 - [[PR589]](https://github.com/lanl/singularity-eos/pull/589) InternalEnergyFromDensityPressure
 
 ### Fixed (Repair bugs, etc)
+- [[PR609]](https://github.com/lanl/singularity-eos/pull/609) Fix bugs introduced in 607, which did not properly handle initial guesses and had a typo that introduced UB
 - [[PR607]](https://github.com/lanl/singularity-eos/pull/607) Make the PTE solvers a little bit more adaptable to EOS models that prefer pressure as an input
 
 ### Changed (changing behavior/API/variables/...)
