@@ -21,3 +21,5 @@ fi
 
 git -C ${XCAP_SPACKAGES_CHECKOUT} checkout ${XCAP_SPACKAGES_REF}
 
+git submodule init
+git submodule update
