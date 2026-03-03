@@ -585,18 +585,13 @@ class PTESolverBase {
       auto prefinput = eos[m].PreferredInput();
       if ((prefinput & thermalqs::pressure) &&
           !(error_utils::bad_value(press[m], "press[m]"))) {
-        // Guess an arbitrary pressure to start things off
-        press[m] = robust::ratio(1.0e8, uscale);
-      } else {
         // Use input pressure for this material as the guess
         press[m] = robust::ratio(press[m], uscale);
+      } else {
+        press[m] = robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tguess,
+                                                                sie[m], lambda[m], false),
+                                 uscale);
       }
-    }
-    else {
-      press[m] = robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tguess,
-                                                              sie[m], lambda[m], false),
-                               uscale);
-    }
     }
 
     // note the scaling of the material internal energy densities
