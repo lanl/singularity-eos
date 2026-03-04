@@ -83,9 +83,7 @@ struct MassFracIndexer {
   PORTABLE_FORCEINLINE_FUNCTION
   Real &operator[](IndexableTypes::LogTemperature t) const { return l[1]; }
   PORTABLE_FORCEINLINE_FUNCTION
-  Real &operator[](IndexableTypes::MassFractions t) const {
-    return x[t.n];
-  }
+  Real &operator[](IndexableTypes::MassFractions t) const { return x[t.n]; }
 
   Real *x;
   Real *l;

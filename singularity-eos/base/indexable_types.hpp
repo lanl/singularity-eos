@@ -154,8 +154,8 @@ SafeMustGetSet(Indexer_t &&lambda, const T &t, std::size_t const idx) {
   }
 }
 template <AllowedIndexing AI, typename T, typename Indexer_t>
-PORTABLE_FORCEINLINE_FUNCTION decltype(auto)
-SafeMustGetSet(Indexer_t &&lambda, std::size_t const idx) {
+PORTABLE_FORCEINLINE_FUNCTION decltype(auto) SafeMustGetSet(Indexer_t &&lambda,
+                                                            std::size_t const idx) {
   return SafeMustGetSet<AI, T, Indexer_t>(lambda, T{}, idx);
 }
 } // namespace impl

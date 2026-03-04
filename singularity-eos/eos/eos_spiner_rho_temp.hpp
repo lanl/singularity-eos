@@ -992,7 +992,6 @@ SpinerEOSDependsRhoT::MassFractionsFromDensityInternalEnergy(const Real rho,
   for (int n = 0; n < numphases; n++) {
     IndexerUtils::SafeSet(lambda, IndexableTypes::MassFractions(n), _n_lambda + n,
                           mF_.interpToReal(lRho, lT, n));
-
   }
 }
 // TODO(JMM): This would be faster with hand-tuned code
