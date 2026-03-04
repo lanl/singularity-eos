@@ -1720,6 +1720,39 @@ constructor for ``SpinerEOSDependsRhoSie`` is identical.
   ``SpinerEOS`` model does **not** support the
   ``MeanAtomicProperties`` struct.
 
+Additionally Spiner EOS models support mass fraction lookups of the form
+
+.. code-block:: cpp
+
+  template <typename Indexer_t>
+  PORTABLE_INLINE_FUNCTION
+  void SpinerEOSDependsRhoT::MassFractionsFromDensityTemperature(
+    const Real rho, const Real temp, Real *mass_fracs, Indexer_t &&lambda) const;
+
+  template <typename Indexer_t>
+  PORTABLE_INLINE_FUNCTION void
+  SpinerEOSDependsRhoT::MassFractionsFromDensityInternalEnergy(
+    const Real rho, const Real sie, Real *mass_fracs, Indexer_t &&lambda) const;
+
+which sets the members of the ``*mass_fracs`` array the mass fractions of multiple phases as a function of density and either temperature or internal energy in a table if they are available. If they are not available, the ``mass_fracs`` array is assumed to be of at least length 1 and is set to unity. Alternatively, the functions 
+
+.. code-block:: cpp
+
+  template <typename Indexer_t>
+  PORTABLE_INLINE_FUNCTION
+  void SpinerEOSDependsRhoT::MassFractionsFromDensityTemperature(
+    const Real rho, const Real temp, Indexer_t &&lambda) const;
+
+  template <typename Indexer_t>
+  PORTABLE_INLINE_FUNCTION
+  void SpinerEOSDependsRhoT::MassFractionsFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const;
+
+assume the mass fractions array is contained in the lambda indexer and
+set them accordingly. They are assumed to be indexable via the
+``MassFractions`` indexable type, discussed above, or to be appended
+at the end of the lambda after ``nlambda()`` elements.
+
 ``sp5`` files and ``sesame2spiner``
 `````````````````````````````````````
 

@@ -177,6 +177,22 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void MassFractionsFromDensityTemperature(
+      const Real rho, const Real temperature, Real *mass_fracs,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void MassFractionsFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  MassFractionsFromDensityInternalEnergy(const Real rho, const Real sie, Real *mass_fracs,
+                                         Indexer_t &&lambda) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  MassFractionsFromDensityInternalEnergy(const Real rho, const Real sie,
+                                         Indexer_t &&lambda) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                        Indexer_t &&lambda, Real &rho, Real &sie) const;
@@ -221,7 +237,13 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumPressure() const { return PMin_; }
 
+  PORTABLE_FORCEINLINE_FUNCTION int GetNumberofPhases() const { return numphases; }
+  const char *GetPhaseNames() const { return phase_names; }
+
+  // TODO(JMM): Should nlambda be made non-static so it can report the
+  // number of phases too?
   constexpr static inline int nlambda() noexcept { return _n_lambda; }
+
   template <typename T>
   static inline constexpr bool NeedsLambda() {
     using namespace IndexableTypes;
@@ -234,7 +256,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 
  private:
   herr_t loadDataboxes_(const std::string &matid_str, hid_t file, hid_t lTGroup,
-                        hid_t coldGroup);
+                        hid_t coldGroup, hid_t mfGroup);
   inline void fixBulkModulus_();
   inline void setlTColdCrit_();
 
@@ -294,7 +316,8 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 
   // TODO(JMM): Could unify declarations and macro below by using
   // reference_wrapper instead of pointers... worth it?
-  DataBox P_, sie_, bMod_, dPdRho_, dPdE_, dTdRho_, dTdE_, dEdRho_, dEdT_;
+
+  DataBox P_, sie_, bMod_, dPdRho_, dPdE_, dTdRho_, dTdE_, dEdRho_, dEdT_, mF_;
   DataBox PMax_, sielTMax_, dEdTMax_, gm1Max_;
   DataBox lTColdCrit_;
   DataBox PCold_, sieCold_, bModCold_;
@@ -303,9 +326,10 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 
   // TODO(JMM): Pointers here? or reference_wrapper? IMO the pointers are more clear
 #define DBLIST                                                                           \
-  &P_, &sie_, &bMod_, &dPdRho_, &dPdE_, &dTdRho_, &dTdE_, &dEdRho_, &dEdT_, &PMax_,      \
-      &sielTMax_, &dEdTMax_, &gm1Max_, &lTColdCrit_, &PCold_, &sieCold_, &bModCold_,     \
-      &dPdRhoCold_, &dPdECold_, &dTdRhoCold_, &dTdECold_, &dEdTCold_, &rho_at_pmin_
+  &P_, &sie_, &bMod_, &dPdRho_, &dPdE_, &dTdRho_, &dTdE_, &dEdRho_, &dEdT_, &mF_,        \
+      &PMax_, &sielTMax_, &dEdTMax_, &gm1Max_, &lTColdCrit_, &PCold_, &sieCold_,         \
+      &bModCold_, &dPdRhoCold_, &dPdECold_, &dTdRhoCold_, &dTdECold_, &dEdTCold_,        \
+      &rho_at_pmin_
   auto GetDataBoxPointers_() const { return std::vector<const DataBox *>{DBLIST}; }
   auto GetDataBoxPointers_() { return std::vector<DataBox *>{DBLIST}; }
 #undef DBLIST
@@ -322,6 +346,13 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   TableSplit split_;
   bool reproducible_ = false;
   bool pmin_vapor_dome_ = false;
+  bool has_mf = false;
+  // Need to hold the phase names for multiphase EOS
+  // This isn't great, but the class needs to be trivially copyable
+  char *phase_names = nullptr;
+  std::size_t len_phase_names = 0;
+  DataStatus phase_names_status = DataStatus::Deallocated;
+  int numphases = 1;
   static constexpr const Real ROOT_THRESH = 1e-14;
   static constexpr const Real SOFT_THRESH = 1e-8;
   // only used to exclude vapor dome
@@ -364,8 +395,18 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, i
   hid_t coldGroup =
       spiner_common::h5_safe_gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);
 
-  loadDataboxes_(matid_str, file, lTGroup, coldGroup);
+  // mass fractions
+  has_mf = H5Lexists(matGroup, SP5::Depends::massFrac, H5P_DEFAULT);
+  hid_t mfGroup = -1;
+  if (has_mf) {
+    mfGroup = spiner_common::h5_safe_gopen(matGroup, SP5::Depends::massFrac, H5P_DEFAULT);
+  }
 
+  loadDataboxes_(matid_str, file, lTGroup, coldGroup, mfGroup);
+
+  if (has_mf) {
+    spiner_common::h5_safe_gclose(mfGroup);
+  }
   spiner_common::h5_safe_gclose(lTGroup);
   spiner_common::h5_safe_gclose(coldGroup);
   spiner_common::h5_safe_gclose(matGroup);
@@ -406,8 +447,18 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
                                             SP5::Material::matid, &matid_);
   matid_str = std::to_string(matid_);
 
-  loadDataboxes_(matid_str, file, lTGroup, coldGroup);
+  // mass fractions
+  has_mf = H5Lexists(matGroup, SP5::Depends::massFrac, H5P_DEFAULT);
+  hid_t mfGroup = -1;
+  if (has_mf) {
+    mfGroup = spiner_common::h5_safe_gopen(matGroup, SP5::Depends::massFrac, H5P_DEFAULT);
+  }
 
+  loadDataboxes_(matid_str, file, lTGroup, coldGroup, mfGroup);
+
+  if (has_mf) {
+    spiner_common::h5_safe_gclose(mfGroup);
+  }
   spiner_common::h5_safe_gclose(lTGroup);
   spiner_common::h5_safe_gclose(coldGroup);
   spiner_common::h5_safe_gclose(matGroup);
@@ -417,27 +468,75 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
 }
 
 inline SpinerEOSDependsRhoT SpinerEOSDependsRhoT::GetOnDevice() {
-  return SpinerTricks::GetOnDevice(this);
+  auto eos_d = SpinerTricks::GetOnDevice(this);
+  if (len_phase_names > 0) {
+    PORTABLE_ALWAYS_REQUIRE(phase_names != nullptr, "phase_names NULL but len > 0");
+
+    char *dev = (char *)(PORTABLE_MALLOC(len_phase_names));
+    portableCopyToDevice<char>(dev, phase_names, len_phase_names);
+
+    eos_d.phase_names = dev;
+    eos_d.len_phase_names = len_phase_names;
+    eos_d.phase_names_status = DataStatus::OnDevice;
+  } else {
+    eos_d.phase_names = nullptr;
+    eos_d.len_phase_names = 0;
+    eos_d.phase_names_status = DataStatus::Deallocated;
+  }
+  return eos_d;
 }
 
-void SpinerEOSDependsRhoT::Finalize() { SpinerTricks::Finalize(this); }
+void SpinerEOSDependsRhoT::Finalize() {
+  SpinerTricks::Finalize(this);
+
+  if ((phase_names_status != DataStatus::UnManaged) && (phase_names != nullptr)) {
+    if (phase_names_status == DataStatus::OnHost) {
+      free(phase_names);
+    } else if (phase_names_status == DataStatus::OnDevice) {
+      PORTABLE_FREE(phase_names);
+    }
+  }
+  phase_names = nullptr;
+  len_phase_names = 0;
+  phase_names_status = DataStatus::Deallocated;
+}
 
 inline std::size_t SpinerEOSDependsRhoT::DynamicMemorySizeInBytes() const {
-  return SpinerTricks::DynamicMemorySizeInBytes(this);
+  return SpinerTricks::DynamicMemorySizeInBytes(this) + len_phase_names;
 }
 
 inline std::size_t SpinerEOSDependsRhoT::DumpDynamicMemory(char *dst) {
-  return SpinerTricks::DumpDynamicMemory(dst, this);
+  std::size_t offst = SpinerTricks::DumpDynamicMemory(dst, this);
+
+  if (len_phase_names > 0) {
+    PORTABLE_ALWAYS_REQUIRE(phase_names != nullptr,
+                            "phase_names null but len_phase_names > 0");
+    std::memcpy(dst + offst, phase_names, len_phase_names);
+    offst += len_phase_names;
+  }
+  return offst;
 }
 
 inline std::size_t
 SpinerEOSDependsRhoT::SetDynamicMemory(char *src, const SharedMemSettings &stngs) {
-  return SpinerTricks::SetDynamicMemory((stngs.data == nullptr) ? src : stngs.data, this);
+  char *base = (stngs.data == nullptr) ? src : stngs.data;
+  std::size_t offst = SpinerTricks::SetDynamicMemory(base, this);
+
+  if (len_phase_names > 0) {
+    phase_names = base + offst;
+    phase_names_status = DataStatus::UnManaged;
+    offst += len_phase_names;
+  } else {
+    phase_names = nullptr;
+    len_phase_names = 0;
+    phase_names_status = DataStatus::Deallocated;
+  }
+  return offst;
 }
 
 inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
                                                    hid_t file, hid_t lTGroup,
-                                                   hid_t coldGroup) {
+                                                   hid_t coldGroup, hid_t mfGroup) {
   using namespace spiner_common;
   herr_t status = H5_SUCCESS;
 
@@ -474,6 +573,24 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
   status += sieCold_.loadHDF(coldGroup, SP5::Fields::sie);
   status += bModCold_.loadHDF(coldGroup, SP5::Fields::bMod);
   status += dPdRhoCold_.loadHDF(coldGroup, SP5::Fields::dPdRho);
+
+  // mass fractions
+  if (mfGroup != -1) {
+    status += mF_.loadHDF(mfGroup, SP5::Fields::massFrac);
+    spiner_common::h5_safe_get_attribute<int>(mfGroup, ".", "numphases", &numphases);
+    if (phase_names != nullptr) {
+      if (phase_names_status == DataStatus::OnHost) {
+        free(phase_names);
+      } else if (phase_names_status == DataStatus::OnDevice) {
+        PORTABLE_FREE(phase_names);
+      }
+    }
+    phase_names = spiner_common::h5_safe_read_attr_string(mfGroup, ".", "phase names",
+                                                          len_phase_names);
+    if ((phase_names != nullptr) && (len_phase_names > 0)) {
+      phase_names_status = DataStatus::OnHost;
+    }
+  }
 
   numRho_ = bMod_.dim(2);
   numT_ = bMod_.dim(1);
@@ -808,7 +925,75 @@ SpinerEOSDependsRhoT::GruneisenParamFromDensityInternalEnergy(const Real rho,
   }
   return gm1;
 }
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void SpinerEOSDependsRhoT::MassFractionsFromDensityTemperature(
+    const Real rho, const Real temp, Real *mass_fracs, Indexer_t &&lambda) const {
+  if (!has_mf) {
+    *mass_fracs = 1.0;
+    return;
+  }
 
+  Real lRho, lT;
+  getLogsRhoT_(rho, temp, lRho, lT, lambda);
+
+  DataBox mf1d(mass_fracs, numphases);
+  mf1d.interpFromDB(mF_, lRho, lT);
+}
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+SpinerEOSDependsRhoT::MassFractionsFromDensityTemperature(const Real rho, const Real temp,
+                                                          Indexer_t &&lambda) const {
+  if (!has_mf) {
+    // TODO(JMM): Should mass fraction be a required element of
+    // lambda? I don't love that...
+    IndexerUtils::SafeSet(lambda, IndexableTypes::MassFractions(0), _n_lambda, 1.0);
+    return;
+  }
+  Real lRho, lT;
+  getLogsRhoT_(rho, temp, lRho, lT, lambda);
+
+  for (int n = 0; n < numphases; n++) {
+    IndexerUtils::SafeSet(lambda, IndexableTypes::MassFractions(n), _n_lambda + n,
+                          mF_.interpToReal(lRho, lT, n));
+  }
+}
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+SpinerEOSDependsRhoT::MassFractionsFromDensityInternalEnergy(const Real rho,
+                                                             const Real sie,
+                                                             Real *mass_fracs,
+                                                             Indexer_t &&lambda) const {
+  if (!has_mf) {
+    *mass_fracs = 1.0;
+    return;
+  }
+  TableStatus whereAmI;
+  const Real lRho = lRho_(rho);
+  const Real lT = lTFromlRhoSie_(lRho, sie, whereAmI, lambda);
+
+  DataBox mf1d(mass_fracs, numphases);
+  mf1d.interpFromDB(mF_, lRho, lT);
+}
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+SpinerEOSDependsRhoT::MassFractionsFromDensityInternalEnergy(const Real rho,
+                                                             const Real sie,
+                                                             Indexer_t &&lambda) const {
+  if (!has_mf) {
+    // TODO(JMM): Should mass fraction be a required element of
+    // lambda? I don't love that...
+    IndexerUtils::SafeSet(lambda, IndexableTypes::MassFractions(0), _n_lambda, 1.0);
+    return;
+  }
+  TableStatus whereAmI;
+  const Real lRho = lRho_(rho);
+  const Real lT = lTFromlRhoSie_(lRho, sie, whereAmI, lambda);
+
+  for (int n = 0; n < numphases; n++) {
+    IndexerUtils::SafeSet(lambda, IndexableTypes::MassFractions(n), _n_lambda + n,
+                          mF_.interpToReal(lRho, lT, n));
+  }
+}
 // TODO(JMM): This would be faster with hand-tuned code
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void SpinerEOSDependsRhoT::DensityEnergyFromPressureTemperature(

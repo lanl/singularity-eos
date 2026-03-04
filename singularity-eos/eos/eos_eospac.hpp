@@ -128,6 +128,7 @@ inline void SetUpOutputScalingOption(EOS_INTEGER options[], EOS_REAL values[],
 
 } // namespace impl_eospac
 
+// TODO(@adempsey): Add mass fractions + better multiphase support
 class EOSPAC : public EosBase<EOSPAC> {
 
  public:

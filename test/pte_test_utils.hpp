@@ -20,6 +20,9 @@
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
 
+// TODO(@adempsey)
+// Move this header to something like test_indexers.hpp
+
 template <typename T>
 class LinearIndexer {
  public:
@@ -45,4 +48,25 @@ class Indexer2D {
   const int j_;
   const T &data_;
 };
+
+template <typename T>
+class FlatIndexer {
+ public:
+  FlatIndexer() = default;
+  PORTABLE_INLINE_FUNCTION FlatIndexer(const T &t) : offset_(0), data_(t) {}
+  PORTABLE_INLINE_FUNCTION FlatIndexer(const int offset, const T &t)
+      : offset_(offset), data_(t) {}
+  PORTABLE_INLINE_FUNCTION FlatIndexer(const int j, const int stride_x1, const T &t)
+      : offset_(stride_x1 * j), data_(t) {}
+  PORTABLE_INLINE_FUNCTION FlatIndexer(const int k, const int j, const int stride_x2,
+                                       const int stride_x1, const T &t)
+      : offset_(stride_x1 * j + stride_x1 * stride_x2 * k), data_(t) {}
+  PORTABLE_INLINE_FUNCTION
+  auto &operator[](const int i) const { return data_[i + offset_]; }
+
+ private:
+  const int offset_;
+  T data_;
+};
+
 #endif // _SINGULARITY_EOS_TEST_PTE_TEST_UTILS_

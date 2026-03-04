@@ -196,6 +196,22 @@ class SpinerEOSDependsRhoSieTransformable
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void MassFractionsFromDensityTemperature(
+      const Real rho, const Real T, Real *mass_frac,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  MassFractionsFromDensityTemperature(const Real rho, const Real T,
+                                      Indexer_t &&lambda) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void MassFractionsFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *mass_frac,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  MassFractionsFromDensityInternalEnergy(const Real rho, const Real sie,
+                                         Indexer_t &&lambda) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                        Indexer_t &&lambda, Real &rho, Real &sie) const;
@@ -244,8 +260,13 @@ class SpinerEOSDependsRhoSieTransformable
   Real RhoPmin(const Real temp) const {
     return rho_at_pmin_.interpToReal(spiner_common::to_log(temp, lTOffset_));
   }
+  PORTABLE_FORCEINLINE_FUNCTION int GetNumberofPhases() const { return numphases; }
+  const char *GetPhaseNames() const { return phase_names; }
 
+  // TODO(JMM): Should nlambda be made non-static so it can report the
+  // number of phases too?
   constexpr static inline int nlambda() noexcept { return _n_lambda; }
+
   template <typename T>
   static inline constexpr bool NeedsLambda() {
     return std::is_same<T, IndexableTypes::LogDensity>::value;
@@ -275,7 +296,7 @@ class SpinerEOSDependsRhoSieTransformable
 
  private:
   inline herr_t loadDataboxes_(const std::string &matid_str, hid_t file, hid_t lTGroup,
-                               hid_t lEGroup, hid_t coldGroupd);
+                               hid_t lEGroup, hid_t coldGroupd, hid_t mfGroup);
   inline void calcBMod_(SP5Tables &tables);
 
   template <typename Indexer_t = Real *>
@@ -295,6 +316,7 @@ class SpinerEOSDependsRhoSieTransformable
   DataBox rho_at_pmin_;
   SP5Tables dependsRhoT_;
   SP5Tables dependsRhoSie_;
+  DataBox mF_;
   DataBox PlRhoMax_, dPdRhoMax_;
   DataBox PCold_, sieCold_, bModCold_, dPdRhoCold_;
   int numRho_, numT_;
@@ -309,7 +331,7 @@ class SpinerEOSDependsRhoSieTransformable
       &(dependsRhoT_.dPdRho), &(dependsRhoT_.dPdE), &(dependsRhoT_.dTdRho),              \
       &(dependsRhoT_.dTdE), &(dependsRhoT_.dEdRho), &(dependsRhoSie_.P),                 \
       &(dependsRhoSie_.bMod), &(dependsRhoSie_.dPdRho), &(dependsRhoSie_.dPdE),          \
-      &(dependsRhoSie_.dTdRho), &(dependsRhoSie_.dTdE), &(dependsRhoSie_.dEdRho),        \
+      &(dependsRhoSie_.dTdRho), &(dependsRhoSie_.dTdE), &(dependsRhoSie_.dEdRho), &mF_,  \
       &PlRhoMax_, &dPdRhoMax_, &PCold_, &sieCold_, &bModCold_, &dPdRhoCold_
   std::vector<const DataBox *> GetDataBoxPointers_() const {
     return std::vector<const DataBox *>{DBLIST};
@@ -325,6 +347,14 @@ class SpinerEOSDependsRhoSieTransformable
   MeanAtomicProperties AZbar_;
   bool reproducible_ = false;
   bool pmin_vapor_dome_ = false;
+  bool has_mf = false;
+  // Need to hold the phase names for multiphase EOS
+  // This isn't great, but the class needs to be trivially copyable
+  // I've chosen something reasonable, e.g., 15 phases with 32 character names
+  char *phase_names = nullptr;
+  std::size_t len_phase_names = 0;
+  DataStatus phase_names_status = DataStatus::Deallocated;
+  int numphases = 1;
   // only used to exclude vapor dome
   static constexpr const Real VAPOR_DPDR_THRESH = 1e-8;
   static constexpr const int _n_lambda = 1;
@@ -373,11 +403,20 @@ inline SpinerEOSDependsRhoSieTransformable<
   spiner_common::h5_safe_get_attribute<int>(file, materialName.c_str(),
                                             SP5::Material::matid, &matid_);
   matid_str = std::to_string(matid_);
+  // mass fractions
+  has_mf = H5Lexists(matGroup, SP5::Depends::massFrac, H5P_DEFAULT);
+  hid_t mfGroup = -1;
+  if (has_mf) {
+    mfGroup = spiner_common::h5_safe_gopen(matGroup, SP5::Depends::massFrac, H5P_DEFAULT);
+  }
 
-  status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
+  status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup, mfGroup);
 
   InitializeTransformer();
 
+  if (has_mf) {
+    spiner_common::h5_safe_gclose(mfGroup);
+  }
   spiner_common::h5_safe_gclose(lTGroup);
   spiner_common::h5_safe_gclose(lEGroup);
   spiner_common::h5_safe_gclose(matGroup);
@@ -387,7 +426,7 @@ inline SpinerEOSDependsRhoSieTransformable<
 template <template <class> class TransformerT>
 herr_t SpinerEOSDependsRhoSieTransformable<TransformerT>::loadDataboxes_(
     const std::string &matid_str, hid_t file, hid_t lTGroup, hid_t lEGroup,
-    hid_t coldGroup) {
+    hid_t coldGroup, hid_t mfGroup) {
   using namespace spiner_common;
   herr_t status = H5_SUCCESS;
 
@@ -439,6 +478,24 @@ herr_t SpinerEOSDependsRhoSieTransformable<TransformerT>::loadDataboxes_(
   status += dependsRhoSie_.dTdRho.loadHDF(lEGroup, SP5::Fields::dTdRho);
   status += dependsRhoSie_.dTdE.loadHDF(lEGroup, SP5::Fields::dTdE);
   status += dependsRhoSie_.dEdRho.loadHDF(lEGroup, SP5::Fields::dEdRho);
+
+  // mass fractions
+  if (mfGroup != -1) {
+    status += mF_.loadHDF(mfGroup, SP5::Fields::massFrac);
+    spiner_common::h5_safe_get_attribute<int>(mfGroup, ".", "numphases", &numphases);
+    if (phase_names != nullptr) {
+      if (phase_names_status == DataStatus::OnHost) {
+        free(phase_names);
+      } else if (phase_names_status == DataStatus::OnDevice) {
+        PORTABLE_FREE(phase_names);
+      }
+    }
+    phase_names = spiner_common::h5_safe_read_attr_string(mfGroup, ".", "phase names",
+                                                          len_phase_names);
+    if ((phase_names != nullptr) && (len_phase_names > 0)) {
+      phase_names_status = DataStatus::OnHost;
+    }
+  }
 
   // Fix up bulk modulus
   calcBMod_(dependsRhoT_);
@@ -516,31 +573,74 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>
 SpinerEOSDependsRhoSieTransformable<TransformerT>::GetOnDevice() {
   auto eos_d = STricks::GetOnDevice(this);
   eos_d.InitializeTransformer();
+  if (len_phase_names > 0) {
+    PORTABLE_ALWAYS_REQUIRE(phase_names != nullptr, "phase_names NULL but len > 0");
+
+    char *dev = (char *)(PORTABLE_MALLOC(len_phase_names));
+    portableCopyToDevice<char>(dev, phase_names, len_phase_names);
+
+    eos_d.phase_names = dev;
+    eos_d.len_phase_names = len_phase_names;
+    eos_d.phase_names_status = DataStatus::OnDevice;
+  } else {
+    eos_d.phase_names = nullptr;
+    eos_d.len_phase_names = 0;
+    eos_d.phase_names_status = DataStatus::Deallocated;
+  }
   return eos_d;
 }
 
 template <template <class> class TransformerT>
 void SpinerEOSDependsRhoSieTransformable<TransformerT>::Finalize() {
   STricks::Finalize(this);
+
+  if ((phase_names_status != DataStatus::UnManaged) && (phase_names != nullptr)) {
+    if (phase_names_status == DataStatus::OnHost) {
+      free(phase_names);
+    } else if (phase_names_status == DataStatus::OnDevice) {
+      PORTABLE_FREE(phase_names);
+    }
+  }
+  phase_names = nullptr;
+  len_phase_names = 0;
+  phase_names_status = DataStatus::Deallocated;
 }
 
 template <template <class> class TransformerT>
 inline std::size_t
 SpinerEOSDependsRhoSieTransformable<TransformerT>::DynamicMemorySizeInBytes() const {
-  return STricks::DynamicMemorySizeInBytes(this);
+  return STricks::DynamicMemorySizeInBytes(this) + len_phase_names;
 }
 
 template <template <class> class TransformerT>
 inline std::size_t
 SpinerEOSDependsRhoSieTransformable<TransformerT>::DumpDynamicMemory(char *dst) {
-  return STricks::DumpDynamicMemory(dst, this);
+  std::size_t offst = STricks::DumpDynamicMemory(dst, this);
+
+  if (len_phase_names > 0) {
+    PORTABLE_ALWAYS_REQUIRE(phase_names != nullptr,
+                            "phase_names null but len_phase_names > 0");
+    std::memcpy(dst + offst, phase_names, len_phase_names);
+    offst += len_phase_names;
+  }
+  return offst;
 }
 
 template <template <class> class TransformerT>
 inline std::size_t SpinerEOSDependsRhoSieTransformable<TransformerT>::SetDynamicMemory(
     char *src, const SharedMemSettings &stngs) {
   if (stngs.data != nullptr) src = stngs.data;
-  return STricks::SetDynamicMemory(src, this);
+  std::size_t offst = STricks::SetDynamicMemory(src, this);
+  if (len_phase_names > 0) {
+    phase_names = src + offst;
+    phase_names_status = DataStatus::UnManaged;
+    offst += len_phase_names;
+  } else {
+    phase_names = nullptr;
+    len_phase_names = 0;
+    phase_names_status = DataStatus::Deallocated;
+  }
+  return offst;
 }
 
 template <template <class> class TransformerT>
@@ -652,6 +752,76 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSieTransformable<
   return dpde / rho;
 }
 
+template <template <class> class TransformerT>
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+SpinerEOSDependsRhoSieTransformable<TransformerT>::MassFractionsFromDensityTemperature(
+    const Real rho, const Real T, Real *mass_frac, Indexer_t &&lambda) const {
+  if (!has_mf) {
+    *mass_frac = 1.0;
+    return;
+  }
+  const Real lRho = spiner_common::to_log(rho, lRhoOffset_);
+  const Real lT = spiner_common::to_log(T, lTOffset_);
+  IndexerUtils::SafeSet<IndexableTypes::LogDensity>(lambda, Lambda::lRho, lRho);
+  DataBox mf1d(mass_frac, numphases);
+  mf1d.interpFromDB(mF_, lRho, lT);
+}
+template <template <class> class TransformerT>
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+SpinerEOSDependsRhoSieTransformable<TransformerT>::MassFractionsFromDensityTemperature(
+    const Real rho, const Real T, Indexer_t &&lambda) const {
+  if (!has_mf) {
+    // TODO(JMM): Should mass fraction be a required element of
+    // lambda? I don't love that...
+    IndexerUtils::SafeSet(lambda, IndexableTypes::MassFractions(0), _n_lambda, 1.0);
+    return;
+  }
+  const Real lRho = spiner_common::to_log(rho, lRhoOffset_);
+  const Real lT = spiner_common::to_log(T, lTOffset_);
+  IndexerUtils::SafeSet<IndexableTypes::LogDensity>(lambda, Lambda::lRho, lRho);
+  for (int n = 0; n < numphases; n++) {
+    IndexerUtils::SafeSet(lambda, IndexableTypes::MassFractions(n), _n_lambda + n,
+                          mF_.interpToReal(lRho, lT, n));
+  }
+}
+template <template <class> class TransformerT>
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+SpinerEOSDependsRhoSieTransformable<TransformerT>::MassFractionsFromDensityInternalEnergy(
+    const Real rho, const Real sie, Real *mass_frac, Indexer_t &&lambda) const {
+  if (!has_mf) {
+    *mass_frac = 1.0;
+    return;
+  }
+  const Real lRho = spiner_common::to_log(rho, lRhoOffset_);
+  const Real lE = spiner_common::to_log(sie, lEOffset_);
+  const Real T = T_.interpToReal(lRho, lE);
+  const Real lT = spiner_common::to_log(T, lTOffset_);
+  DataBox mf1d(mass_frac, numphases);
+  mf1d.interpFromDB(mF_, lRho, lT);
+}
+template <template <class> class TransformerT>
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+SpinerEOSDependsRhoSieTransformable<TransformerT>::MassFractionsFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
+  if (!has_mf) {
+    // TODO(JMM): Should mass fraction be a required element of
+    // lambda? I don't love that...
+    IndexerUtils::SafeSet(lambda, IndexableTypes::MassFractions(0), _n_lambda, 1.0);
+    return;
+  }
+  const Real lRho = spiner_common::to_log(rho, lRhoOffset_);
+  const Real lE = spiner_common::to_log(sie, lEOffset_);
+  const Real T = T_.interpToReal(lRho, lE);
+  const Real lT = spiner_common::to_log(T, lTOffset_);
+  for (int n = 0; n < numphases; n++) {
+    IndexerUtils::SafeSet(lambda, IndexableTypes::MassFractions(n), _n_lambda + n,
+                          mF_.interpToReal(lRho, lT, n));
+  }
+}
 template <template <class> class TransformerT>
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void
@@ -842,12 +1012,22 @@ inline SpinerEOSDependsRhoSieTransformable<
   hid_t coldGroup =
       spiner_common::h5_safe_gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);
 
-  status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
+  // mass fractions
+  has_mf = H5Lexists(matGroup, SP5::Depends::massFrac, H5P_DEFAULT);
+  hid_t mfGroup = -1;
+  if (has_mf) {
+    mfGroup = spiner_common::h5_safe_gopen(matGroup, SP5::Depends::massFrac, H5P_DEFAULT);
+  }
+
+  status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup, mfGroup);
 
   TransformDataContainer_ = {lRhoOffset_, lEOffset_, sieCold_, T_, dependsRhoSie_.dTdE};
 
   transformer_ = Transformer(TransformDataContainer_);
 
+  if (has_mf) {
+    spiner_common::h5_safe_gclose(mfGroup);
+  }
   spiner_common::h5_safe_gclose(lTGroup);
   spiner_common::h5_safe_gclose(lEGroup);
   spiner_common::h5_safe_gclose(matGroup);
