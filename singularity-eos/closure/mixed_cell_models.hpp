@@ -544,7 +544,7 @@ class PTESolverBase {
       Real Pmin = eos.MinimumPressure();
       Real Pmax = eos.MaximumPressureAtTemperature(T);
       Real Pguess;
-      if (error_utils::bad_value(Pguess, "Pressure in GetSieCvFromTAndPreferred")) {
+      if (error_utils::bad_value(P, "Pressure in GetSieCvFromTAndPreferred")) {
         Pguess = 0.5 * (Pmin + Pmax);
       } else {
         Pguess = std::max(Pmin, std::min(Pmax, P));
@@ -584,17 +584,9 @@ class PTESolverBase {
       // note the scaling of pressure
       auto prefinput = eos[m].PreferredInput();
       if ((prefinput & thermalqs::pressure) &&
-          !((prefinput & thermalqs::density) &&
-            ((prefinput & thermalqs::specific_internal_energy) ||
-             (prefinput & thermalqs::temperature)))) {
-        // Use pressure array for guesses without doing a lookup
-        if (error_utils::bad_value(press[m], "press[m]")) {
-          // Guess an arbitrary pressure to start things off
-          press[m] = robust::ratio(1.0e8, uscale);
-        } else {
-          // Use input pressure for this material as the guess
-          press[m] = robust::ratio(press[m], uscale);
-        }
+          !(error_utils::bad_value(press[m], "press[m]"))) {
+        // Use input pressure for this material as the guess
+        press[m] = robust::ratio(press[m], uscale);
       } else {
         press[m] = robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tguess,
                                                                 sie[m], lambda[m], false),
