@@ -277,11 +277,10 @@ class PTESolverBase {
   // pointers, and avoid relocatable device code.
 
   // Fixup is meant to be a hook for derived classes to provide arbitrary manipulations
-  // after each iteration of the Newton solver.  This version just renormalizes the
-  // volume fractions, which is useful to deal with roundoff error.
+  // after each iteration of the Newton solver.
   // See comment above about virtual keyword
   PORTABLE_INLINE_FUNCTION
-  virtual void Fixup() { NormalizeVfrac(); }
+  virtual void Fixup() { }
   // Finalize restores the temperatures, energies, and pressures to unscaled values from
   // the internally scaled quantities used by the solvers
   // See comment above about virtual keyword
@@ -303,6 +302,12 @@ class PTESolverBase {
   // Parameters for the solver
   PORTABLE_INLINE_FUNCTION
   const MixParams &GetParams() const { return params_; }
+
+  // Reports which quantities are exactly conserved by a given solver
+  PORTABLE_INLINE_FUNCTION
+  constexpr static unsigned long ExactlySum() {
+    return thermalqs::none;
+  }
 
  protected:
   PORTABLE_INLINE_FUNCTION
@@ -851,6 +856,11 @@ class PTESolverRhoT
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::lambda;
 
  public:
+  PORTABLE_INLINE_FUNCTION
+  constexpr static unsigned long ExactlySum() {
+    return thermalqs::mass_fractions | thermalqs::volume_fractions;
+  }
+
   // template the ctor to get type deduction/universal references prior to c++17
   template <typename EOS_t, typename Real_t, typename Lambda_t>
   PORTABLE_INLINE_FUNCTION
@@ -1171,6 +1181,11 @@ class PTESolverPT
   enum RES { RV = 0, RSIE = 1 };
 
  public:
+  PORTABLE_INLINE_FUNCTION
+  constexpr static unsigned long ExactlySum() {
+    return thermalqs::mass_fraction;
+  }
+
   // template the ctor to get type deduction/universal references prior to c++17
   template <typename EOS_t, typename Real_t, typename Lambda_t>
   PORTABLE_INLINE_FUNCTION
@@ -1417,6 +1432,11 @@ class PTESolverFixedT
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::lambda;
 
  public:
+  PORTABLE_INLINE_FUNCTION
+  constexpr static unsigned long ExactlySum() {
+    return thermalqs::mass_fractions | thermalqs::volume_fractions;
+  }
+
   // template the ctor to get type deduction/universal references prior to c++17
   // allow the type of the temperature array to be different, potentially a const Real*
   template <typename EOS_t, typename Real_t, typename CReal_t, typename Lambda_t>
@@ -1638,6 +1658,11 @@ class PTESolverFixedP
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::lambda;
 
  public:
+  PORTABLE_INLINE_FUNCTION
+  constexpr static unsigned long ExactlySum() {
+    return thermalqs::mass_fractions | thermalqs::volume_fractions;
+  }
+
   // template the ctor to get type deduction/universal references prior to c++17
   template <typename EOS_t, typename Real_t, typename CReal_t, typename Lambda_t>
   PORTABLE_INLINE_FUNCTION
@@ -1883,6 +1908,12 @@ class PTESolverRhoU
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::lambda;
 
  public:
+  PORTABLE_INLINE_FUNCTION
+  constexpr static unsigned long ExactlySum() {
+    return thermalqs::mass_fractions | thermalqs::volume_fractions |
+           thermalqs::specific_internal_energy;
+  }
+
   // template the ctor to get type deduction/universal references prior to c++17
   template <typename EOS_t, typename Real_t, typename Lambda_t>
   PORTABLE_INLINE_FUNCTION

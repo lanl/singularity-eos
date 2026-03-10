@@ -564,6 +564,66 @@ material pressures.
 
 In the code this is referred to as the ``PTESolverFixedP``.
 
+A note on satisfying constraints up to machine precision
+``````````````````````````````````````````````````````````
+
+As discussed above, broadly we are enforcing that the sum of volume fractions sums to unity
+
+.. math::
+
+  \sum_m f_m = 1
+
+and likewise for the mass fractions
+
+.. math::
+
+  \sum_m \mu_m = 1
+
+and the energy must sum to the total
+
+.. math::
+
+  \sum_m f_m \rho_m \epsilon_m = u
+
+where :math:`u` is total energy by volume. In full generality
+these constraints are satisfied only up to the residual tolerance of
+the solver utilized.
+
+However, **all** solvers are constructed such that the mass fraction
+constraint is satisfied up to machine precision. Similarly, solvers
+that use density as an independent variable, satisfy the volume
+fraction constraint, and those that use energy as an independent
+variable satisfy the energy constraint.
+
+Each solver also reports which of these constraints it satisfies via
+the method
+
+.. code:: cpp
+
+  PORTABLE_INLINE_FUNCTION
+  constexpr static unsigned long ExactlySum();
+
+which returns a bit array that evaulates to true for quantities that
+are satisfied. The possible flags are
+
+* ``singularity::thermalqs::mass_fractions`` for the mass fraction constraint
+* ``singularity::thermalqs::volume_fractions`` for the volume fraction constraint
+* ``singularity::thermalqs::specific_internal_energy`` for the energy constraint
+
+For example:
+
+.. code:: cpp
+
+  // evaluates to true
+  PTESolverPT<types>::ExactlySum() & thermalqs::mass_fractions;
+
+  // evaluates to false
+  PTESolverPT<types>::ExactlySum() & thermalqs::volume_fractions;
+
+Note that accessing a flag from a bit array requires a single bitwise
+``&`` operator, not the boolean ``&&`` operator. Building your own
+bitarray by combining flags requires the bitwise ``|`` operator.
+
 Using the Pressure-Temperature Equilibrium Solver
 ```````````````````````````````````````````````````
 
