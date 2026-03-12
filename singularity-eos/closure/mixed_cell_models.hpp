@@ -280,7 +280,7 @@ class PTESolverBase {
   // after each iteration of the Newton solver.
   // See comment above about virtual keyword
   PORTABLE_INLINE_FUNCTION
-  virtual void Fixup() { }
+  virtual void Fixup() {}
   // Finalize restores the temperatures, energies, and pressures to unscaled values from
   // the internally scaled quantities used by the solvers
   // See comment above about virtual keyword
@@ -305,9 +305,7 @@ class PTESolverBase {
 
   // Reports which quantities are exactly conserved by a given solver
   PORTABLE_INLINE_FUNCTION
-  constexpr static unsigned long ExactlySum() {
-    return thermalqs::none;
-  }
+  constexpr static unsigned long ExactlySum() { return thermalqs::none; }
 
  protected:
   PORTABLE_INLINE_FUNCTION
@@ -1182,9 +1180,7 @@ class PTESolverPT
 
  public:
   PORTABLE_INLINE_FUNCTION
-  constexpr static unsigned long ExactlySum() {
-    return thermalqs::mass_fractions;
-  }
+  constexpr static unsigned long ExactlySum() { return thermalqs::mass_fractions; }
 
   // template the ctor to get type deduction/universal references prior to c++17
   template <typename EOS_t, typename Real_t, typename Lambda_t>
@@ -1917,7 +1913,7 @@ class PTESolverRhoU
   // template the ctor to get type deduction/universal references prior to c++17
   template <typename EOS_t, typename Real_t, typename Lambda_t>
   PORTABLE_INLINE_FUNCTION
-  PTESolverRhoU(const std::size_t nmat, const EOS_t &&eos, const Real vfrac_tot,
+  PTESolverRhoU(const std::size_t nmat, EOS_t &&eos, const Real vfrac_tot,
                 const Real sie_tot, Real_t &&rho, Real_t &&vfrac, Real_t &&sie,
                 Real_t &&temp, Real_t &&press, Lambda_t &&lambda, Real *scratch,
                 const Real Tnorm = 0.0, const MixParams &params = MixParams())
@@ -2228,6 +2224,8 @@ PORTABLE_INLINE_FUNCTION SolverStatus PTESolver(System &s) {
       break;
     }
   }
+  // In case we bailed out early, fixup here for consistency
+  s.Fixup();
   // undo any scaling that was applied internally for the solver
   s.Finalize();
   return status;
