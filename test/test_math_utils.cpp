@@ -19,6 +19,7 @@
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
+#include <singularity-eos/base/integration/numerical_integration.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
 #ifndef CATCH_CONFIG_FAST_COMPILE
@@ -139,4 +140,54 @@ SCENARIO("Rudimentary test of the root finder", "[RootFinding1D]") {
       REQUIRE(isClose(root, 0.744658));
     }
   }
+}
+SCENARIO("Test integrateSimp38 with simple functions", "[Integration][integrateSimp38]") {
+using namespace numIntegration;
+GIVEN("A constant integrand") {
+  const Real a = -3.5, b = 2.25, c = 4.2;
+  auto f = [=](Real) { return c; };
+  const Real I = integrateSimp38(f, a, b);
+  REQUIRE(isClose(I, c * (b - a), 1e-12));
+  }
+
+GIVEN("A linear integrand") {
+  const Real a = -1.0, b = 3.0;
+  auto f = [](Real x) { return x; };
+  const Real I = integrateSimp38(f, a, b);
+  const Real exact = 0.5 * (b*b - a*a);
+  REQUIRE(isClose(I, exact, 1e-12));
+}
+
+GIVEN("A quadratic integrand") {
+  const Real a = -2.0, b = 1.5;
+  auto f = [](Real x) { return x*x; };
+  const Real I = integrateSimp38(f, a, b);
+  const Real exact = (b*b*b - a*a*a) / 3.0;
+  CAPTURE(I,exact);
+  REQUIRE(isClose(I, exact, 1e-12));
+}
+
+GIVEN("A quartic integrand converges") {
+  const Real a = -2.0, b = 1.5;
+  auto f = [](Real x) { return x*x*x*x; };
+  const Real exact = (b*b*b*b*b - a*a*a*a*a) / 5.0;
+  const Real I1 = integrateSimp38(f, a, b);
+  const Real I2 = integrateSimp38(f, a, b, 2);
+  const Real e1 = exact - I1;
+  const Real e2 = exact - I2;
+  const Real convRatio = e1/e2;
+  CAPTURE(I1, I2, exact, convRatio);
+  REQUIRE(isClose(convRatio, 16.0, 1e-12));
+}
+
+GIVEN("A D3 integrand regression") {
+  const Real a = 0.00001, b = 100;
+  auto f = [](Real x) { return x*x*x/std::expm1(x); };
+  const Real exact = 6.493939402266828; //pi**4/15
+  const Real I = integrateSimp38(f, a, b, 1000);
+  CAPTURE(I, exact);
+  REQUIRE(isClose(I, exact, 1e-6));
+}
+
+
 }
