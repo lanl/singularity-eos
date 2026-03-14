@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -138,7 +138,7 @@ SCENARIO("We can enforce conservation on a state that might emerge out of a PTE 
   constexpr Real tot_rho = 2.5;
   constexpr Real tot_u = 1.23e12;
   constexpr Real tot_sie = tot_u / tot_rho;
-  
+
   Real *mu = (Real *)PORTABLE_MALLOC(nmat * sizeof(Real));
   Real *rhobar = (Real *)PORTABLE_MALLOC(nmat * sizeof(Real));
   Real *rho = (Real *)PORTABLE_MALLOC(nmat * sizeof(Real));
