@@ -30,7 +30,8 @@ constexpr unsigned long bulk_modulus = (1 << 5);
 constexpr unsigned long do_lambda = (1 << 6);
 constexpr unsigned long mass_fractions = (1 << 7);
 constexpr unsigned long volume_fractions = (1 << 8);
-constexpr unsigned long all_values = (1 << 9) - 1;
+constexpr unsigned long internal_energy_densities = (1 << 9);
+constexpr unsigned long all_values = (1 << 10) - 1;
 } // namespace thermalqs
 
 constexpr size_t MAX_NUM_LAMBDAS = 3;

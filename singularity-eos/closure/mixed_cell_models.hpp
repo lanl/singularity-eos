@@ -1907,7 +1907,7 @@ class PTESolverRhoU
   PORTABLE_INLINE_FUNCTION
   constexpr static unsigned long ExactlySum() {
     return thermalqs::mass_fractions | thermalqs::volume_fractions |
-           thermalqs::specific_internal_energy;
+           thermalqs::internal_energy_densities;
   }
 
   // template the ctor to get type deduction/universal references prior to c++17
