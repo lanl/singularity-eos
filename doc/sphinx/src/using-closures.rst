@@ -593,7 +593,7 @@ solver) are:
 
 .. math::
 
-  f_1 = \frac{\mu_1\rho_b}{\rho_1}, f_2 = \frac{\mu_2\rhob}{\rho_2}
+  f_1 = \frac{\mu_1\rho_b}{\rho_1}, f_2 = \frac{\mu_2\rho_b}{\rho_2}
 
 and the solver minimizes its residuals to enforce that
 
@@ -684,13 +684,13 @@ which material 2 is an ideal gas with equation of state
 
 .. math::
 
-  P = (\Gamma - 1)\rho_2 C_v T
+  P = (\Gamma - 1)\rho_2 c_v T
 
 then :math:`\rho_2` implies an effective pressure
 
 .. math::
 
-  P_2' = (\Gamma - 1)\rho_2' C_v T = P (1 + \mathcal{O}(\delta_f)),
+  P_2' = (\Gamma - 1)\rho_2' c_v T = P (1 + \mathcal{O}(\delta_f)),
 
 which now differs from the solver-selected pressure by a factor of
 order :math:`\delta_f`.
@@ -722,7 +722,7 @@ through phase space such that
 
   \sum_m \mu_m \rho_b \Delta \epsilon_m = 0
 
-end energy is conserved exactly on each solver iteration. Thus
+and energy is conserved exactly on each solver iteration. Thus
 different PTE solvers in the ``singularity-eos`` suite satisfy
 different numbers of constraints to machine precision, exposing
 trade-offs between performance, robustness, and conservation.
@@ -740,7 +740,7 @@ are satisfied. The possible flags are
 
 * ``singularity::thermalqs::mass_fractions`` for the mass fraction constraint
 * ``singularity::thermalqs::volume_fractions`` for the volume fraction constraint
-* ``singularity::thermalqs::specific_internal_energy`` for the energy constraint
+* ``singularity::thermalqs::internal_energy_densities`` for the energy constraint
 
 For example:
 
