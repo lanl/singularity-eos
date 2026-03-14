@@ -155,7 +155,7 @@ SCENARIO("We can enforce conservation on a state that might emerge out of a PTE 
           vfrac[0] = 0.55;
           vfrac[1] = 0.05;
           vfrac[2] = 0.4;
-          for (int m = 0; m < nmat; ++m) {
+          for (std::size_t m = 0; m < nmat; ++m) {
             rhobar[m] = mu[m] * tot_rho;
             rho[m] = rhobar[m] / vfrac[m];
           }
@@ -164,7 +164,7 @@ SCENARIO("We can enforce conservation on a state that might emerge out of a PTE 
           rho[0] += -0.01;
           rho[1] += 0.004;
           rho[2] -= 0.002;
-          for (int m = 0; m < nmat; ++m) {
+          for (std::size_t m = 0; m < nmat; ++m) {
             vfrac[m] = singularity::robust::ratio(rhobar[m], rho[m]);
           }
 
@@ -182,7 +182,7 @@ SCENARIO("We can enforce conservation on a state that might emerge out of a PTE 
             Real test_rho = 0;
             Real test_u = 0;
             Real test_vfrac = 0;
-            for (int m = 0; m < nmat; ++m) {
+            for (std::size_t m = 0; m < nmat; ++m) {
               test_rho += vfrac[m] * rho[m];
               test_u += vfrac[m] * rho[m] * sie[m];
               test_vfrac += vfrac[m];
@@ -212,7 +212,7 @@ SCENARIO("We can enforce conservation on a state that might emerge out of a PTE 
               PORTABLE_LAMBDA(const int, int &nw) {
                 Real test_rho = 0;
                 Real test_vfrac = 0;
-                for (int m = 0; m < nmat; ++m) {
+                for (std::size_t m = 0; m < nmat; ++m) {
                   test_rho += vfrac[m] * rho[m];
                   test_vfrac += vfrac[m];
                 }
@@ -238,7 +238,7 @@ SCENARIO("We can enforce conservation on a state that might emerge out of a PTE 
                 "Check energies sum", 0, 1,
                 PORTABLE_LAMBDA(const int, int &nw) {
                   Real test_u = 0;
-                  for (int m = 0; m < nmat; ++m) {
+                  for (std::size_t m = 0; m < nmat; ++m) {
                     test_u += vfrac[m] * rho[m] * sie[m];
                   }
                   if (!isClose(test_u, tot_u, 1e-12)) {
