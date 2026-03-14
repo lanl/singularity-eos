@@ -30,13 +30,13 @@ namespace numIntegration {
 
 //Simpsons 3/8ths rule
 template <class Integrand>
-Real integrateSimp38(Integrand&& f, Real x1, Real x2){
+PORTABLE_INLINE_FUNCTION Real integrateSimp38(Integrand&& f, Real x1, Real x2){
     Real dx = (x2 - x1)/3.0;
     Real I = f(x1) + 3.0*f(x1+dx) + 3.0*f(x2-dx) + f(x2);
     return (x2-x1)*I/8.0;
 }
 template <class Integrand>
-double integrateSimp38(Integrand&& f, double x1, double x2, int subdivides){
+PORTABLE_INLINE_FUNCTION Real integrateSimp38(Integrand&& f, double x1, double x2, int subdivides){
 
     Real a = x1;
     Real I = 0.0;
