@@ -236,7 +236,7 @@ void TestPTE(const std::string name, const std::size_t nscratch_vars,
             in_pte = in_pte && f_close;
           }
 
-          if (method.ExactlySum() & singularity::thermalqs::specific_internal_energy) {
+          if (method.ExactlySum() & singularity::thermalqs::internal_energy_densities) {
             Real utot = 0;
             for (std::size_t m = 0; m < NMAT; ++m) {
               utot += rho[m] * vfrac[m] * sie[m];
