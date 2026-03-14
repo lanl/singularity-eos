@@ -15,16 +15,9 @@
 #ifndef _SINGULARITY_EOS_UTILS_NUM_INTEGRATION_HPP_
 #define _SINGULARITY_EOS_UTILS_NUM_INTEGRATION_HPP_
 
-#include <cmath>
-#include <cstdio>
 #include <ports-of-call/portability.hpp>
-#include <ports-of-call/portable_errors.hpp>
-#include <ports-of-call/math_utils.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
-#include <tuple>
 
-
-#define SINGULARITY_MY_SIGN(x) (x > 0) - (x < 0)
 
 namespace numIntegration {
 
@@ -36,13 +29,13 @@ PORTABLE_INLINE_FUNCTION Real integrateSimp38(Integrand&& f, Real x1, Real x2){
     return (x2-x1)*I/8.0;
 }
 template <class Integrand>
-PORTABLE_INLINE_FUNCTION Real integrateSimp38(Integrand&& f, double x1, double x2, int subdivides){
+PORTABLE_INLINE_FUNCTION Real integrateSimp38(Integrand&& f, Real x1, Real x2, int subdivides){
 
     Real a = x1;
     Real I = 0.0;
     Real f0 = f(a);
     Real dx = (x2 - x1);
-    Real h = dx/(3.0*static_cast<double>(subdivides));
+    Real h = dx/(3.0*static_cast<Real>(subdivides));
 
     const Real fac = 3.0*h/8.0;    
 
