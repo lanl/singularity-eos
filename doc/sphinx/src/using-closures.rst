@@ -567,25 +567,168 @@ In the code this is referred to as the ``PTESolverFixedP``.
 A note on satisfying constraints up to machine precision
 ``````````````````````````````````````````````````````````
 
-As discussed above, broadly we are enforcing that the sum of volume fractions sums to unity
+The thermodynamic consistency of a state produced by a PTE solver can
+be in tension with the precision at which the solver satisfies the
+governing equations, that is conservation of mass, energy and
+volume. To see how that plays out, let's explore a toy
+example. Consider a two material mixed cell. The PTE problem is fully
+specified by choosing material mass fractions :math:`\mu_1` and
+:math:`\mu_2` such that
 
 .. math::
 
-  \sum_m f_m = 1
+  \mu_1 + \mu_2 = 1,
 
-and likewise for the mass fractions
+total bulk density :math:`\rho_b`, and bulk internal
+energy density :math:`u_b`.
+
+We find a PTE solution using the PT-space PTE solver described above,
+i.e., ``PTESolverPT``. It returns to us microphysical densities
+:math:`\rho_1(P, T)`, :math:`\rho_2(P, T)`, and specific internal
+energies :math:`\epsilon_1(P, T)`, :math:`\epsilon_2(P, T)` of each
+material, which are functions of the shared equilibrium pressure
+:math:`P` and temperature :math:`T`. The volume fractions consistent
+with these densities and the prescribed state (also output by the
+solver) are:
 
 .. math::
 
-  \sum_m \mu_m = 1
+  f_1 = \frac{\mu_1\rho_b}{\rho_1}, f_2 = \frac{\mu_2\rhob}{\rho_2}
 
-and the energy must sum to the total
+and the solver minimizes its residuals to enforce that
 
 .. math::
 
-  \sum_m f_m \rho_m \epsilon_m = u
+  1 - f_1 - f_2 = \delta_f
 
-where :math:`u` is total energy by volume. In full generality
+and
+
+.. math::
+
+  u_b - \mu_1 \rho_b \epsilon_1 - \mu_2 \rho_b \epsilon_2 = \delta_\epsilon,
+
+where :math:`0 < |\delta_f| \ll 1` and :math:`0 < |\delta_\epsilon|
+\ll 1` are solution errors set by the tolerance of the solver. This
+means that volume and energy are **not** exactly conserved by
+``PTESolverPT``. They are satisfied only up to the accuracy of the
+solver.
+
+We now explore if it's possible to rectify the situation by modifying
+(for example) the volume fractions so that they sum exactly to
+unity. What are the consequences of such a transformation? In other
+words, we seek to define :math:`f_1'` and :math:`f_2'` such that
+
+.. math::
+
+  f_1' + f_2' = 1
+
+We could do so by renormalizing :math:`f_1` and :math:`f_2`, or by a
+procedure where one volume fraction is set to the difference between 1
+and the sum of the others. We call the former strategy (1) and the
+latter strategy (2). For the sake of specificity we choose this latter
+approach:
+
+.. math::
+
+  f_1' = f_1, f_2' = 1 - f_1
+
+but the broad conclusions we will draw here are independent of the
+choice we make. If we change the volume fractions but do not change
+the densities, this implies that we have modified the mass fractions,
+resulting in new effective mass fractions
+
+.. math::
+
+  \mu_1' = \frac{\mu_1 f_1'}{\rho_b} = \frac{\mu_1\rho_b}{f_1} = \mu_1 \frac{f_1'}{f_1}
+
+and
+
+.. math::
+
+  \mu_2' = \mu_2 \frac{f_2'}{f_2}
+
+In the case of strategy 2, this implies
+
+.. math::
+
+  1 - \mu_1' - \mu_2' &= 1 - \mu_1 \frac{f_1'}{f_1} - \mu_2\frac{f_2'}{f_2}\\
+                      &= 1 - \mu_1 - \mu_2 \frac{f_2'}{f_2}\\
+                      &= 1 - \mu_1 - \frac{1}{f_2}\mu_2(1 - f_1)\\
+                      &= 1 - \mu_1 - \frac{1}{f_2}\mu_2(f_2 + \delta_f)\\
+                      &= 1 - \mu_1 - \mu_2 - \frac{\mu_2}{f_2}\delta_f\\
+                      &= 0 + \mathcal{O}(\delta_f)
+
+Thus the new effective mass fractions no longer some to 1, introducing
+an error of order the solver tolerance into mass conservation by the
+solver. 
+
+Alternatively, one can enforce the mass fractions stay fixed and
+modify the densities to be compatile with the modified volume
+fractions. In this case, we seek new effective microphysical densities
+
+.. math::
+
+  \rho_1' = \rho_1 \frac{f_1}{f_1'}, \rho_2' = \rho_2 \frac{f_2}{f_2'}
+
+consistent with the new volume fractions :math:`f_1'`, :math:`f_2'`,
+and the original mass fractions :math:`\mu_1`, :math:`\mu_2`. In the
+case of strategy (2), this implies that
+
+.. math::
+
+  \rho_2' = \rho_2 \frac{f_2}{f_2 + \delta_f} = \rho_2(1 + \mathcal{O}(\delta_f)),
+
+which no longer necessarily corresponds to the pressure and
+temperature chosen by the solver. Indeed, even in the simple case in
+which material 2 is an ideal gas with equation of state
+
+.. math::
+
+  P = (\Gamma - 1)\rho_2 C_v T
+
+then :math:`\rho_2` implies an effective pressure
+
+.. math::
+
+  P_2' = (\Gamma - 1)\rho_2' C_v T = P (1 + \mathcal{O}(\delta_f)),
+
+which now differs from the solver-selected pressure by a factor of
+order :math:`\delta_f`. A similar story holds for attempting to modify
+the internal energys :math:`\epsilon` to sum to the bulk internal
+energy density.
+
+What we have learned in this toy example is that in general it is not
+possible to both maintain thermodynamic consistency with the PTE state
+and satisfy all "conservation" constraints to machine precision. In
+fact, this is what motivates the ``PTESolverRhoT`` and
+``PTESolverRhoU`` models. The ``PTESolveRhoT`` model uses
+microphysical density :math:`\rho_m` as an independent variable and
+thus can construct steps through phase space at each solver iteration
+such that
+
+.. math::
+
+  \sum_m \Delta f_m = 0
+
+so that volume is conserved exactly. Similarly, ``PTESolverRhoU`` also
+uses internal energy as an independent variable and construct steps
+through phase space such that
+
+.. math::
+
+  \sum_m \mu_m \rho_b \Delta \epsilon_m = 0
+
+end energy is conserved exactly on each solver iteration. Thus
+different PTE solvers in the ``singularity-eos`` suite satisfy
+different numbers of constraints to machine precision, exposing
+trade-offs between performance, robustness, and conservation.
+
+Moreover, what can be satisfied depends on the independent
+variables and constraint equations enforced by the solver. 
+
+``singularity-eos`` provides introspection into what a given
+
+while In full generality
 these constraints are satisfied only up to the residual tolerance of
 the solver utilized.
 
