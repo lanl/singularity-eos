@@ -42,7 +42,7 @@ double integrateSimp38(Integrand&& f, double x1, double x2, int subdivides){
     Real I = 0.0;
     Real f0 = f(a);
     Real dx = (x2 - x1);
-    Real h = dx/3.0/subdivides;
+    Real h = dx/(3.0*static_cast<double>(subdivides));
 
     const Real fac = 3.0*h/8.0;    
 
