@@ -131,3 +131,130 @@ SCENARIO("3x3 matrix solve", "[Matrix][3x3]") {
     PORTABLE_FREE(scr);
   }
 }
+
+SCENARIO("We can enforce conservation on a state that might emerge out of a PTE solver"
+         "[EnforceMassVolumesSum][EnforceEnergiesSum]") {
+  constexpr std::size_t nmat = 3;
+  constexpr Real tot_rho = 2.5;
+  constexpr Real tot_u = 1.23e12;
+  constexpr Real tot_sie = tot_u / tot_rho;
+  
+  Real *mu = (Real *)PORTABLE_MALLOC(nmat * sizeof(Real));
+  Real *rhobar = (Real *)PORTABLE_MALLOC(nmat * sizeof(Real));
+  Real *rho = (Real *)PORTABLE_MALLOC(nmat * sizeof(Real));
+  Real *vfrac = (Real *)PORTABLE_MALLOC(nmat * sizeof(Real));
+  Real *sie = (Real *)PORTABLE_MALLOC(nmat * sizeof(Real));
+
+  GIVEN("A state that isn't quite right") {
+    portableFor(
+        "Set thermodyamic state", 0, 1, PORTABLE_LAMBDA(const int) {
+          mu[0] = 0.025;
+          mu[1] = 0.9; // this one's a metal
+          mu[2] = 0.075;
+
+          vfrac[0] = 0.55;
+          vfrac[1] = 0.05;
+          vfrac[2] = 0.4;
+          for (int m = 0; m < nmat; ++m) {
+            rhobar[m] = mu[m] * tot_rho;
+            rho[m] = rhobar[m] / vfrac[m];
+          }
+
+          // perturb and reset
+          rho[0] += -0.01;
+          rho[1] += 0.004;
+          rho[2] -= 0.002;
+          for (int m = 0; m < nmat; ++m) {
+            vfrac[m] = singularity::robust::ratio(rhobar[m], rho[m]);
+          }
+
+          // already perturbed
+          sie[0] = 0.5 * tot_u / rhobar[0] + 0.01 * tot_sie;
+          sie[1] = 0 - 0.0025 * tot_sie;
+          sie[2] = 0.5 * tot_u / rhobar[2] + -0.06 * tot_sie;
+        });
+
+    THEN("Things don't quite add up") {
+      int nwrong = 0;
+      portableReduce(
+          "Check it's currently wrong", 0, 1,
+          PORTABLE_LAMBDA(const int, int &nw) {
+            Real test_rho = 0;
+            Real test_u = 0;
+            Real test_vfrac = 0;
+            for (int m = 0; m < nmat; ++m) {
+              test_rho += vfrac[m] * rho[m];
+              test_u += vfrac[m] * rho[m] * sie[m];
+              test_vfrac += vfrac[m];
+            }
+            if (isClose(test_vfrac, 1, 1e-12)) {
+              nw += 1;
+            }
+            if (isClose(test_u, tot_u, 1e-12)) {
+              nw += 1;
+            }
+            if (!isClose(test_rho, tot_rho, 1e-12)) {
+              nw += 1;
+            }
+          },
+          nwrong);
+      REQUIRE(nwrong == 0);
+
+      AND_WHEN("We enforce mass and volume fractions sum") {
+        portableFor(
+            "Enforce mass and volume fractions sum", 0, 1, PORTABLE_LAMBDA(const int) {
+              singularity::MixUtils::EnforceMassVolumesSum(nmat, 1.0, rho, vfrac);
+            });
+        THEN("They do") {
+          int nwrong = 0;
+          portableReduce(
+              "Check they sum right now", 0, 1,
+              PORTABLE_LAMBDA(const int, int &nw) {
+                Real test_rho = 0;
+                Real test_vfrac = 0;
+                for (int m = 0; m < nmat; ++m) {
+                  test_rho += vfrac[m] * rho[m];
+                  test_vfrac += vfrac[m];
+                }
+                if (!isClose(test_vfrac, 1, 1e-12)) {
+                  nw += 1;
+                }
+                if (!isClose(test_rho, tot_rho, 1e-12)) {
+                  nw += 1;
+                }
+              },
+              nwrong);
+          REQUIRE(nwrong == 0);
+        }
+        AND_WHEN("We enforce energies sum") {
+          portableFor(
+              "Enforce energies sum", 0, 1, PORTABLE_LAMBDA(const int) {
+                singularity::MixUtils::EnforceEnergiesSum(nmat, tot_rho, tot_sie, rho,
+                                                          vfrac, sie);
+              });
+          THEN("They do") {
+            int nwrong = 0;
+            portableReduce(
+                "Check energies sum", 0, 1,
+                PORTABLE_LAMBDA(const int, int &nw) {
+                  Real test_u = 0;
+                  for (int m = 0; m < nmat; ++m) {
+                    test_u += vfrac[m] * rho[m] * sie[m];
+                  }
+                  if (!isClose(test_u, tot_u, 1e-12)) {
+                    nw += 1;
+                  }
+                },
+                nwrong);
+            REQUIRE(nwrong == 0);
+          }
+        }
+      }
+    }
+  }
+  PORTABLE_FREE(mu);
+  PORTABLE_FREE(rhobar);
+  PORTABLE_FREE(rho);
+  PORTABLE_FREE(vfrac);
+  PORTABLE_FREE(sie);
+}

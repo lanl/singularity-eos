@@ -86,6 +86,69 @@ struct SolverStatus {
   Real residual;
 };
 
+/* Sets the volume fraction of the material occupying the most volume to be exactly
+ * tot_vol - the sum of the others
+ * Does so in a way that maintains the mass fractions sum to 1.
+ */
+namespace MixUtils {
+template <typename RhoIndexer_t, typename VFracIndexer_t>
+PORTABLE_INLINE_FUNCTION void
+EnforceMassVolumesSum(const std::size_t nmat, const Real tot_vol, RhoIndexer_t &&rho,
+                      VFracIndexer_t &&vfracs) {
+  std::size_t imax = 0;
+  Real fmax = -1;
+  for (std::size_t m = 0; m < nmat; ++m) {
+    PORTABLE_REQUIRE(vfracs[m] > 0, "volume fractions all positive");
+    if (vfracs[m] > fmax) {
+      fmax = vfracs[m];
+      imax = m;
+    }
+  }
+  Real vfrac_new = tot_vol;
+  for (std::size_t m = 0; m < nmat; ++m) {
+    if (m == imax) continue;
+    vfrac_new -= vfracs[m];
+  }
+  PORTABLE_REQUIRE(vfrac_new > 0, "New volume fraction positive");
+  PORTABLE_REQUIRE(vfrac_new <= tot_vol, "New volume fraction bounded");
+  rho[imax] *= robust::ratio(vfracs[imax], vfrac_new);
+  vfracs[imax] = vfrac_new;
+}
+
+template <typename RhoIndexer_t, typename VFracIndexer_t, typename SieIndexer_t>
+PORTABLE_INLINE_FUNCTION void
+EnforceEnergiesSum(const std::size_t nmat, const Real tot_rho, const Real tot_sie,
+                   RhoIndexer_t &&rhos, VFracIndexer_t &&vfracs, SieIndexer_t &&sies) {
+  // TODO(JMM): I decided to let the host code pass in this
+  // information so that we can avoid duplicating work and so that it
+  // can enforce exactly what it wants. But we could alternatively
+  // compute it ourselves as:
+  /*
+  Real tot_rho = 0;
+  for (std::size_t m = 0; m < nmat; ++m) {
+    tot_rho += rhos[m] * vfracs[m];
+  }
+  */
+  const Real tot_u = tot_sie * tot_rho;
+  std::size_t imax = 0;
+  Real max_contribution = 0;
+  for (std::size_t m = 0; m < nmat; ++m) {
+    Real um = rhos[m] * vfracs[m] * sies[m];
+    if (std::abs(um) > max_contribution) {
+      imax = m;
+      max_contribution = std::abs(um);
+    }
+  }
+  PORTABLE_REQUIRE(max_contribution > 0, "We found a meaningful energy to modify");
+  Real unew = tot_u;
+  for (std::size_t m = 0; m < nmat; ++m) {
+    if (m == imax) continue;
+    unew -= rhos[m] * vfracs[m] * sies[m];
+  }
+  sies[imax] = robust::ratio(unew, rhos[imax] * vfracs[imax]);
+}
+} // namespace MixUtils
+
 namespace mix_impl {
 template <typename T,
           typename = typename std::enable_if<std::is_floating_point<T>::value>::type>

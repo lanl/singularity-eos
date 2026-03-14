@@ -693,9 +693,13 @@ then :math:`\rho_2` implies an effective pressure
   P_2' = (\Gamma - 1)\rho_2' C_v T = P (1 + \mathcal{O}(\delta_f)),
 
 which now differs from the solver-selected pressure by a factor of
-order :math:`\delta_f`. A similar story holds for attempting to modify
-the internal energys :math:`\epsilon` to sum to the bulk internal
-energy density.
+order :math:`\delta_f`.
+
+A similar story holds for attempting to modify the internal energys
+:math:`\epsilon` to sum to the bulk internal energy density. The
+internal energy doesn't necessarily impact mass or volume fractions,
+but modifying it may break thermodynamic consistency with the PTE
+state chosen by the solver.
 
 What we have learned in this toy example is that in general it is not
 possible to both maintain thermodynamic consistency with the PTE state
@@ -722,21 +726,6 @@ end energy is conserved exactly on each solver iteration. Thus
 different PTE solvers in the ``singularity-eos`` suite satisfy
 different numbers of constraints to machine precision, exposing
 trade-offs between performance, robustness, and conservation.
-
-Moreover, what can be satisfied depends on the independent
-variables and constraint equations enforced by the solver. 
-
-``singularity-eos`` provides introspection into what a given
-
-while In full generality
-these constraints are satisfied only up to the residual tolerance of
-the solver utilized.
-
-However, **all** solvers are constructed such that the mass fraction
-constraint is satisfied up to machine precision. Similarly, solvers
-that use density as an independent variable, satisfy the volume
-fraction constraint, and those that use energy as an independent
-variable satisfy the energy constraint.
 
 Each solver also reports which of these constraints it satisfies via
 the method
@@ -766,6 +755,47 @@ For example:
 Note that accessing a flag from a bit array requires a single bitwise
 ``&`` operator, not the boolean ``&&`` operator. Building your own
 bitarray by combining flags requires the bitwise ``|`` operator.
+
+
+Choosing how to handle thermodynamically inconsistent solver output
+````````````````````````````````````````````````````````````````````
+
+To address the issues discussed above, ``singularity-eos`` also
+provides two stand alone functions in the ``singularity::MixUtils``
+namespace. The function
+
+.. code:: cpp
+
+  template <typename RhoIndexer_t, typename VFracIndexer_t>
+  PORTABLE_INLINE_FUNCTION void
+  EnforceMassVolumesSum(const std::size_t nmat, const Real tot_vol, RhoIndexer_t &&rho,
+                        VFracIndexer_t &&vfracs);
+
+sets the volume fraction of the material occupying the greatest volume
+to ``tot_vol`` minus the sum of the other volume fractions. It also
+modifies that material's density so that the mass fractions continue
+to sum to unity. Depending on the PTE solver utilized to construct
+these volume fractions, this may introduce some thermodynamic
+inconsistency in the state.
+
+Similarly, the function
+
+.. code:: cpp
+
+  template <typename RhoIndexer_t, typename VFracIndexer_t, typename SieIndexer_t>
+  PORTABLE_INLINE_FUNCTION void
+  EnforceEnergiesSum(const std::size_t nmat, const Real tot_rho, const Real tot_sie,
+                     RhoIndexer_t &&rhos, VFracIndexer_t &&vfracs, SieIndexer_t &&sies);
+
+sets the specific internal energy density of the material that
+contributes the most to the energy in the mixture to ``tot_rho *
+tot_sie`` minus the sum of the others. The specific internal energy is
+modified to match this new energy density, without modifying densities
+or volume fractions. This may be combined with
+``EnforceMassVolumesSum``. It will not impact other conservation
+rules, but might make the thermodynamic state of the material
+inconsistent with the mixture chosen by a PTE solver, depending on the
+solver.
 
 Using the Pressure-Temperature Equilibrium Solver
 ```````````````````````````````````````````````````
