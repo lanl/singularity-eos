@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026 Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -169,7 +169,8 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
         singularity::mfuncname::member_func_name(typeid(ShiftedEOS<T>).name(), __func__);
     static auto const cname = name.c_str();
     const auto shift_val = shift_;
-    portableFor(cname, 0, num, PORTABLE_LAMBDA(const int i) { sies[i] += shift_val; });
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) { sies[i] += shift_val; });
   }
 
   template <typename LambdaIndexer>
