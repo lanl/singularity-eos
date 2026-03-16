@@ -268,7 +268,7 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   PORTABLE_FORCEINLINE_FUNCTION Real MaximumPressureAtTemperature(const Real temp) const {
     return inv_press_unit_ * t_.MaximumPressureAtTemperature(temp_unit_ * temp);
   }
-  PORTABLE_INLINE_FUNCTION
+  PORTABLE_FORCEINLINE_FUNCTION
   Real RhoPmin(const Real temp) const {
     return inv_rho_unit_ * t_.RhoPmin(temp * temp_unit_);
   }
