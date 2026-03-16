@@ -169,8 +169,7 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
         singularity::mfuncname::member_func_name(typeid(ShiftedEOS<T>).name(), __func__);
     static auto const cname = name.c_str();
     const auto shift_val = shift_;
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) { sies[i] += shift_val; });
+    portableFor(cname, 0, num, PORTABLE_LAMBDA(const int i) { sies[i] += shift_val; });
   }
 
   template <typename LambdaIndexer>
@@ -356,22 +355,6 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
     sie += shift_;
   }
 
-  PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const {
-    return t_.MinimumDensity();
-  }
-  PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const {
-    return t_.MinimumTemperature();
-  }
-  PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const {
-    return t_.MaximumDensity();
-  }
-  PORTABLE_FORCEINLINE_FUNCTION Real MinimumPressure() const {
-    return t_.MinimumPressure();
-  }
-  PORTABLE_FORCEINLINE_FUNCTION Real MaximumPressureAtTemperature(const Real temp) const {
-    return t_.MaximumPressureAtTemperature(temp);
-  }
-
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
       const Real rho, const Real temperature,
@@ -386,7 +369,8 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   }
 
   SG_ADD_MODIFIER_METHODS(T, t_);
-  SG_ADD_MODIFIER_MEAN_METHODS(t_)
+  SG_ADD_MODIFIER_MEAN_METHODS(t_);
+  SG_ADD_MODIFIER_INTROSPECTION_METHODS(t_);
 
  private:
   T t_;

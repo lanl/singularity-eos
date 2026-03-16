@@ -12,12 +12,15 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+// This file was generated in part with the assistance of generative AI
+
 #include <limits>
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
+#include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/base/serialization_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
@@ -47,6 +50,37 @@ using singularity::RelativisticEOS;
 using singularity::ScaledEOS;
 using singularity::ShiftedEOS;
 using singularity::UnitSystem;
+
+/* A toy version of ideal gas where bounds have been placed on it so
+   we can check these are passed through modifiers properly.
+ */
+class BoundedGas : public IdealGas {
+ public:
+  BoundedGas() = default;
+  PORTABLE_INLINE_FUNCTION
+  BoundedGas(Real gm1, Real Cv) : IdealGas(gm1, Cv) {}
+
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumDensity() const { return 1e-2; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumTemperature() const { return 1e-3; }
+
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumDensity() const { return 1e10; }
+
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumPressure() const {
+    return PressureFromDensityTemperature(MinimumDensity(), MinimumTemperature());
+  }
+  // Gruneisen EOS's often have a maximum density, which implies a maximum pressure.
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumPressureAtTemperature([[maybe_unused]] const Real T) const {
+    return MaximumDensity();
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  Real RhoPmin(const Real /*temp*/) const { return MinimumDensity(); }
+};
 
 #ifndef SINGULARITY_BUILD_CLOSURE
 // recreate variadic list
@@ -199,7 +233,7 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder][Modifiers][IdealGas]") {
                         igra.PressureFromDensityTemperature(1.2 * r1, T0), 1.e-12));
       }
       THEN("We obtain correct ramp behavior in bmod(rho) for rho <r0, [r0,rmid], "
-           "[rmid,r1] and >r1") {
+           "[rmid,r1] and >r0") {
         // check bulk moduli on both pieces of ramp
         INFO("reference bmod((r0+rmid)/2, T0): "
              << bmodrt1 << " test bmod((r0+rmid)/2, T0): "
@@ -225,5 +259,71 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder][Modifiers][IdealGas]") {
       }
     }
 #endif // SINGULARITY_BUILD_CLOSURE
+  }
+}
+
+SCENARIO("Modifiers propagate introspection bounds correctly", "[Modifiers]") {
+  GIVEN("A BoundedGas EOS with known bounds") {
+    constexpr Real Cv = 2.0;
+    constexpr Real gm1 = 0.5;
+    constexpr Real shift = 0.1;
+    constexpr Real scale = 2.0;
+    constexpr Real EPS = 10 * singularity::robust::EPS();
+
+    BoundedGas bg(gm1, Cv);
+    const Real base_min_rho = bg.MinimumDensity();
+    const Real base_max_rho = bg.MaximumDensity();
+    const Real base_min_temp = bg.MinimumTemperature();
+    const Real base_min_pres = bg.MinimumPressure();
+    const Real base_max_pres = bg.MaximumPressureAtTemperature(0.0);
+    const Real base_rho_pmin = bg.RhoPmin(0.0);
+
+    AND_GIVEN("A shifted, scaled EOS") {
+      auto eos = ScaledEOS<ShiftedEOS<BoundedGas>>(
+          ShiftedEOS<BoundedGas>(BoundedGas(gm1, Cv), shift), scale);
+
+      THEN("MinimumDensity is scaled by the scale factor") {
+        REQUIRE(isClose(eos.MinimumDensity(), base_min_rho / scale, 1.e-12));
+      }
+
+      THEN("MaximumDensity is scaled by the scale factor") {
+        REQUIRE(isClose(eos.MaximumDensity(), base_max_rho / scale, 1.e-12));
+      }
+
+      THEN("MinimumTemperature is unchanged by shift/scale") {
+        REQUIRE(isClose(eos.MinimumTemperature(), base_min_temp, 1.e-12));
+      }
+
+      THEN("MinimumPressure is unchanged by shift/scale") {
+        REQUIRE(isClose(eos.MinimumPressure(), base_min_pres, 1.e-12));
+      }
+
+      THEN("MaximumPressureAtTemperature is unchanged by shift/scale") {
+        REQUIRE(isClose(eos.MaximumPressureAtTemperature(0.0), base_max_pres, 1.e-12));
+      }
+
+      THEN("RhoPmin returns the scaled minimum density") {
+        REQUIRE(isClose(eos.RhoPmin(0.0), base_rho_pmin / scale, 1.e-12));
+      }
+    }
+
+    AND_GIVEN("A UnitSystem") {
+      constexpr Real rho_unit = 2.0;
+      constexpr Real sie_unit = 3.0;
+      constexpr Real temp_unit = 4.0;
+      constexpr Real press_unit = rho_unit * sie_unit;
+      auto us =
+          UnitSystem<BoundedGas>(BoundedGas(gm1, Cv), rho_unit, sie_unit, temp_unit);
+
+      THEN("The unit system propagates bounds correctly") {
+        REQUIRE(isClose(us.MinimumDensity(), base_min_rho / rho_unit, EPS));
+        REQUIRE(isClose(us.MinimumTemperature(), base_min_temp / temp_unit, EPS));
+        REQUIRE(isClose(us.MaximumDensity(), base_max_rho / rho_unit, EPS));
+        REQUIRE(isClose(us.MinimumPressure(), base_min_pres / press_unit, EPS));
+        REQUIRE(isClose(us.MaximumPressureAtTemperature(0.0), base_max_pres / press_unit,
+                        EPS));
+        REQUIRE(isClose(us.RhoPmin(0.0), base_rho_pmin / rho_unit, EPS));
+      }
+    }
   }
 }
