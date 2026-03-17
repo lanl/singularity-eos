@@ -280,6 +280,20 @@ class Variant {
         eos_);
   }
 
+  // TODO(JMM): Do we need a vectorized version of this call?
+  template <typename Lambda_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P, const Real T,
+                             Lambda_t &&lambda, Real &dedP_T, Real &drdP_T, Real &dedT_P,
+                             Real &drdT_P) const {
+    return PortsOfCall::visit(
+        [&](const auto &eos) {
+          return eos.PTDerivativesFromPreferred(rho, sie, P, T, lambda, dedP_T, drdP_T,
+                                                dedT_P, drdT_P);
+        },
+        eos_);
+  }
+
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,

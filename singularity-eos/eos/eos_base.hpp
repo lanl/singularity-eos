@@ -266,6 +266,32 @@ class EosBase {
     return sie + (P / rho) - T * S;
   }
 
+  // The base class computes these differences by finite
+  // differences. When available, this should absolutely be overloaded
+  // by an individual EOS, but this provides a default implementation
+  // at the very least.
+  //
+  // TODO(JMM): Should we have a vectorized version of this function?
+  template <typename Lambda_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P, const Real T,
+                             Lambda_t &&lambda, Real &dedP_T, Real &drdP_T, Real &dedT_P,
+                             Real &drdT_P) const {
+    Real r_pert, e_pert;
+
+    constexpr Real derivative_eps = 3.0e-6;
+    const Real dP = -P * derivative_eps;
+    const Real dT = T * derivative_eps;
+
+    DensityEnergyFromPressureTemperature(P + dP, T, lambda, r_pert, e_pert);
+    drdP_T = robust::ratio(r_pert - rho, dP);
+    dedP_T = robust::ratio(e_pert - sie, dP);
+
+    DensityEnergyFromPressureTemperature(P, T + dT, lambda, r_pert, e_pert);
+    drdT_P = robust::ratio(r_pert - rho, dT);
+    dedT_P = robust::ratio(e_pert - sie, dT);
+  }
+
   // Vector member functions
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void
