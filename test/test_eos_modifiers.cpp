@@ -122,6 +122,64 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder][Modifiers][IdealGas]") {
           eos_ramped.PrintParams();
         }
       }
+
+      WHEN("We compute PT derivatives from preferred for the modified EOS") {
+        // Choose a representative state
+        constexpr Real test_rho = 1.5;
+        constexpr Real test_T   = 2.0;
+
+        // Compute primitive quantities
+        const Real P   = eos.PressureFromDensityTemperature(test_rho, test_T);
+        const Real sie_val = eos.InternalEnergyFromDensityTemperature(test_rho, test_T);
+
+        // Derivatives from the EOS preferred interface
+        Real dedP_T, drdP_T, dedT_P, drdT_P;
+        eos.PTDerivativesFromPreferred(test_rho, sie_val, P, test_T,
+                                      static_cast<Real *>(nullptr),
+                                      dedP_T, drdP_T, dedT_P, drdT_P);
+
+        // Finite‑difference reference
+        constexpr Real derivative_eps = 3e-6;
+        Real dedP_T_fd, drdP_T_fd, dedT_P_fd, drdT_P_fd;
+        singularity::eos_base::PTDerivativesByFiniteDifferences(
+            eos, test_rho, sie_val, P, test_T, derivative_eps,
+            static_cast<Real *>(nullptr),
+            dedP_T_fd, drdP_T_fd, dedT_P_fd, drdT_P_fd);
+
+        // Compare each component
+        THEN("dedP_T matches finite‑difference reference") {
+          bool close = isClose(dedP_T, dedP_T_fd);
+          if (!close) {
+            printf("dedP_T mismatch: eos = %.14e, fd = %.14e, diff = %.14e\n",
+                   dedP_T, dedP_T_fd, dedP_T - dedP_T_fd);
+          }
+          REQUIRE(close);
+        }
+        THEN("drdP_T matches finite‑difference reference") {
+          bool close = isClose(drdP_T, drdP_T_fd);
+          if (!close) {
+            printf("drdP_T mismatch: eos = %.14e, fd = %.14e, diff = %.14e\n",
+                   drdP_T, drdP_T_fd, drdP_T - drdP_T_fd);
+          }
+          REQUIRE(close);
+        }
+        THEN("dedT_P matches finite‑difference reference") {
+          bool close = isClose(dedT_P, dedT_P_fd);
+          if (!close) {
+            printf("dedT_P mismatch: eos = %.14e, fd = %.14e, diff = %.14e\n",
+                   dedT_P, dedT_P_fd, dedT_P - dedT_P_fd);
+          }
+          REQUIRE(close);
+        }
+        THEN("drdT_P matches finite‑difference reference") {
+          bool close = isClose(drdT_P, drdT_P_fd);
+          if (!close) {
+            printf("drdT_P mismatch: eos = %.14e, fd = %.14e, diff = %.14e\n",
+                   drdT_P, drdT_P_fd, drdT_P - drdT_P_fd);
+          }
+          REQUIRE(close);
+        }
+      }
     }
 #ifdef SINGULARITY_BUILD_CLOSURE
     WHEN("We construct a non-modifying modifier") {
@@ -170,56 +228,49 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder][Modifiers][IdealGas]") {
       // bmod (rho_t2)
       const Real bmodrt2 = rho_t2 * b / r0;
       THEN("P_eos(alpha_0*rmid, T0) = P_ramp(rmid,T0)") {
-        INFO("P_eos(alpha_0*rmid, T0): "
-             << P_armid
-             << " P_ramp(rmid, T0): " << igra.PressureFromDensityTemperature(rmid, T0));
+        printf("P_eos(alpha_0*rmid, T0): %.14e  P_ramp(rmid, T0): %.14e\n",
+               P_armid, igra.PressureFromDensityTemperature(rmid, T0));
         REQUIRE(isClose(P_armid, igra.PressureFromDensityTemperature(rmid, T0), 1.e-12));
       }
       THEN("We obtain correct ramp behavior in P(rho) for rho <r0, [r0,rmid], [rmid,r1] "
            "and >r1") {
         // also check pressures on ramp
-        INFO("reference P((r0+rmid)/2, T0): "
-             << Prhot1 << " test P((r0+rmid)/2, T0): "
-             << igra.PressureFromDensityTemperature(rho_t1, T0));
+        printf("reference P((r0+rmid)/2, T0): %.14e  test P((r0+rmid)/2, T0): %.14e\n",
+               Prhot1, igra.PressureFromDensityTemperature(rho_t1, T0));
         REQUIRE(isClose(Prhot1, igra.PressureFromDensityTemperature(rho_t1, T0), 1.e-12));
-        INFO("reference P((rmid+r1)/2, T0): "
-             << Prhot2 << " test P((rmid+r1)/2, T0): "
-             << igra.PressureFromDensityTemperature(rho_t2, T0));
+        printf("reference P((rmid+r1)/2, T0): %.14e  test P((rmid+r1)/2, T0): %.14e\n",
+               Prhot2, igra.PressureFromDensityTemperature(rho_t2, T0));
         REQUIRE(isClose(Prhot2, igra.PressureFromDensityTemperature(rho_t2, T0), 1.e-12));
         // check pressure below and beyond ramp matches unmodified ideal gas
-        INFO("reference P(0.8*r0, T0): "
-             << 0.8 * r0 * gm1 * Cv * T0 << " test P(0.8*r0, T0): "
-             << igra.PressureFromDensityTemperature(0.8 * r0, T0));
+        printf("reference P(0.8*r0, T0): %.14e  test P(0.8*r0, T0): %.14e\n",
+               0.8 * r0 * gm1 * Cv * T0, igra.PressureFromDensityTemperature(0.8 * r0, T0));
         REQUIRE(isClose(0.8 * r0 * gm1 * Cv * T0,
                         igra.PressureFromDensityTemperature(0.8 * r0, T0), 1.e-12));
-        INFO("reference P(1.2*r1, T0): "
-             << 1.2 * r1 * gm1 * Cv * T0 << " test P(1.2*r1, T0): "
-             << igra.PressureFromDensityTemperature(1.2 * r1, T0));
-        REQUIRE(isClose(1.2 * r1 * gm1 * Cv * T0,
-                        igra.PressureFromDensityTemperature(1.2 * r1, T0), 1.e-12));
+        printf("reference P(1.2*r1, T0): %.14e  test P(1.2*r1, T0): %.14e\n",
+               1.2 * r0 * gm1 * Cv * T0, igra.PressureFromDensityTemperature(1.2 * r0, T0));
+        REQUIRE(isClose(1.2 * r0 * gm1 * Cv * T0,
+                        igra.PressureFromDensityTemperature(1.2 * r0, T0), 1.e-12));
       }
       THEN("We obtain correct ramp behavior in bmod(rho) for rho <r0, [r0,rmid], "
            "[rmid,r1] and >r1") {
         // check bulk moduli on both pieces of ramp
-        INFO("reference bmod((r0+rmid)/2, T0): "
-             << bmodrt1 << " test bmod((r0+rmid)/2, T0): "
-             << igra.BulkModulusFromDensityTemperature(rho_t1, T0));
+        printf("reference bmod((r0+rmid)/2, T0): %.14e  test bmod((r0+rmid)/2, T0): %.14e\n",
+               bmodrt1, igra.BulkModulusFromDensityTemperature(rho_t1, T0));
         REQUIRE(
             isClose(bmodrt1, igra.BulkModulusFromDensityTemperature(rho_t1, T0), 1.e-12));
-        INFO("reference bmod((rmid+r1)/2, T0): "
-             << bmodrt2 << " test bmod((rmid+r1)/2, T0): "
-             << igra.BulkModulusFromDensityTemperature(rho_t2, T0));
+        printf("reference bmod((rmid+r1)/2, T0): %.14e  test bmod((rmid+r1)/2, T0): %.14e\n",
+               bmodrt2, igra.BulkModulusFromDensityTemperature(rho_t2, T0));
         REQUIRE(
             isClose(bmodrt2, igra.BulkModulusFromDensityTemperature(rho_t2, T0), 1.e-12));
         // check bulk modulus below and beyond ramp matches unmodified ideal gas
-        INFO("reference bmod(0.8*r0, T0): "
-             << 0.8 * r0 * gm1 * (gm1 + 1.0) * Cv * T0 << " test bmod(0.8*r0, T0): "
-             << igra.BulkModulusFromDensityTemperature(0.8 * r0, T0));
+        printf("reference bmod(0.8*r0, T0): %.14e  test bmod(0.8*r0, T0): %.14e\n",
+               0.8 * r0 * gm1 * (gm1 + 1.0) * Cv * T0,
+               igra.BulkModulusFromDensityTemperature(0.8 * r0, T0));
         REQUIRE(isClose(0.8 * r0 * gm1 * (gm1 + 1.0) * Cv * T0,
                         igra.BulkModulusFromDensityTemperature(0.8 * r0, T0), 1.e-12));
-        INFO("reference bmod(1.2*r1, T0): "
-             << 1.2 * r1 * gm1 * (gm1 + 1.0) * Cv * T0 << " test bmod(1.2*r1, T0): "
-             << igra.BulkModulusFromDensityTemperature(1.2 * r1, T0));
+        printf("reference bmod(1.2*r1, T0): %.14e  test bmod(1.2*r1, T0): %.14e\n",
+               1.2 * r1 * gm1 * (gm1 + 1.0) * Cv * T0,
+               igra.BulkModulusFromDensityTemperature(1.2 * r1, T0));
         REQUIRE(isClose(1.2 * r1 * gm1 * (gm1 + 1.0) * Cv * T0,
                         igra.BulkModulusFromDensityTemperature(1.2 * r1, T0), 1.e-12));
       }
