@@ -198,6 +198,53 @@ SCENARIO("Ideal gas density energy from prssure temperature",
           nwrong);
       THEN("There are no errors") { REQUIRE(nwrong == 0); }
     }
+    WHEN("We check PT derivatives from preferred") {
+      constexpr int N = 100;
+      constexpr Real derivative_eps = 3e-6;
+      int nwrong = 0;
+      portableReduce(
+          "Check PT derivatives from preferred", 1, N,
+          PORTABLE_LAMBDA(const int i, int &nw) {
+            Real rho = i;
+            Real T = 100 * i;
+            Real P = device_eos.PressureFromDensityTemperature(rho, T);
+            Real sie = device_eos.InternalEnergyFromDensityTemperature(rho, T);
+            Real dedP_T, drdP_T, dedT_P, drdT_P;
+            Real dedP_T_fd, drdP_T_fd, dedT_P_fd, drdT_P_fd;
+            device_eos.PTDerivativesFromPreferred(rho, sie, P, T,
+                                                  static_cast<Real *>(nullptr), dedP_T,
+                                                  drdP_T, dedT_P, drdT_P);
+            singularity::eos_base::PTDerivativesByFiniteDifferences(
+                device_eos, rho, sie, P, T, derivative_eps, static_cast<Real *>(nullptr),
+                dedP_T_fd, drdP_T_fd, dedT_P_fd, drdT_P_fd);
+            if (!isClose(dedP_T, dedP_T_fd)) {
+              printf("rho, sie, P, T, dedP_T expected, true, diff:\n\t"
+                     "%.14e %.14e %.14e %.14e %.14e %.14e %.14e\n",
+                     rho, sie, P, T, dedP_T, dedP_T_fd, dedP_T - dedP_T_fd);
+              nw += 1;
+            }
+            if (!isClose(drdP_T, drdP_T_fd)) {
+              printf("rho, sie, P, T, drdP_T expected, true, diff:\n\t"
+                     "%.14e %.14e %.14e %.14e %.14e %.14e %.14e\n",
+                     rho, sie, P, T, drdP_T, drdP_T_fd, drdP_T - drdP_T_fd);
+              nw += 1;
+            }
+            if (!isClose(dedT_P, dedT_P_fd)) {
+              printf("rho, sie, P, T, dedT_P expected, true, diff:\n\t"
+                     "%.14e %.14e %.14e %.14e %.14e %.14e %.14e\n",
+                     rho, sie, P, T, dedT_P, dedT_P_fd, dedT_P - dedT_P_fd);
+              nw += 1;
+            }
+            if (!isClose(drdT_P, drdT_P_fd)) {
+              printf("rho, sie, P, T, drdT_P expected, true, diff:\n\t"
+                     "%.14e %.14e %.14e %.14e %.14e %.14e %.14e\n",
+                     rho, sie, P, T, drdT_P, drdT_P_fd, drdT_P - drdT_P_fd);
+              nw += 1;
+            }
+          },
+          nwrong);
+      THEN("There are no errors") { REQUIRE(nwrong == 0); }
+    }
   }
 }
 
