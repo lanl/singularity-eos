@@ -129,9 +129,9 @@ class FlooredEnergy : public EosBase<FlooredEnergy<T>> {
 
   template <typename Lambda_t = Real *>
   PORTABLE_INLINE_FUNCTION void
-  PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P, const Real temp,
-                             Lambda_t &&lambda, Real &dedP_T, Real &drdP_T, Real &dedT_P,
-                             Real &drdT_P) const {
+  PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P,
+                             const Real temp, Lambda_t &&lambda, Real &dedP_T,
+                             Real &drdP_T, Real &dedT_P, Real &drdT_P) const {
     const Real min_sie = t_.MinInternalEnergyFromDensity(rho);
     t_.PTDerivativesFromPreferred(rho, std::max(sie, min_sie), P, temp, lambda, dedP_T,
                                   drdP_T, dedT_P, drdT_P);

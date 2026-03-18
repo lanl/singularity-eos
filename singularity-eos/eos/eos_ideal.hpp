@@ -164,7 +164,7 @@ class IdealGas : public EosBase<IdealGas> {
 
     // rho(P, T) = (P / (gm1 cv)) T^{-1}
     // => drdT_P = -1 (P / (gm1 cv)) T^{-2}
-    drdT_P = - robust::ratio(P, _gm1 * _Cv * T *T);
+    drdT_P = -robust::ratio(P, _gm1 * _Cv * T * T);
   }
 
   template <typename Indexer_t = Real *>

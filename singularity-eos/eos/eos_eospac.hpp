@@ -1717,9 +1717,9 @@ PORTABLE_INLINE_FUNCTION void EOSPAC::DensityEnergyFromPressureTemperature(
 
 template <typename Lambda_t>
 PORTABLE_INLINE_FUNCTION void
-EOSPAC::PTDerivativesFromPreferred(const Real rho, const Real sie, const Real press, const Real temp,
-                                   Lambda_t &&lambda, Real &dedP_T, Real &drdP_T, Real &dedT_P,
-                                   Real &drdT_P) const {
+EOSPAC::PTDerivativesFromPreferred(const Real rho, const Real sie, const Real press,
+                                   const Real temp, Lambda_t &&lambda, Real &dedP_T,
+                                   Real &drdP_T, Real &dedT_P, Real &drdT_P) const {
 #if SINGULARITY_ON_DEVICE
   PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
 #else
