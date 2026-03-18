@@ -196,6 +196,11 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                        Indexer_t &&lambda, Real &rho, Real &sie) const;
+  template <typename Lambda_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P, const Real T,
+                             Lambda_t &&lambda, Real &dedP_T, Real &drdP_T, Real &dedT_P,
+                             Real &drdT_P) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
@@ -1003,6 +1008,38 @@ PORTABLE_INLINE_FUNCTION void SpinerEOSDependsRhoT::DensityEnergyFromPressureTem
   Real lRho = lRhoFromPlT_(press, lT, whereAmI, lambda);
   rho = rho_(lRho);
   sie = InternalEnergyFromDensityTemperature(rho, temp, lambda);
+}
+
+template <typename Lambda_t>
+PORTABLE_INLINE_FUNCTION void
+PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P, const Real T,
+                           Lambda_t &&lambda, Real &dedP_T, Real &drdP_T, Real &dedT_P,
+                           Real &drdT_P) const {
+  const Real lT = lT_(temp);
+  const Real lRho = lRho_(rho);
+  const TableStatus whereAmI = getLocDependsRhoT_(lRho, lT);
+
+  if (whereAmI == TableStatus::OffBottom) {
+    dedP_T = robust::ratio(1., dPdECold_.interpToReal(lRho));
+    drdP_T = robust::ratio(1., dPdRhoCold_.interpToReal(lRho));
+    dedT_P = dedTCold_.interpToReal(lRho);
+    drdT_P = 0; // TODO(JMM) is this right?
+  } else if (whereAmI == TableStatus::OffTop) { // idela gas
+    const Real gm1 = gm1Max_.interpToReal(lRho);
+    const Real Cv = dEdTMax_.interpToReal(lRho);
+    dedP_T = 0;
+    dedT_P = Cv;
+    drdP_T = robust::ratio(1.0, gm1 * sie);
+    drdT_P = - robust::ratio(P, gm1 * Cv * T *T);
+  } else {
+    dedP_T = robust::ratio(1., dPdE_.interpToReal(lRho, lT));
+    drdP_T = robust::ratio(1., dPdRho_.interpToReal(lRho, lT));
+    dedT_P = dedT_.interpToReal(lRho, lT);
+    // dP = (dP/dr)_T dr + (dP/dT)_r dT
+    // dP = 0
+    // => 0 = (dP/dr)_T dr + (dP/dT)_r dT
+    drdT_P = -robust::ratio(dPdT_.interpToReal(lRho, lT), dPdRho_.interpToReal(lRho, lT));
+  }
 }
 
 template <typename Indexer_t>
