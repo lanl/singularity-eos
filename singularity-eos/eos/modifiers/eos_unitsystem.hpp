@@ -214,6 +214,21 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
     sie *= inv_sie_unit_;
   }
 
+  template <typename Lambda_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P,
+                             const Real temp, Lambda_t &&lambda, Real &dedP_T,
+                             Real &drdP_T, Real &dedT_P, Real &drdT_P) const {
+    t_.PTDerivativesFromPreferred(rho * rho_unit_, sie * sie_unit_, P * press_unit_,
+                                  temp * temp_unit_, lambda, dedP_T, drdP_T, dedT_P,
+                                  drdT_P);
+    // scale outputs
+    dedP_T *= robust::ratio(press_unit_, temp_unit_);
+    drdP_T *= robust::ratio(press_unit_, rho_unit_);
+    dedT_P *= robust::ratio(temp_unit_, sie_unit_);
+    drdT_P *= robust::ratio(temp_unit_, rho_unit_);
+  }
+
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                  Real &cv, Real &bmod, const unsigned long output,

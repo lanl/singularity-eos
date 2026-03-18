@@ -134,6 +134,16 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
     t_.InternalEnergyFromDensityPressure(rho, P, sie, lambda);
     sie += shift_;
   }
+
+  template <typename Lambda_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P,
+                             const Real temp, Lambda_t &&lambda, Real &dedP_T,
+                             Real &drdP_T, Real &dedT_P, Real &drdT_P) const {
+    t_.PTDerivativesFromPreferred(rho, sie - shift_, P, temp, lambda, dedP_T, drdP_T,
+                                  dedT_P, drdT_P);
+  }
+
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                  Real &cv, Real &bmod, const unsigned long output,
@@ -169,8 +179,7 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
         singularity::mfuncname::member_func_name(typeid(ShiftedEOS<T>).name(), __func__);
     static auto const cname = name.c_str();
     const auto shift_val = shift_;
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) { sies[i] += shift_val; });
+    portableFor(cname, 0, num, PORTABLE_LAMBDA(const int i) { sies[i] += shift_val; });
   }
 
   template <typename LambdaIndexer>

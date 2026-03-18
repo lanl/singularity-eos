@@ -213,6 +213,9 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     // TODO(JMM): This doesn't seem right. dpdrho relevant.
     return t_.GruneisenParamFromDensityTemperature(rho, temperature, lambda);
   }
+
+  /* JMM: Use the base class PTDerivativesFromPreferred for now */
+
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                  Real &cv, Real &bmod, const unsigned long output,

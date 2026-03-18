@@ -180,6 +180,21 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
     sie *= scale;
   }
 
+  template <typename Lambda_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P,
+                             const Real temp, Lambda_t &&lambda, Real &dedP_T,
+                             Real &drdP_T, Real &dedT_P, Real &drdT_P) const {
+    const Real scale = GetScale_(lambda);
+    const Real iscale = GetInvScale_(lambda);
+    t_.PTDerivativesFromPreferred(rho, sie * iscale, P * iscale, temp, lambda, dedP_T,
+                                  drdP_T, dedT_P, drdT_P);
+    // dedP scale cancels
+    drdP_T *= iscale;
+    dedT_P *= scale;
+    // drdT_P does not need scaling
+  }
+
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
