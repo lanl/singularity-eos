@@ -231,6 +231,11 @@ class EOSPAC : public EosBase<EOSPAC> {
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Lambda_t>
+  PORTABLE_INLINE_FUNCTION void
+  PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P, const Real T,
+                             Lambda_t &&lambda, Real &dedP_T, Real &drdP_T, Real &dedT_P,
+                             Real &drdT_P) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
@@ -1707,6 +1712,41 @@ PORTABLE_INLINE_FUNCTION void EOSPAC::DensityEnergyFromPressureTemperature(
   table = EofRT_table_;
   eosSafeInterpolate(&table, nxypairs, R, T, E, dx, dy, "EofPRT", Verbosity::Quiet);
   sie = sieFromSesame(E[0]);
+#endif // ON DEVICE
+}
+
+template <typename Lambda_t>
+PORTABLE_INLINE_FUNCTION void
+EOSPAC::PTDerivativesFromPreferred(const Real rho, const Real sie, const Real press, const Real temp,
+                                   Lambda_t &&lambda, Real &dedP_T, Real &drdP_T, Real &dedT_P,
+                                   Real &drdT_P) const {
+#if SINGULARITY_ON_DEVICE
+  PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
+#else
+  PORTABLE_REQUIRE(split_ == TableSplit::Total,
+                   "Density of pressure and temperature only supported for total "
+                   "tables at this time");
+  using namespace EospacWrapper;
+  EOS_REAL P[1] = {pressureToSesame(press)};
+  EOS_REAL T[1] = {temperatureToSesame(temp)};
+  EOS_REAL R[1] = {rho};
+  EOS_REAL E[1] = {sieToSesame(sie)};
+  EOS_REAL z[1], dx[1], dy[1];
+  EOS_INTEGER nxypairs = 1;
+  EOS_INTEGER table;
+
+  table = PofRE_table_;
+  eosSafeInterpolate(&table, nxypairs, z, R, E, dx, dy, "PofRE", Verbosity::Quiet);
+  dedP_T = robust::ratio(1., dy[0]);
+
+  table = EofRT_table_;
+  eosSafeInterpolate(&table, nxypairs, z, R, T, dx, dy, "EofRT", Verbosity::Quiet);
+  dedT_P = dy[0];
+
+  table = RofPT_table_;
+  eosSafeInterpolate(&table, nxypairs, z, P, T, dx, dy, "RofPT", Verbosity::Quiet);
+  drdP_T = dx[0];
+  drdT_P = dx[1];
 #endif // ON DEVICE
 }
 
