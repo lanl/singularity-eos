@@ -366,10 +366,6 @@ class PTESolverBase {
   PORTABLE_INLINE_FUNCTION
   const MixParams &GetParams() const { return params_; }
 
-  // Reports which quantities are exactly conserved by a given solver
-  PORTABLE_INLINE_FUNCTION
-  constexpr static unsigned long ExactlySum() { return thermalqs::none; }
-
  protected:
   PORTABLE_INLINE_FUNCTION
   PTESolverBase(std::size_t nmats, std::size_t neqs, const EOSIndexer &eos_,
