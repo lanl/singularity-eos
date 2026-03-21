@@ -773,10 +773,10 @@ namespace. The function
 
 sets the volume fraction of the material occupying the greatest volume
 to ``tot_vol`` minus the sum of the other volume fractions. It also
-modifies that material's density so that the mass fractions continue
-to sum to unity. Depending on the PTE solver utilized to construct
-these volume fractions, this may introduce some thermodynamic
-inconsistency in the state.
+modifies that material's density so that the mass fractions remain
+unchanded, which also means they continue to sum to unity. Depending
+on the PTE solver utilized to construct these volume fractions, this
+may introduce some thermodynamic inconsistency in the state.
 
 Similarly, the function
 
