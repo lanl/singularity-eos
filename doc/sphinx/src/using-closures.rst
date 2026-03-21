@@ -695,6 +695,30 @@ then :math:`\rho_2` implies an effective pressure
 which now differs from the solver-selected pressure by a factor of
 order :math:`\delta_f`.
 
+The ideal gas is a relatively gentle special case. For stiffer
+equations of state, the issues can be more severe. For example, the
+pressure along a reference curve for the Murnaghan equation of state
+is
+
+.. math::
+
+  P(\rho) = \frac{B_0}{B_0'} \left[\left(\frac{\rho}{\rho_0}\right)^{B_0'} - 1\right]
+
+where the bulk modulus :math:`B_s` is given by a linear function in density
+
+.. math::
+
+   B_s = B_0 + B_0' (\rho - \rho_0)
+
+for some reference density :math:`\rho_0`. In this case, the corrected
+pressure due to modifying the volume fractions has the form
+
+.. math::
+
+  P_2' = P\left(1 + \mathcal{O}(\delta_f)\right)^{B_0'},
+
+which could introduce a very large deviation for :math:`B_0' > 1`.
+
 A similar story holds for attempting to modify the internal energys
 :math:`\epsilon` to sum to the bulk internal energy density. The
 internal energy doesn't necessarily impact mass or volume fractions,
