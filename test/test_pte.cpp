@@ -75,20 +75,26 @@ void TestPTE(const std::string name, const std::size_t nscratch_vars,
   using EOSAccessor = LinearIndexer<decltype(eos_v)>;
   EOSAccessor eos(eos_v);
 
+// TODO(JMM): CLean this mess up with a more coherent/minimal set of
+// databoxes. Most of these don't need host mirrors, so we don't need
+// branching, we can just choose AllocationTarget::Device.
 #ifdef PORTABILITY_STRATEGY_KOKKOS
   RView rho_v("rho", NPTS);
+  RView rhobar_v("rhobar", NPTS); // this is just scratch
   RView vfrac_v("vfrac", NPTS);
   RView sie_v("sie", NPTS);
   RView temp_v("temp", NPTS);
   RView press_v("press", NPTS);
   RView scratch_v("scratch", NTRIAL * nscratch_vars);
   auto rho_vh = Kokkos::create_mirror_view(rho_v);
+  auto rhobar_vh = Kokkos::create_mirror_view(rhobar_v);
   auto vfrac_vh = Kokkos::create_mirror_view(vfrac_v);
   auto sie_vh = Kokkos::create_mirror_view(sie_v);
   auto temp_vh = Kokkos::create_mirror_view(temp_v);
   auto press_vh = Kokkos::create_mirror_view(press_v);
   auto scratch_vh = Kokkos::create_mirror_view(scratch_v);
   DataBox rho_d(rho_v.data(), NTRIAL, NMAT);
+  DataBox rhobar_d(rhobar_v.data(), NTRIAL, NMAT);
   DataBox vfrac_d(vfrac_v.data(), NTRIAL, NMAT);
   DataBox sie_d(sie_v.data(), NTRIAL, NMAT);
   DataBox temp_d(temp_v.data(), NTRIAL, NMAT);
@@ -106,6 +112,7 @@ void TestPTE(const std::string name, const std::size_t nscratch_vars,
   auto hist_vh = Kokkos::create_mirror_view(hist_d);
 #else
   DataBox rho_d(NTRIAL, NMAT);
+  DataBox rhobar_d(NTRIAL, NMAT); // this is just scratch
   DataBox vfrac_d(NTRIAL, NMAT);
   DataBox sie_d(NTRIAL, NMAT);
   DataBox temp_d(NTRIAL, NMAT);
@@ -172,6 +179,7 @@ void TestPTE(const std::string name, const std::size_t nscratch_vars,
       PORTABLE_LAMBDA(const int &t, std::size_t &ns) {
         singularity::NullIndexer lambda;
         Indexer2D<decltype(rho_d)> rho(t, rho_d);
+        Indexer2D<decltype(rhobar_d)> rhobar(t, rhobar_d);
         Indexer2D<decltype(vfrac_d)> vfrac(t, vfrac_d);
         Indexer2D<decltype(sie_d)> sie(t, sie_d);
         Indexer2D<decltype(temp_d)> temp(t, temp_d);
@@ -180,8 +188,9 @@ void TestPTE(const std::string name, const std::size_t nscratch_vars,
         Real sie_tot = 0.0;
         Real rho_tot = 0.0;
         for (int i = 0; i < NMAT; i++) {
-          rho_tot += rho[i] * vfrac[i];
-          sie_tot += rho[i] * vfrac[i] * sie[i];
+          rhobar[i] = rho[i] * vfrac[i];
+          rho_tot += rhobar[i];
+          sie_tot += rhobar[i] * sie[i];
         }
         sie_tot /= rho_tot;
 
@@ -211,17 +220,17 @@ void TestPTE(const std::string name, const std::size_t nscratch_vars,
           }
 
           if (method.ExactlySum() & singularity::thermalqs::mass_fractions) {
-            Real rho_new = 0;
+            // check that the individual mass fractions still match
             for (std::size_t m = 0; m < NMAT; ++m) {
-              rho_new += rho[m] * vfrac[m];
+              bool rhobar_close = isClose(rhobar[m], rho[m] * vfrac[m], 1e-12);
+              if (!rhobar_close) {
+                printf("rhobars (i.e., mass fractions) no longer match! "
+                       "rhobar_old, rhobar_new, rho, vfrac = "
+                       "%.14e %.14e %.14e %.14e\n",
+                       rhobar[m], rho[m] * vfrac[m], rho[m], vfrac[m]);
+              }
+              in_pte = in_pte && rhobar_close;
             }
-            bool rho_close = isClose(rho_new, rho_tot, 1e-12);
-            if (!rho_close) {
-              printf("Mass fractions no longer sum to 1! "
-                     "rho_bulk = %.14e, true = %.14e\n",
-                     rho_new, rho_tot);
-            }
-            in_pte = in_pte && rho_close;
           }
 
           if (method.ExactlySum() & singularity::thermalqs::volume_fractions) {
@@ -289,6 +298,7 @@ void TestPTE(const std::string name, const std::size_t nscratch_vars,
   }
 #ifndef PORTABILITY_STRATEGY_KOKKOS
   free(rho_d);
+  free(rhobar_d);
   free(vfrac_d);
   free(sie_d);
   free(temp_d);
