@@ -98,7 +98,7 @@ EnforceMassVolumesSum(const std::size_t nmat, const Real tot_vol, RhoIndexer_t &
   std::size_t imax = 0;
   Real fmax = -1;
   for (std::size_t m = 0; m < nmat; ++m) {
-    PORTABLE_REQUIRE(vfracs[m] > 0, "volume fractions all positive");
+    PORTABLE_REQUIRE(vfracs[m] > 0, "volume fractions must all be strictly positive");
     if (vfracs[m] > fmax) {
       fmax = vfracs[m];
       imax = m;
@@ -109,8 +109,8 @@ EnforceMassVolumesSum(const std::size_t nmat, const Real tot_vol, RhoIndexer_t &
     if (m == imax) continue;
     vfrac_new -= vfracs[m];
   }
-  PORTABLE_REQUIRE(vfrac_new > 0, "New volume fraction positive");
-  PORTABLE_REQUIRE(vfrac_new <= tot_vol, "New volume fraction bounded");
+  PORTABLE_REQUIRE(vfrac_new > 0, "New majority volume fraction must be positive");
+  PORTABLE_REQUIRE(vfrac_new <= tot_vol, "New majority volume fraction must be bounded");
   rho[imax] *= robust::ratio(vfracs[imax], vfrac_new);
   vfracs[imax] = vfrac_new;
 }
