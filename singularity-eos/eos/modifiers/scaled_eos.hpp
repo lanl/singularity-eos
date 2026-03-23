@@ -147,8 +147,8 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P,
                              const Real temp, Lambda_t &&lambda, Real &dedP_T,
                              Real &drdP_T, Real &dedT_P, Real &drdT_P) const {
-    t_.PTDerivativesFromPreferred(scale_ * rho, sie, P, temp, lambda, dedP_T, drdP_T,
-                                  dedT_P, drdT_P);
+    t_.PTDerivativesFromPreferred(scale_ * rho, inv_scale_ * sie, P, temp, lambda, dedP_T,
+                                  drdP_T, dedT_P, drdT_P);
     dedP_T *= scale_;
     drdP_T *= inv_scale_;
     dedT_P *= scale_;
