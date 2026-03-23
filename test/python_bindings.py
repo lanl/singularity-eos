@@ -58,11 +58,14 @@ class EOS(unittest.TestCase):
         self.assertEqual(thermalqs.all_values, thermalqs.none |
                                                thermalqs.density |
                                                thermalqs.specific_internal_energy |
-                                               thermalqs.pressure      |
-                                               thermalqs.temperature   |
-                                               thermalqs.specific_heat |
-                                               thermalqs.bulk_modulus  |
-                                               thermalqs.do_lambda)
+                                               thermalqs.pressure         |
+                                               thermalqs.temperature      |
+                                               thermalqs.specific_heat    |
+                                               thermalqs.bulk_modulus     |
+                                               thermalqs.do_lambda        |
+                                               thermalqs.mass_fractions   |
+                                               thermalqs.volume_fractions |
+                                               thermalqs.internal_energy_densities)
 
     def testIdealGas(self):
         eos = singularity_eos.IdealGas(1,1)
