@@ -8,6 +8,7 @@
 - [[PR589]](https://github.com/lanl/singularity-eos/pull/589) InternalEnergyFromDensityPressure
 
 ### Fixed (Repair bugs, etc)
+- [[PR616]](https://github.com/lanl/singularity-eos/pull/616/changes) Ensure introspection methods are threaded through modifiers properly
 - [[PR615]](https://github.com/lanl/singularity-eos/pull/615) Clarify expectations on quantities preserved up to machine precision by the PTE solver
 - [[PR609]](https://github.com/lanl/singularity-eos/pull/609) Fix bugs introduced in 607, which did not properly handle initial guesses and had a typo that introduced UB
 - [[PR607]](https://github.com/lanl/singularity-eos/pull/607) Make the PTE solvers a little bit more adaptable to EOS models that prefer pressure as an input
@@ -16,6 +17,7 @@
 - [[PR601]](https://github.com/lanl/singularity-eos/pull/601) Make Serialize() return a smart pointer
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR617]](https://github.com/lanl/singularity-eos/pull/617) Fix issue for findpackage when no library target to find
 - [[PR605]](https://github.com/lanl/singularity-eos/pull/605) Improve HDF5 erorr handling when reading tables
 - [[PR604]](https://github.com/lanl/singularity-eos/pull/604) Update kokkos kernels linalg call after kokkos kernels became more strict
 

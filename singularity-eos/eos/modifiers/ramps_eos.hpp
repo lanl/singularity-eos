@@ -246,6 +246,7 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     return;
   }
 
+  // TODO(JMM): These are probably not correct for ramp EOS
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const {
     return t_.MinimumDensity();
   }
@@ -260,6 +261,9 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
   }
   PORTABLE_FORCEINLINE_FUNCTION Real MaximumPressureAtTemperature(const Real temp) const {
     return t_.MaximumPressureAtTemperature(temp);
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real RhoPmin(const Real temp) const {
+    return t_.RhoPmin(temp);
   }
 
   template <typename Indexer_t = Real *>

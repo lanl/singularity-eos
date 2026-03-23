@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------#
-# © 2021-2023. Triad National Security, LLC. All rights reserved.  This program
+# © 2021-2026. Triad National Security, LLC. All rights reserved.  This program
 # was produced under U.S. Government contract 89233218CNA000001 for Los Alamos
 # National Laboratory (LANL), which is operated by Triad National Security, LLC
 # for the U.S.  Department of Energy/National Nuclear Security Administration.
@@ -112,10 +112,14 @@ if(NOT TARGET singularity-eos AND NOT singularity-eos_BINARY_DIR)
   add_library(singularity-eos::singularity-eos ALIAS singularity-eos)
 
   if("Interface" IN_LIST ${CMAKE_FIND_PACKAGE_NAME}_comps)
-    target_link_libraries(singularity-eos INTERFACE singularity-eos::singularity-eos_Interface)
+    if (TARGET singularity-eos::singularity-eos_Interface)
+      target_link_libraries(singularity-eos INTERFACE singularity-eos::singularity-eos_Interface)
+    endif()
   endif()
 
   if("Library" IN_LIST ${CMAKE_FIND_PACKAGE_NAME}_comps)
-    target_link_libraries(singularity-eos INTERFACE singularity-eos::singularity-eos_Library)
+    if (TARGET singularity-eos::singularity-eos_Library)
+      target_link_libraries(singularity-eos INTERFACE singularity-eos::singularity-eos_Library)
+    endif()
   endif()
 endif()
