@@ -111,10 +111,30 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS][DependsRhoT][EOSPAC]") {
       singularity::eos_base::PTDerivativesByFiniteDifferences(
           eospac, rho, sie, P, T, derivative_eps, static_cast<Real *>(nullptr), dedP_T_fd,
           drdP_T_fd, dedT_P_fd, drdT_P_fd);
-      REQUIRE(isClose(dedP_T, dedP_T_fd));
-      REQUIRE(isClose(drdP_T, drdP_T_fd));
-      REQUIRE(isClose(dedT_P, dedT_P_fd));
-      REQUIRE(isClose(drdT_P, drdT_P_fd));
+      bool is_close_dedp = isClose(dedP_T, dedP_T_fd);
+      if (!is_close_dedp) {
+        printf("dedP_T not close! %.14e %.14e %.14e\n", dedP_T, dedP_T_fd,
+               dedP_T - dedP_T_fd);
+      }
+      REQUIRE(is_close_dedp);
+      bool is_close_drdP = isClose(drdP_T, drdP_T_fd);
+      if (!is_close_drdP) {
+        printf("drdP_T not close! %.14e %.14e %.14e\n", drdP_T, drdP_T_fd,
+               drdP_T - drdP_T_fd);
+      }
+      REQUIRE(is_close_drdP);
+      bool is_close_dedT = isClose(dedT_P, dedT_P_fd);
+      if (!is_close_dedT) {
+        printf("dedT_P not close! %.14e %.14e %.14e\n", dedT_P, dedT_P_fd,
+               dedT_P - dedT_P_fd);
+      }
+      REQUIRE(is_close_dedT);
+      bool is_close_drdT = isClose(drdT_P, drdT_P_fd);
+      if (!is_close_drdT) {
+        printf("drdT_P not close! %.14e %.14e %.14e\n", drdT_P, drdT_P_fd,
+               drdT_P - drdT_P_fd);
+      }
+      REQUIRE(is_close_drdT);
     }
 
     THEN("The correct metadata is read in") {
