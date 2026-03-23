@@ -1744,6 +1744,8 @@ EOSPAC::PTDerivativesFromPreferred(const Real rho, const Real sie, const Real pr
   eosSafeInterpolate(&table, nxypairs, z, P, T, dx, dy, "RofPT", Verbosity::Quiet);
   drdP_T = dx[0];
   drdT_P = dy[0];
+  printf("dedP_T, dedr_T, drdP_T = %.14e %.14e %.14e\n", // DEBUG
+         dedr_T, dedr_T, drdP_T);
   dedP_T = dedr_T * drdP_T;
   dedT_P = dedT_r + dedr_T * drdT_P;
 #endif // ON DEVICE
