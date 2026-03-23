@@ -564,6 +564,263 @@ material pressures.
 
 In the code this is referred to as the ``PTESolverFixedP``.
 
+A note on satisfying constraints up to machine precision
+``````````````````````````````````````````````````````````
+
+The thermodynamic consistency of a state produced by a PTE solver can
+be in tension with the precision at which the solver satisfies the
+governing equations, that is conservation of mass, energy and
+volume. To see how that plays out, let's explore a toy
+example. Consider a two material mixed cell. The PTE problem is fully
+specified by choosing material mass fractions :math:`\mu_1` and
+:math:`\mu_2` such that
+
+.. math::
+
+  \mu_1 + \mu_2 = 1,
+
+total bulk density :math:`\rho_b`, and bulk internal
+energy density :math:`u_b`.
+
+We find a PTE solution using the PT-space PTE solver described above,
+i.e., ``PTESolverPT``. It returns to us microphysical densities
+:math:`\rho_1(P, T)`, :math:`\rho_2(P, T)`, and specific internal
+energies :math:`\epsilon_1(P, T)`, :math:`\epsilon_2(P, T)` of each
+material, which are functions of the shared equilibrium pressure
+:math:`P` and temperature :math:`T`. The volume fractions consistent
+with these densities and the prescribed state (also output by the
+solver) are:
+
+.. math::
+
+  f_1 = \frac{\mu_1\rho_b}{\rho_1}, f_2 = \frac{\mu_2\rho_b}{\rho_2}
+
+and the solver minimizes its residuals to enforce that
+
+.. math::
+
+  1 - f_1 - f_2 = \delta_f
+
+and
+
+.. math::
+
+  u_b - \mu_1 \rho_b \epsilon_1 - \mu_2 \rho_b \epsilon_2 = \delta_\epsilon,
+
+where :math:`0 < |\delta_f| \ll 1` and :math:`0 < |\delta_\epsilon|
+\ll 1` are solution errors set by the tolerance of the solver. This
+means that volume and energy are **not** exactly conserved by
+``PTESolverPT``. They are satisfied only up to the accuracy of the
+solver.
+
+We now explore if it's possible to rectify the situation by modifying
+(for example) the volume fractions so that they sum exactly to
+unity. What are the consequences of such a transformation? In other
+words, we seek to define :math:`f_1'` and :math:`f_2'` such that
+
+.. math::
+
+  f_1' + f_2' = 1
+
+We could do so by renormalizing :math:`f_1` and :math:`f_2`, or by a
+procedure where one volume fraction is set to the difference between 1
+and the sum of the others. We call the former strategy (1) and the
+latter strategy (2). For the sake of specificity we choose this latter
+approach:
+
+.. math::
+
+  f_1' = f_1, f_2' = 1 - f_1
+
+but the broad conclusions we will draw here are independent of the
+choice we make. If we change the volume fractions but do not change
+the densities, this implies that we have modified the mass fractions,
+resulting in new effective mass fractions
+
+.. math::
+
+  \mu_1' = \frac{\mu_1 f_1'}{\rho_b} = \frac{\mu_1\rho_b}{f_1} = \mu_1 \frac{f_1'}{f_1}
+
+and
+
+.. math::
+
+  \mu_2' = \mu_2 \frac{f_2'}{f_2}
+
+In the case of strategy 2, this implies
+
+.. math::
+
+  1 - \mu_1' - \mu_2' &= 1 - \mu_1 \frac{f_1'}{f_1} - \mu_2\frac{f_2'}{f_2}\\
+                      &= 1 - \mu_1 - \mu_2 \frac{f_2'}{f_2}\\
+                      &= 1 - \mu_1 - \frac{1}{f_2}\mu_2(1 - f_1)\\
+                      &= 1 - \mu_1 - \frac{1}{f_2}\mu_2(f_2 + \delta_f)\\
+                      &= 1 - \mu_1 - \mu_2 - \frac{\mu_2}{f_2}\delta_f\\
+                      &= 0 + \mathcal{O}(\delta_f)
+
+Thus the new effective mass fractions no longer some to 1, introducing
+an error of order the solver tolerance into mass conservation by the
+solver. 
+
+Alternatively, one can enforce the mass fractions stay fixed and
+modify the densities to be compatile with the modified volume
+fractions. In this case, we seek new effective microphysical densities
+
+.. math::
+
+  \rho_1' = \rho_1 \frac{f_1}{f_1'}, \rho_2' = \rho_2 \frac{f_2}{f_2'}
+
+consistent with the new volume fractions :math:`f_1'`, :math:`f_2'`,
+and the original mass fractions :math:`\mu_1`, :math:`\mu_2`. In the
+case of strategy (2), this implies that
+
+.. math::
+
+  \rho_2' = \rho_2 \frac{f_2}{f_2 + \delta_f} = \rho_2(1 + \mathcal{O}(\delta_f)),
+
+which no longer necessarily corresponds to the pressure and
+temperature chosen by the solver. Indeed, even in the simple case in
+which material 2 is an ideal gas with equation of state
+
+.. math::
+
+  P = (\Gamma - 1)\rho_2 c_v T
+
+then :math:`\rho_2` implies an effective pressure
+
+.. math::
+
+  P_2' = (\Gamma - 1)\rho_2' c_v T = P (1 + \mathcal{O}(\delta_f)),
+
+which now differs from the solver-selected pressure by a factor of
+order :math:`\delta_f`.
+
+The ideal gas is a relatively gentle special case. For stiffer
+equations of state, the issues can be more severe. For example, the
+pressure along a reference curve for the Murnaghan equation of state
+is
+
+.. math::
+
+  P(\rho) = \frac{B_0}{B_0'} \left[\left(\frac{\rho}{\rho_0}\right)^{B_0'} - 1\right]
+
+where the bulk modulus :math:`B_s` is given by a linear function in density
+
+.. math::
+
+   B_s = B_0 + B_0' (\rho - \rho_0)
+
+for some reference density :math:`\rho_0`. In this case, the corrected
+pressure due to modifying the volume fractions has the form
+
+.. math::
+
+  P_2' = P\left(1 + \mathcal{O}(\delta_f)\right)^{B_0'},
+
+which could introduce a very large deviation for :math:`B_0' > 1`.
+
+A similar story holds for attempting to modify the internal energys
+:math:`\epsilon` to sum to the bulk internal energy density. The
+internal energy doesn't necessarily impact mass or volume fractions,
+but modifying it may break thermodynamic consistency with the PTE
+state chosen by the solver.
+
+What we have learned in this toy example is that in general it is not
+possible to both maintain thermodynamic consistency with the PTE state
+and satisfy all "conservation" constraints to machine precision. In
+fact, this is what motivates the ``PTESolverRhoT`` and
+``PTESolverRhoU`` models. The ``PTESolveRhoT`` model uses
+microphysical density :math:`\rho_m` as an independent variable and
+thus can construct steps through phase space at each solver iteration
+such that
+
+.. math::
+
+  \sum_m \Delta f_m = 0
+
+so that volume is conserved exactly. Similarly, ``PTESolverRhoU`` also
+uses internal energy as an independent variable and construct steps
+through phase space such that
+
+.. math::
+
+  \sum_m \mu_m \rho_b \Delta \epsilon_m = 0
+
+and energy is conserved exactly on each solver iteration. Thus
+different PTE solvers in the ``singularity-eos`` suite satisfy
+different numbers of constraints to machine precision, exposing
+trade-offs between performance, robustness, and conservation.
+
+Each solver also reports which of these constraints it satisfies via
+the method
+
+.. code:: cpp
+
+  PORTABLE_INLINE_FUNCTION
+  constexpr static unsigned long ExactlySum();
+
+which returns a bit array that evaulates to true for quantities that
+are satisfied. The possible flags are
+
+* ``singularity::thermalqs::mass_fractions`` for the mass fraction constraint
+* ``singularity::thermalqs::volume_fractions`` for the volume fraction constraint
+* ``singularity::thermalqs::internal_energy_densities`` for the energy constraint
+
+For example:
+
+.. code:: cpp
+
+  // evaluates to true
+  PTESolverPT<types>::ExactlySum() & thermalqs::mass_fractions;
+
+  // evaluates to false
+  PTESolverPT<types>::ExactlySum() & thermalqs::volume_fractions;
+
+Note that accessing a flag from a bit array requires a single bitwise
+``&`` operator, not the boolean ``&&`` operator. Building your own
+bitarray by combining flags requires the bitwise ``|`` operator.
+
+
+Choosing how to handle thermodynamically inconsistent solver output
+````````````````````````````````````````````````````````````````````
+
+To address the issues discussed above, ``singularity-eos`` also
+provides two stand alone functions in the ``singularity::MixUtils``
+namespace. The function
+
+.. code:: cpp
+
+  template <typename RhoIndexer_t, typename VFracIndexer_t>
+  PORTABLE_INLINE_FUNCTION void
+  EnforceMassVolumesSum(const std::size_t nmat, const Real tot_vol, RhoIndexer_t &&rho,
+                        VFracIndexer_t &&vfracs);
+
+sets the volume fraction of the material occupying the greatest volume
+to ``tot_vol`` minus the sum of the other volume fractions. It also
+modifies that material's density so that the mass fractions remain
+unchanded, which also means they continue to sum to unity. Depending
+on the PTE solver utilized to construct these volume fractions, this
+may introduce some thermodynamic inconsistency in the state.
+
+Similarly, the function
+
+.. code:: cpp
+
+  template <typename RhoIndexer_t, typename VFracIndexer_t, typename SieIndexer_t>
+  PORTABLE_INLINE_FUNCTION void
+  EnforceEnergiesSum(const std::size_t nmat, const Real tot_rho, const Real tot_sie,
+                     RhoIndexer_t &&rhos, VFracIndexer_t &&vfracs, SieIndexer_t &&sies);
+
+sets the specific internal energy density of the material that
+contributes the most to the energy in the mixture to ``tot_rho *
+tot_sie`` minus the sum of the others. The specific internal energy is
+modified to match this new energy density, without modifying densities
+or volume fractions. This may be combined with
+``EnforceMassVolumesSum``. It will not impact other conservation
+rules, but might make the thermodynamic state of the material
+inconsistent with the mixture chosen by a PTE solver, depending on the
+solver.
+
 Using the Pressure-Temperature Equilibrium Solver
 ```````````````````````````````````````````````````
 
