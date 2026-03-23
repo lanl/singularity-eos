@@ -1736,12 +1736,17 @@ EOSPAC::PTDerivativesFromPreferred(const Real rho, const Real sie, const Real pr
   EOS_INTEGER table;
 
   table = EofRT_table_;
-  eosSafeInterpolate(&table, nxypairs, z, R, T, dx, dy, "EofRT", Verbosity::Quiet);
+  eosSafeInterpolate(&table, nxypairs, R, T, z dx, dy, "EofRT", Verbosity::Quiet);
   const Real dedr_T = dx[0];
   const Real dedT_r = dy[0];
 
+  table = TofRP_table_;
+  eosSafeInterpolate(&table, nxypairs, R, P, z, dx, dy, "TofRP", Verbosity::Quiet);
+  const Real dTdr_P = dx[0];
+  const Real dTdP_r = dy[0];
+
   table = RofPT_table_;
-  eosSafeInterpolate(&table, nxypairs, z, P, T, dx, dy, "RofPT", Verbosity::Quiet);
+  eosSafeInterpolate(&table, nxypairs, P, T, z, dx, dy, "RofPT", Verbosity::Quiet);
   drdP_T = dx[0];
   drdT_P = dy[0];
   printf("dedP_T, dedr_T, drdP_T = %.14e %.14e %.14e\n", // DEBUG
