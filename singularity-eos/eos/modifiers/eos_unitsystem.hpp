@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -267,6 +267,10 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   }
   PORTABLE_FORCEINLINE_FUNCTION Real MaximumPressureAtTemperature(const Real temp) const {
     return inv_press_unit_ * t_.MaximumPressureAtTemperature(temp_unit_ * temp);
+  }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real RhoPmin(const Real temp) const {
+    return inv_rho_unit_ * t_.RhoPmin(temp * temp_unit_);
   }
 
   template <typename Indexer_t = Real *>

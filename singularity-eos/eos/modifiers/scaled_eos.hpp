@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -359,6 +359,8 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   PORTABLE_FORCEINLINE_FUNCTION Real MaximumPressureAtTemperature(const Real temp) const {
     return t_.MaximumPressureAtTemperature(temp);
   }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real RhoPmin(const Real temp) const { return inv_scale_ * t_.RhoPmin(temp); }
 
   PORTABLE_INLINE_FUNCTION
   Real MeanAtomicMass() const { return inv_scale_ * t_.MeanAtomicMass(); }
