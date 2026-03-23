@@ -196,8 +196,11 @@ PTDerivativesByFiniteDifferences(const EOS_t &eos, const Real rho, const Real si
                                  Real &dedT_P, Real &drdT_P) {
   Real r_pert, e_pert;
 
-  const Real dP = -P * derivative_eps;
-  const Real dT = T * derivative_eps;
+  const Real absP = std::max(std::abs(P), robust::EPS() / derivative_eps);
+  const Real dP = -robust::sgn(P) * absP * derivative_eps; // might be negative
+
+  const Real absT = std::max(std::abs(T), robust::EPS() / derivative_eps);
+  const Real dT = absT * derivative_eps; // can't be negative
 
   eos.DensityEnergyFromPressureTemperature(P + dP, T, lambda, r_pert, e_pert);
   drdP_T = robust::ratio(r_pert - rho, dP);
