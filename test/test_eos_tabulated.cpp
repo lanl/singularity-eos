@@ -97,6 +97,24 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS][DependsRhoT][EOSPAC]") {
     auto steelEOS_host = steelEOS_host_polymorphic.get<SpinerEOSDependsRhoT>();
 
     EOS eospac = EOSPAC(steelID);
+    THEN("The EOSPAC model can provide derivatives from preferred") {
+      Real rho = 5;
+      Real T = 500;
+      Real P = eospac.PressureFromDensityTemperature(rho, T);
+      Real sie = eospac.InternalEnergyFromDensityTemperature(rho, T);
+
+      Real dedP_T, drdP_T, dedT_P, drdT_P;
+      Real dedP_T_fd, drdP_T_fd, dedT_P_fd, drdT_P_fd;
+      eospac.PTDerivativesFromPreferred(rho, sie, P, T, static_cast<Real *>(nullptr),
+                                        dedP_T, drdP_T, dedT_P, drdT_P);
+      singularity::eos_base::PTDerivativesByFiniteDifferences(
+          eospac, rho, sie, P, T, derivative_eps, static_cast<Real *>(nullptr), dedP_T_fd,
+          drdP_T_fd, dedT_P_fd, drdT_P_fd);
+      REQUIRE(isClose(dedP_T, dedP_T_fd));
+      REQUIRE(isClose(drdP_T, drdP_T_fd));
+      REQUIRE(isClose(dedT_P, dedT_P_fd));
+      REQUIRE(isClose(drdT_P, drdT_P_fd));
+    }
 
     THEN("The correct metadata is read in") {
       REQUIRE(steelEOS_host.matid() == steelID);
