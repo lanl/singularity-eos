@@ -1735,18 +1735,17 @@ EOSPAC::PTDerivativesFromPreferred(const Real rho, const Real sie, const Real pr
   EOS_INTEGER nxypairs = 1;
   EOS_INTEGER table;
 
-  table = PofRE_table_;
-  eosSafeInterpolate(&table, nxypairs, z, R, E, dx, dy, "PofRE", Verbosity::Quiet);
-  dedP_T = robust::ratio(1., dy[0]);
-
   table = EofRT_table_;
   eosSafeInterpolate(&table, nxypairs, z, R, T, dx, dy, "EofRT", Verbosity::Quiet);
-  dedT_P = dy[0];
+  const Real dedr_T = dx[0];
+  const Real dedT_r = dy[0];
 
   table = RofPT_table_;
   eosSafeInterpolate(&table, nxypairs, z, P, T, dx, dy, "RofPT", Verbosity::Quiet);
   drdP_T = dx[0];
   drdT_P = dx[1];
+  dedP_T = dedr_T * drdP_T;
+  dedT_P = dedT_r + dedr_T * drdT_P;
 #endif // ON DEVICE
 }
 
