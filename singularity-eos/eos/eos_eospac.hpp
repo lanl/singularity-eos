@@ -1743,7 +1743,7 @@ EOSPAC::PTDerivativesFromPreferred(const Real rho, const Real sie, const Real pr
   table = RofPT_table_;
   eosSafeInterpolate(&table, nxypairs, z, P, T, dx, dy, "RofPT", Verbosity::Quiet);
   drdP_T = dx[0];
-  drdT_P = dx[1];
+  drdT_P = dy[0];
   dedP_T = dedr_T * drdP_T;
   dedT_P = dedT_r + dedr_T * drdT_P;
 #endif // ON DEVICE
