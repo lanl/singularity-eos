@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -39,6 +39,8 @@ using singularity::PTESolverPT;
 using singularity::PTESolverPTRequiredScratch;
 using singularity::PTESolverRhoT;
 using singularity::PTESolverRhoTRequiredScratch;
+using singularity::PTESolverRhoU;
+using singularity::PTESolverRhoURequiredScratch;
 using singularity::Variant;
 using EOS = Variant<Gruneisen, DavisReactants, DavisProducts>;
 
@@ -73,20 +75,26 @@ void TestPTE(const std::string name, const std::size_t nscratch_vars,
   using EOSAccessor = LinearIndexer<decltype(eos_v)>;
   EOSAccessor eos(eos_v);
 
+// TODO(JMM): CLean this mess up with a more coherent/minimal set of
+// databoxes. Most of these don't need host mirrors, so we don't need
+// branching, we can just choose AllocationTarget::Device.
 #ifdef PORTABILITY_STRATEGY_KOKKOS
   RView rho_v("rho", NPTS);
+  RView rhobar_v("rhobar", NPTS); // this is just scratch
   RView vfrac_v("vfrac", NPTS);
   RView sie_v("sie", NPTS);
   RView temp_v("temp", NPTS);
   RView press_v("press", NPTS);
   RView scratch_v("scratch", NTRIAL * nscratch_vars);
   auto rho_vh = Kokkos::create_mirror_view(rho_v);
+  auto rhobar_vh = Kokkos::create_mirror_view(rhobar_v);
   auto vfrac_vh = Kokkos::create_mirror_view(vfrac_v);
   auto sie_vh = Kokkos::create_mirror_view(sie_v);
   auto temp_vh = Kokkos::create_mirror_view(temp_v);
   auto press_vh = Kokkos::create_mirror_view(press_v);
   auto scratch_vh = Kokkos::create_mirror_view(scratch_v);
   DataBox rho_d(rho_v.data(), NTRIAL, NMAT);
+  DataBox rhobar_d(rhobar_v.data(), NTRIAL, NMAT);
   DataBox vfrac_d(vfrac_v.data(), NTRIAL, NMAT);
   DataBox sie_d(sie_v.data(), NTRIAL, NMAT);
   DataBox temp_d(temp_v.data(), NTRIAL, NMAT);
@@ -104,6 +112,7 @@ void TestPTE(const std::string name, const std::size_t nscratch_vars,
   auto hist_vh = Kokkos::create_mirror_view(hist_d);
 #else
   DataBox rho_d(NTRIAL, NMAT);
+  DataBox rhobar_d(NTRIAL, NMAT); // this is just scratch
   DataBox vfrac_d(NTRIAL, NMAT);
   DataBox sie_d(NTRIAL, NMAT);
   DataBox temp_d(NTRIAL, NMAT);
@@ -170,6 +179,7 @@ void TestPTE(const std::string name, const std::size_t nscratch_vars,
       PORTABLE_LAMBDA(const int &t, std::size_t &ns) {
         singularity::NullIndexer lambda;
         Indexer2D<decltype(rho_d)> rho(t, rho_d);
+        Indexer2D<decltype(rhobar_d)> rhobar(t, rhobar_d);
         Indexer2D<decltype(vfrac_d)> vfrac(t, vfrac_d);
         Indexer2D<decltype(sie_d)> sie(t, sie_d);
         Indexer2D<decltype(temp_d)> temp(t, temp_d);
@@ -178,8 +188,9 @@ void TestPTE(const std::string name, const std::size_t nscratch_vars,
         Real sie_tot = 0.0;
         Real rho_tot = 0.0;
         for (int i = 0; i < NMAT; i++) {
-          rho_tot += rho[i] * vfrac[i];
-          sie_tot += rho[i] * vfrac[i] * sie[i];
+          rhobar[i] = rho[i] * vfrac[i];
+          rho_tot += rhobar[i];
+          sie_tot += rhobar[i] * sie[i];
         }
         sie_tot /= rho_tot;
 
@@ -199,6 +210,7 @@ void TestPTE(const std::string name, const std::size_t nscratch_vars,
                      press[m + 1], press[m] - press[m + 1]);
             }
             in_pte = in_pte && press_close;
+
             bool temp_close = isClose(temp[m], temp[m + 1], EPS);
             if (!temp_close) {
               printf("Temperatures not close! %ld, %.14e %.14e %.14e\n", m, temp[m],
@@ -206,6 +218,46 @@ void TestPTE(const std::string name, const std::size_t nscratch_vars,
             }
             in_pte = in_pte && temp_close;
           }
+
+          if (method.ExactlySum() & singularity::thermalqs::mass_fractions) {
+            // check that the individual mass fractions still match
+            for (std::size_t m = 0; m < NMAT; ++m) {
+              bool rhobar_close = isClose(rhobar[m], rho[m] * vfrac[m], 1e-12);
+              if (!rhobar_close) {
+                printf("rhobars (i.e., mass fractions) no longer match! "
+                       "rhobar_old, rhobar_new, rho, vfrac = "
+                       "%.14e %.14e %.14e %.14e\n",
+                       rhobar[m], rho[m] * vfrac[m], rho[m], vfrac[m]);
+              }
+              in_pte = in_pte && rhobar_close;
+            }
+          }
+
+          if (method.ExactlySum() & singularity::thermalqs::volume_fractions) {
+            Real f_tot = 0;
+            for (std::size_t m = 0; m < NMAT; ++m) {
+              f_tot += vfrac[m];
+            }
+            bool f_close = isClose(f_tot, 1, 1e-12);
+            if (!f_close) {
+              printf("Volume fractions no longer sum to 1! %.14e\n", f_tot);
+            }
+            in_pte = in_pte && f_close;
+          }
+
+          if (method.ExactlySum() & singularity::thermalqs::internal_energy_densities) {
+            Real utot = 0;
+            for (std::size_t m = 0; m < NMAT; ++m) {
+              utot += rho[m] * vfrac[m] * sie[m];
+            }
+            bool u_close = isClose(utot, sie_tot * rho_tot, 1e-12);
+            if (!u_close) {
+              printf("Energies no longer sum correctly! %.14e %.14e\n", utot,
+                     sie_tot * rho_tot);
+            }
+            in_pte = in_pte && u_close;
+          }
+
           ns += in_pte;
         }
         hist_d[std::min(HIST_SIZE - 1, method.Niter())] += 1;
@@ -246,6 +298,7 @@ void TestPTE(const std::string name, const std::size_t nscratch_vars,
   }
 #ifndef PORTABILITY_STRATEGY_KOKKOS
   free(rho_d);
+  free(rhobar_d);
   free(vfrac_d);
   free(sie_d);
   free(temp_d);
@@ -262,14 +315,21 @@ int main(int argc, char *argv[]) {
   {
     srand(time(NULL));
 
-    // scratch required for PTE solver
+    // scratch required for rho-T PTE solver
     std::size_t ns_rt;
     std::vector<Real> rho_rt;
     auto nscratch_vars_rt = PTESolverRhoTRequiredScratch(NMAT);
     TestPTE<PTESolverRhoT>("PTESolverRhoT", nscratch_vars_rt, ns_rt, rho_rt);
     nsuccess += ns_rt;
 
-    // // scratch required for PTE solver
+    // scratch required for rho-sie PTE solver
+    std::size_t ns_re;
+    std::vector<Real> rho_re;
+    auto nscratch_vars_re = PTESolverRhoURequiredScratch(NMAT);
+    TestPTE<PTESolverRhoU>("PTESolverRhoU", nscratch_vars_re, ns_re, rho_re);
+    nsuccess += ns_rt;
+
+    // scratch required for P-T PTE solver
     std::size_t ns_pt;
     std::vector<Real> rho_pt;
     auto nscratch_vars_pt = PTESolverPTRequiredScratch(NMAT);
@@ -281,13 +341,20 @@ int main(int argc, char *argv[]) {
     std::vector<bool> matmatch(NMAT, true);
     for (int t = 0; t < NTRIAL; ++t) {
       for (int m = 0; m < NMAT; ++m) {
-        bool they_match = isClose(rho_rt[i], rho_pt[i]);
-        if (!they_match && matmatch[m]) { // only print once per material
-          printf("Densities don't match for %d %d: %.14e %.14e %.14e\n", t, m, rho_rt[i],
-                 rho_pt[i], rho_rt[i] - rho_pt[i]);
+        bool they_match_rhop = isClose(rho_rt[i], rho_pt[i]);
+        if (!they_match_rhop && matmatch[m]) { // only print once per material
+          printf("Densities don't match (rhot vs rhop) for %d %d: %.14e %.14e %.14e\n", t,
+                 m, rho_rt[i], rho_pt[i], rho_rt[i] - rho_pt[i]);
         }
-        matmatch[m] = matmatch[m] && they_match;
-        nmatch += they_match;
+
+        bool they_match_rhoe = isClose(rho_rt[i], rho_re[i]);
+        if (!they_match_rhoe && matmatch[m]) { // only print once per material
+          printf("Densities don't match (rhot vs rhoe) for %d %d: %.14e %.14e %.14e\n", t,
+                 m, rho_rt[i], rho_re[i], rho_rt[i] - rho_re[i]);
+        }
+
+        matmatch[m] = matmatch[m] && they_match_rhop && they_match_rhoe;
+        nmatch += they_match_rhop && they_match_rhoe;
         i++;
       }
     }
