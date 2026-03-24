@@ -1747,12 +1747,10 @@ EOSPAC::PTDerivativesFromPreferred(const Real rho, const Real sie, const Real pr
 
   table = RofPT_table_;
   eosSafeInterpolate(&table, nxypairs, P, T, z, dx, dy, "RofPT", Verbosity::Quiet);
-  drdP_T = dx[0];
-  drdT_P = dy[0];
-  printf("dedP_T, dedr_T, drdP_T = %.14e %.14e %.14e\n", // DEBUG
-         dedT_T, dedr_T, drdP_T);
-  dedP_T = dedr_T * drdP_T;
-  dedT_P = dedT_r + dedr_T * drdT_P;
+  drdP_T = pressureToSesame(dx[0]); // dividing by pressure means inverse conversion
+  drdT_P = temperatueToSesame(dy[0]); // ditto
+  dedP_T = sieFromSesame(pressureToSesame(dedr_T * drdP_T));
+  dedT_P = sieFromSesame(temperatureToSesame(dedT_r + dedr_T * drdT_P));
 #endif // ON DEVICE
 }
 
