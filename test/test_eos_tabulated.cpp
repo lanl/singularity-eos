@@ -98,7 +98,7 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS][DependsRhoT][EOSPAC]") {
 
     EOS eospac = EOSPAC(steelID);
     THEN("The EOSPAC model can provide derivatives from preferred") {
-      Real rho = 5;
+      Real rho = 50;
       Real T = 500;
       Real P = eospac.PressureFromDensityTemperature(rho, T);
       Real sie = eospac.InternalEnergyFromDensityTemperature(rho, T);
