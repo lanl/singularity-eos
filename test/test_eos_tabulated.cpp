@@ -103,7 +103,7 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS][DependsRhoT][EOSPAC]") {
       Real P = eospac.PressureFromDensityTemperature(rho, T);
       Real sie = eospac.InternalEnergyFromDensityTemperature(rho, T);
 
-      constexpr Real derivative_eps = 3e-6;
+      constexpr Real derivative_eps = 1e-8;
       Real dedP_T, drdP_T, dedT_P, drdT_P;
       Real dedP_T_fd, drdP_T_fd, dedT_P_fd, drdT_P_fd;
       eospac.PTDerivativesFromPreferred(rho, sie, P, T, static_cast<Real *>(nullptr),
