@@ -223,7 +223,7 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
                                   temp * temp_unit_, lambda, dedP_T, drdP_T, dedT_P,
                                   drdT_P);
     // scale outputs
-    dedP_T *= robust::ratio(press_unit_, energy_unit_);
+    dedP_T *= robust::ratio(press_unit_, sie_unit_);
     drdP_T *= robust::ratio(press_unit_, rho_unit_);
     dedT_P *= robust::ratio(temp_unit_, sie_unit_);
     drdT_P *= robust::ratio(temp_unit_, rho_unit_);
