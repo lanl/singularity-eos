@@ -1344,9 +1344,9 @@ The function
 
 computes the partial derivatives of density and specific internal
 energy with respect to pressure and temperature, with either pressure
-or temperature fixed. Density, energy, pressure, and temperature, must
-all be passed into this function, to maximize the ability for the
-underlying EOS to perform this calculation performantly. The intended
+or temperature fixed. Each EOS model expects consistent density, 
+energy, pressure and temperature values to be provided so that it
+can perform this calculation performantly. The intended
 use of this method is to compute the cell-averaged thermodynamic
 derivatives in a mixed cell in pressure-temperature equilibrium.
 
