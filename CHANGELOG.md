@@ -4,6 +4,17 @@
 
 ### Added (new features/APIs/variables/...)
 - [[PR618]](https://github.com/lanl/singularity-eos/pull/618) Add PTDerivativesFromPreferred for computing derivatives of a mixture in a cell
+
+### Fixed (Repair bugs, etc)
+
+### Changed (changing behavior/API/variables/...)
+
+### Infrastructure (changes irrelevant to downstream codes)
+
+## Release 1.11.1
+Date: 03/25/2026
+
+### Added (new features/APIs/variables/...)
 - [[PR600]](https://github.com/lanl/singularity-eos/pull/600) Added mass fractions for multiphase tables to sesame2spiner and added MassFractionsFromDensityTemperture/InternalEnergy to the SpinerDependsRhoSIE and SpinerDependsRhoT equations of state.
 - [[PR589]](https://github.com/lanl/singularity-eos/pull/589) InternalEnergyFromDensityPressure
 
