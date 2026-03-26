@@ -1742,13 +1742,13 @@ EOSPAC::PTDerivativesFromPreferred(const Real rho, const Real sie, const Real pr
 
   table = PofRT_table_;
   eosSafeInterpolate(&table, nxypairs, R, T, z, dx, dy, "PofRT", Verbosity::Quiet);
-  const Real dpdr_T = pressureFromSesame(dx[0]);
-  const Real dpdT_r = pressureFromSesame(temperatureToSesame(dy[0]));
+  const Real dPdr_T = pressureFromSesame(dx[0]);
+  const Real dPdT_r = pressureFromSesame(temperatureToSesame(dy[0]));
 
-  dedP_T = robust::ratio(dedr_T, dpdr_T);
-  dedT_P = dedT_r - robust::ratio(dedr_T * dpdT_r, dPdr_T);
-  drdP_T = robust::ratio(1., dpdr_T);
-  drdT_P = -robust::ratio(dpdT_r, dpdr_T);
+  dedP_T = robust::ratio(dedr_T, dPdr_T);
+  dedT_P = dedT_r - robust::ratio(dedr_T * dPdT_r, dPdr_T);
+  drdP_T = robust::ratio(1., dPdr_T);
+  drdT_P = -robust::ratio(dPdT_r, dPdr_T);
   /*
   // Alternative approach
   table = RofPT_table_;
