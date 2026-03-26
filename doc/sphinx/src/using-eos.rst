@@ -1336,6 +1336,31 @@ The function
 
 .. code-block:: cpp
 
+  template <typename Lambda_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P, const Real T,
+                             Lambda_t &&lambda, Real &dedP_T, Real &drdP_T, Real &dedT_P,
+                             Real &drdT_P) const;
+
+computes the partial derivatives of density and specific internal
+energy with respect to pressure and temperature, with either pressure
+or temperature fixed. Each EOS model expects consistent density, 
+energy, pressure and temperature values to be provided so that it
+can perform this calculation performantly. The intended
+use of this method is to compute the cell-averaged thermodynamic
+derivatives in a mixed cell in pressure-temperature equilibrium.
+
+.. warning::
+
+  Not all equations of state provide implementations of
+  ``PTDerivativesFromPreferred``, when an implementation is not
+  available, ``singularity-eos`` uses a finite differences
+  approximation.
+
+The function
+
+.. code-block:: cpp
+
    template<typename Indexer_t Real*>
    void MeanAtomicMassFromDensityTemperature(const Real rho, const Real T,
                                              Indexer_t &&lambda = nullpter) const;

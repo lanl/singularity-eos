@@ -97,6 +97,45 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS][DependsRhoT][EOSPAC]") {
     auto steelEOS_host = steelEOS_host_polymorphic.get<SpinerEOSDependsRhoT>();
 
     EOS eospac = EOSPAC(steelID);
+    THEN("The EOSPAC model can provide derivatives from preferred") {
+      Real rho = 50;
+      Real T = 500;
+      Real P = eospac.PressureFromDensityTemperature(rho, T);
+      Real sie = eospac.InternalEnergyFromDensityTemperature(rho, T);
+
+      constexpr Real derivative_eps = 1e-8;
+      Real dedP_T, drdP_T, dedT_P, drdT_P;
+      Real dedP_T_fd, drdP_T_fd, dedT_P_fd, drdT_P_fd;
+      eospac.PTDerivativesFromPreferred(rho, sie, P, T, static_cast<Real *>(nullptr),
+                                        dedP_T, drdP_T, dedT_P, drdT_P);
+      singularity::eos_base::PTDerivativesByFiniteDifferences(
+          eospac, rho, sie, P, T, derivative_eps, static_cast<Real *>(nullptr), dedP_T_fd,
+          drdP_T_fd, dedT_P_fd, drdT_P_fd);
+      bool is_close_dedp = isClose(dedP_T, dedP_T_fd);
+      if (!is_close_dedp) {
+        printf("dedP_T not close! %.14e %.14e %.14e\n", dedP_T, dedP_T_fd,
+               dedP_T - dedP_T_fd);
+      }
+      REQUIRE(is_close_dedp);
+      bool is_close_drdP = isClose(drdP_T, drdP_T_fd);
+      if (!is_close_drdP) {
+        printf("drdP_T not close! %.14e %.14e %.14e\n", drdP_T, drdP_T_fd,
+               drdP_T - drdP_T_fd);
+      }
+      REQUIRE(is_close_drdP);
+      bool is_close_dedT = isClose(dedT_P, dedT_P_fd);
+      if (!is_close_dedT) {
+        printf("dedT_P not close! %.14e %.14e %.14e\n", dedT_P, dedT_P_fd,
+               dedT_P - dedT_P_fd);
+      }
+      REQUIRE(is_close_dedT);
+      bool is_close_drdT = isClose(drdT_P, drdT_P_fd);
+      if (!is_close_drdT) {
+        printf("drdT_P not close! %.14e %.14e %.14e\n", drdT_P, drdT_P_fd,
+               drdT_P - drdT_P_fd);
+      }
+      REQUIRE(is_close_drdT);
+    }
 
     THEN("The correct metadata is read in") {
       REQUIRE(steelEOS_host.matid() == steelID);

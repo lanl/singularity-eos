@@ -148,6 +148,25 @@ class IdealGas : public EosBase<IdealGas> {
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return _gm1;
   }
+
+  template <typename Lambda_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P, const Real T,
+                             Lambda_t &&lambda, Real &dedP_T, Real &drdP_T, Real &dedT_P,
+                             Real &drdT_P) const {
+    // P = (gm1) rho cv T = (gm1) rho sie
+
+    dedP_T = 0;
+    dedT_P = _Cv;
+
+    // => rho(P, T) = P / (gm1 cv T) = P / (gm1 sie)
+    drdP_T = robust::ratio(1.0, _gm1 * sie);
+
+    // rho(P, T) = (P / (gm1 cv)) T^{-1}
+    // => drdT_P = -1 (P / (gm1 cv)) T^{-2}
+    drdT_P = -robust::ratio(P, _gm1 * _Cv * T * T);
+  }
+
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,

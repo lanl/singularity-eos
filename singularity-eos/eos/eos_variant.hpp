@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -276,6 +276,20 @@ class Variant {
     return PortsOfCall::visit(
         [&rho, &sie, &lambda](const auto &eos) {
           return eos.GruneisenParamFromDensityInternalEnergy(rho, sie, lambda);
+        },
+        eos_);
+  }
+
+  // TODO(JMM): Do we need a vectorized version of this call?
+  template <typename Lambda_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P, const Real T,
+                             Lambda_t &&lambda, Real &dedP_T, Real &drdP_T, Real &dedT_P,
+                             Real &drdT_P) const {
+    return PortsOfCall::visit(
+        [&](const auto &eos) {
+          return eos.PTDerivativesFromPreferred(rho, sie, P, T, lambda, dedP_T, drdP_T,
+                                                dedT_P, drdT_P);
         },
         eos_);
   }

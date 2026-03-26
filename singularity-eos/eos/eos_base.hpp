@@ -206,6 +206,33 @@ struct MeanAtomicProperties {
   }
 };
 
+/* A version of PT Derivatives that uses only finite
+   differences. Factored out of the base class so it can be used to
+   cross-validate per-class implementations.
+*/
+template <typename EOS_t, typename Lambda_t>
+PORTABLE_INLINE_FUNCTION void
+PTDerivativesByFiniteDifferences(const EOS_t &eos, const Real rho, const Real sie,
+                                 const Real P, const Real T, const Real derivative_eps,
+                                 Lambda_t &&lambda, Real &dedP_T, Real &drdP_T,
+                                 Real &dedT_P, Real &drdT_P) {
+  Real r_pert, e_pert;
+
+  const Real absP = std::max(std::abs(P), robust::EPS() / derivative_eps);
+  const Real dP = -robust::sgn(P) * absP * derivative_eps; // might be negative
+
+  const Real absT = std::max(std::abs(T), robust::EPS() / derivative_eps);
+  const Real dT = absT * derivative_eps; // can't be negative
+
+  eos.DensityEnergyFromPressureTemperature(P + dP, T, lambda, r_pert, e_pert);
+  drdP_T = robust::ratio(r_pert - rho, dP);
+  dedP_T = robust::ratio(e_pert - sie, dP);
+
+  eos.DensityEnergyFromPressureTemperature(P, T + dT, lambda, r_pert, e_pert);
+  drdT_P = robust::ratio(r_pert - rho, dT);
+  dedT_P = robust::ratio(e_pert - sie, dT);
+}
+
 /*
 This is a CRTP that allows for static inheritance so that default behavior for
 various member functions can be defined.
@@ -286,6 +313,23 @@ class EosBase {
     Real P = copy.PressureFromDensityTemperature(rho, T, lambda);
     Real S = copy.EntropyFromDensityTemperature(rho, T, lambda);
     return sie + (P / rho) - T * S;
+  }
+
+  // The base class computes these differences by finite
+  // differences. When available, this should absolutely be overloaded
+  // by an individual EOS, but this provides a default implementation
+  // at the very least.
+  //
+  // TODO(JMM): Should we have a vectorized version of this function?
+  template <typename Lambda_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P, const Real T,
+                             Lambda_t &&lambda, Real &dedP_T, Real &drdP_T, Real &dedT_P,
+                             Real &drdT_P) const {
+    constexpr Real derivative_eps = 3.0e-6;
+    const CRTP &copy = *(static_cast<CRTP const *>(this));
+    PTDerivativesByFiniteDifferences(copy, rho, sie, P, T, derivative_eps, lambda, dedP_T,
+                                     drdP_T, dedT_P, drdT_P);
   }
 
   // Vector member functions

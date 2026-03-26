@@ -141,6 +141,20 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
                                     Indexer_t &&lambda = nullptr) const {
     t_.InternalEnergyFromDensityPressure(scale_ * rho, P, sie, lambda);
   }
+
+  template <typename Lambda_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P,
+                             const Real temp, Lambda_t &&lambda, Real &dedP_T,
+                             Real &drdP_T, Real &dedT_P, Real &drdT_P) const {
+    t_.PTDerivativesFromPreferred(scale_ * rho, inv_scale_ * sie, P, temp, lambda, dedP_T,
+                                  drdP_T, dedT_P, drdT_P);
+    dedP_T *= scale_;
+    drdP_T *= inv_scale_;
+    dedT_P *= scale_;
+    drdT_P *= inv_scale_;
+  }
+
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                  Real &cv, Real &bmod, const unsigned long output,

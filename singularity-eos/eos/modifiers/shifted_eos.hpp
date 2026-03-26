@@ -134,6 +134,16 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
     t_.InternalEnergyFromDensityPressure(rho, P, sie, lambda);
     sie += shift_;
   }
+
+  template <typename Lambda_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P,
+                             const Real temp, Lambda_t &&lambda, Real &dedP_T,
+                             Real &drdP_T, Real &dedT_P, Real &drdT_P) const {
+    t_.PTDerivativesFromPreferred(rho, sie - shift_, P, temp, lambda, dedP_T, drdP_T,
+                                  dedT_P, drdT_P);
+  }
+
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                  Real &cv, Real &bmod, const unsigned long output,

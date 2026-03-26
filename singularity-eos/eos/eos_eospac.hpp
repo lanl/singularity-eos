@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -231,6 +231,11 @@ class EOSPAC : public EosBase<EOSPAC> {
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Lambda_t>
+  PORTABLE_INLINE_FUNCTION void
+  PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P, const Real T,
+                             Lambda_t &&lambda, Real &dedP_T, Real &drdP_T, Real &dedT_P,
+                             Real &drdT_P) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
@@ -1707,6 +1712,52 @@ PORTABLE_INLINE_FUNCTION void EOSPAC::DensityEnergyFromPressureTemperature(
   table = EofRT_table_;
   eosSafeInterpolate(&table, nxypairs, R, T, E, dx, dy, "EofPRT", Verbosity::Quiet);
   sie = sieFromSesame(E[0]);
+#endif // ON DEVICE
+}
+
+template <typename Lambda_t>
+PORTABLE_INLINE_FUNCTION void
+EOSPAC::PTDerivativesFromPreferred(const Real rho, const Real sie, const Real press,
+                                   const Real temp, Lambda_t &&lambda, Real &dedP_T,
+                                   Real &drdP_T, Real &dedT_P, Real &drdT_P) const {
+#if SINGULARITY_ON_DEVICE
+  PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
+#else
+  PORTABLE_REQUIRE(split_ == TableSplit::Total,
+                   "Density of pressure and temperature only supported for total "
+                   "tables at this time");
+  using namespace EospacWrapper;
+  EOS_REAL P[1] = {pressureToSesame(press)};
+  EOS_REAL T[1] = {temperatureToSesame(temp)};
+  EOS_REAL R[1] = {rho};
+  EOS_REAL E[1] = {sieToSesame(sie)};
+  EOS_REAL z[1], dx[1], dy[1];
+  EOS_INTEGER nxypairs = 1;
+  EOS_INTEGER table;
+
+  table = EofRT_table_;
+  eosSafeInterpolate(&table, nxypairs, R, T, z, dx, dy, "EofRT", Verbosity::Quiet);
+  const Real dedr_T = sieFromSesame(dx[0]);
+  const Real dedT_r = sieFromSesame(temperatureToSesame(dy[0]));
+
+  table = PofRT_table_;
+  eosSafeInterpolate(&table, nxypairs, R, T, z, dx, dy, "PofRT", Verbosity::Quiet);
+  const Real dPdr_T = pressureFromSesame(dx[0]);
+  const Real dPdT_r = pressureFromSesame(temperatureToSesame(dy[0]));
+
+  dedP_T = robust::ratio(dedr_T, dPdr_T);
+  dedT_P = dedT_r - robust::ratio(dedr_T * dPdT_r, dPdr_T);
+  drdP_T = robust::ratio(1., dPdr_T);
+  drdT_P = -robust::ratio(dPdT_r, dPdr_T);
+  /*
+  // Alternative approach
+  table = RofPT_table_;
+  eosSafeInterpolate(&table, nxypairs, P, T, z, dx, dy, "RofPT", Verbosity::Quiet);
+  drdP_T = pressureToSesame(dx[0]);
+  drdT_P = temperatureToSesame(dy[0]);
+  dedP_T = dedr_T * drdP_T;
+  dedT_P = dedT_r + dedr_T * drdT_P;
+  */
 #endif // ON DEVICE
 }
 
