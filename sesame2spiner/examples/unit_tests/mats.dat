@@ -1,0 +1,49 @@
+# ======================================================================
+#  © 2026. Triad National Security, LLC. All rights reserved.  This
+#  program was produced under U.S. Government contract 89233218CNA000001
+#  for Los Alamos National Laboratory (LANL), which is operated by Triad
+#  National Security, LLC for the U.S.  Department of Energy/National
+#  Nuclear Security Administration. All rights in the program are
+#  reserved by Triad National Security, LLC, and the U.S. Department of
+#  Energy/National Nuclear Security Administration. The Government is
+#  granted for itself and others acting on its behalf a nonexclusive,
+#  paid-up, irrevocable worldwide license in this material to reproduce,
+#  prepare derivative works, distribute copies to the public, perform
+#  publicly and display publicly, and to permit others to do so.
+# ======================================================================
+
+# First material doesn't need <name>
+matid = 5030
+name = air
+
+<Aluminum>
+matid=3720
+name=Aluminum  # can override name 
+
+<copper>
+matid=3337
+piecewiseRho = false
+numrho/decade = 50
+
+<deuterium>
+matid = 5267
+
+<Foam>
+matid=7592
+numrho/decade = 200
+numT/decade = 200
+
+<gold>
+matid = 2700
+
+<neon>
+matid = 5000
+
+<steel>
+matid=4272
+ionization = true
+
+<tin>
+matid=2162
+matid = 2961
+
