@@ -177,15 +177,7 @@ herr_t saveAllMaterials(const std::string &savename,
   herr_t status = H5_SUCCESS;
 
   for (auto const &filename : filenames) {
-    Params p(filename);
-    if (!p.Contains("matid")) {
-      std::cerr << "Material file " << filename << "is missing matid.\n"
-                << "Example input files:\n"
-                << EXAMPLESTRING << std::endl;
-      std::exit(1);
-    }
-    matids.push_back(p.Get<int>("matid"));
-    params.push_back(p);
+    AddMaterials(params, matids, filename);
   }
 
   std::cout << "Saving to file " << savename << std::endl;
