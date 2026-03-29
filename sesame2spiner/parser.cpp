@@ -19,7 +19,9 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
+#include "parse_cli.hpp"
 #include "parser.hpp"
 
 Params::Params(const std::string &input_file) {
@@ -39,7 +41,19 @@ void Params::Parse(std::istream &s) {
     auto delimiter_pos = line.find("=");
     auto name = line.substr(0, delimiter_pos);
     auto value = line.substr(delimiter_pos + 1);
+    // make sure there's no trailing comment
+    auto comment_pos = value.find("#");
+    if (comment_pos != std::string::npos) {
+      value.erase(comment_pos);
+    }
     params_[name] = value;
+  }
+}
+
+void Params::Print(std::ostream &s) const {
+  s << "\nParams for " << params_.at("name") << "\n";
+  for (const auto &pair : params_) {
+    s << pair.first << " = " << pair.second << "\n";
   }
 }
 
@@ -72,5 +86,76 @@ bool Params::Get(const std::string &key) const {
     return false;
   } else {
     throw std::runtime_error("The value of " + key + " is not a boolean.\n");
+  }
+}
+
+void add_param(const Params &p, std::vector<Params> &params, std::vector<int> &matids,
+               const std::string &filename) {
+
+  if (!p.Contains("matid")) {
+    if (p.Contains("name")) {
+      const auto &name = p.Get<std::string>("name");
+      std::cerr << "Material " << name << " in file " << filename << "is missing matid.\n"
+                << "Example input files:\n"
+                << EXAMPLESTRING << std::endl;
+      std::exit(1);
+    } else {
+      std::cerr << "A Material in file " << filename << "has no name.\n"
+                << "Example input files:\n"
+                << EXAMPLESTRING << std::endl;
+      std::exit(1);
+    }
+  }
+  matids.push_back(p.Get<int>("matid"));
+  params.push_back(p);
+}
+
+void parse_file(std::vector<Params> &params, std::vector<int> &matids, std::istream &s,
+                const std::string &filename) {
+  std::string line;
+  Params p;
+  size_t line_num = 1;
+  while (getline(s, line)) {
+    line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
+    if (line[0] == '#' || line.empty()) {
+      line_num++;
+      continue;
+    }
+    if (line[0] == '<') {
+      auto term = line.find('>');
+      if (term == std::string::npos) {
+        std::cerr << "Missing closing > on line " << line_num << " of file " << filename
+                  << "\n";
+        std::exit(1);
+      }
+
+      auto name = line.substr(1, term - 1);
+      if (!p.Empty()) add_param(p, params, matids, filename);
+
+      p.Clear();
+      p.Set("name", name);
+    } else {
+      auto delimiter_pos = line.find("=");
+      auto name = line.substr(0, delimiter_pos);
+      auto value = line.substr(delimiter_pos + 1);
+      // make sure there's no trailing comment
+      auto comment_pos = value.find("#");
+      if (comment_pos != std::string::npos) {
+        value.erase(comment_pos);
+      }
+      p.Set(name, value);
+    }
+    line_num++;
+  }
+  if (!p.Empty()) add_param(p, params, matids, filename);
+}
+
+void AddMaterials(std::vector<Params> &params, std::vector<int> &matids,
+                  const std::string &input_file) {
+  std::ifstream config_file(input_file);
+  if (config_file.is_open()) {
+    parse_file(params, matids, config_file, input_file);
+  } else {
+    throw std::runtime_error("Couldn't open config file " + input_file + "\n");
   }
 }
