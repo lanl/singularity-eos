@@ -10,7 +10,8 @@ class Build(BuildEnvironment):
     spack_env = environment("singularity_eos_default")
     project_spec = environment("singularity-eos+tests")
 
-    xcap_spackages_checkout = environment(Path.cwd() / "extern" / "xcap_spackages", variable="XCAP_SPACKAGES_CHECKOUT")
+    xcap_spackages_checkout = environment(
+        Path.cwd() / "extern" / "xcap_spackages", variable="XCAP_SPACKAGES_CHECKOUT")
 
     def ci_message(self, args):
         pre_alloc_init = ""
@@ -43,7 +44,8 @@ class Build(BuildEnvironment):
         super().prepare_env(args)
 
         if "KESSEL_DEPLOYMENT" not in self.environ:
-            self.exec(f"spack repo add {self.xcap_spackages_checkout}/v2/spack_repo/xcap || true")
+            self.exec(
+                f"spack repo add {self.xcap_spackages_checkout}/v2/spack_repo/xcap || true")
 
         # Handle spiner and ports-of-call submodule dependencies
         spiner_path = self.source_dir / "utils" / "spiner"
@@ -52,7 +54,8 @@ class Build(BuildEnvironment):
 
         ports_of_call_path = self.source_dir / "utils" / "ports-of-call"
         if (ports_of_call_path / ".git").exists():
-            self.exec(f"spack develop --no-clone -p {ports_of_call_path} ports-of-call@main")
+            self.exec(
+                f"spack develop --no-clone -p {ports_of_call_path} ports-of-call@main")
 
         super().install_env(args)
 
@@ -62,7 +65,7 @@ class Build(BuildEnvironment):
             pushd {self.build_dir}
             if [[ -f sesame2spiner/sesame2spiner ]]; then
                 echo "/usr/projects/data/eos/eos-developmental/Sn2162/v01/sn2162-v01.bin" > sesameFilesDir.txt
-                sesame2spiner/sesame2spiner -s materials.sp5 ../sesame2spiner/examples/unit_tests/*.dat
+                sesame2spiner/sesame2spiner -s materials.sp5 ../sesame2spiner/examples/unit_tests/mats.dat
                 sesame2spiner/sesame2spiner -s duplicates.sp5 ../sesame2spiner/examples/duplicate-test/*.dat
             fi
             popd""")
