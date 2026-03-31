@@ -166,7 +166,7 @@ default:
     - export BUILD_WITH_CTEST=${BUILD_WITH_CTEST:-${SUBMIT_TO_CDASH}}
     - export CTEST_SUBMIT_ON_ERROR=${SUBMIT_ON_ERROR:-${SUBMIT_TO_CDASH}}
     - |
-      if ${BUILD_WITH_CDASH}; then
+      if ${BUILD_WITH_CTEST}; then
         rm -f .kessel/workflows/default.py
         ln -s cdash.py .kessel/workflows/default.py
       fi
