@@ -44,6 +44,7 @@ jobs:
                   -DSINGULARITY_PLUGINS=$(pwd)/../example/plugin \
                   -DCMAKE_LINKER=ld.gold \
                   -DCMAKE_BUILD_TYPE=Release \
+                  -DCMAKE_CXX_STANDARD=20 \
                   ..
                   #-DSINGULARITY_TEST_PYTHON=ON \
                   #-DSINGULARITY_TEST_STELLAR_COLLAPSE=ON \

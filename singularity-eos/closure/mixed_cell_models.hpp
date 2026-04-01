@@ -431,12 +431,12 @@ class PTESolverBase {
     constexpr Real safety = 0.9;
 
     // TODO(JMM): Stash this somewhere rather than recomputing it?
-    auto get_vfrac_max = [=](const std::size_t m) {
+    auto get_vfrac_max = [T, this](const std::size_t m) {
       const Real rho_min = eos[m].RhoPmin(T);
       const Real vfrac_max = std::min(safety * robust::ratio(rhobar[m], rho_min), 1.0);
       return vfrac_max;
     };
-    auto get_dv = [=](const std::size_t m) {
+    auto get_dv = [&get_vfrac_max, this](const std::size_t m) {
       const Real vfrac_max = get_vfrac_max(m);
       const Real vnew = std::min(vfrac_max, vfrac[m]);
       const Real dv = vfrac[m] - vnew;
@@ -519,7 +519,7 @@ class PTESolverBase {
     // if it makes the temperature larger. Empirically, we find this
     // avoids local saddle points that the solver can have trouble
     // navigating.
-    auto newton_step = [=](Real T) {
+    auto newton_step = [this](Real T) {
       Real dudt = 0;
       Real usum = 0;
       for (std::size_t m = 0; m < nmat; ++m) {
@@ -1390,7 +1390,7 @@ class PTESolverPT
     if (scale * dx[0] < -0.95 * Tequil) {
       scale = robust::ratio(-0.95 * Tequil, dx[0]);
     }
-    auto bounded = [=](Real Pbound, Real delta) {
+    auto bounded = [this](Real Pbound, Real delta) {
       return robust::ratio(robust::ratio(Pbound, uscale) - Pequil, delta);
     };
 
