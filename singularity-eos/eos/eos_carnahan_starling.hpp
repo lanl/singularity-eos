@@ -115,9 +115,7 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
     // The equation has been rewritten to avoid division by zero (polynomial equation).
     auto f = [temperature, press, this](const Real x /* density */) {
       const Real eta = _bb * x;
-      const Real eta2 = eta * eta;
-      const Real eta3 = eta2 * eta;
-      const Real term1 = x * (1. + eta + eta2 - eta3);
+      const Real term1 = x * (1. + eta * (1 + eta * (1 - eta)));
       const Real term2 =
           robust::ratio(press * math_utils::pow<3>(1. - eta), _Cv * _gm1 * temperature);
       return term1 - term2;
