@@ -11,6 +11,7 @@
 ### Changed (changing behavior/API/variables/...)
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR626]](https://github.com/lanl/singularity-eos/pull/626) Fix C++20 warnings related to lambdas
 
 ## Release 1.11.1
 Date: 03/25/2026
