@@ -113,7 +113,7 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
 
     // Setup lambda function for finding rho.
     // The equation has been rewritten to avoid division by zero (polynomial equation).
-    auto f = [temperature,press,this](const Real x /* density */) {
+    auto f = [temperature, press, this](const Real x /* density */) {
       const Real eta = _bb * x;
       const Real eta2 = eta * eta;
       const Real eta3 = eta2 * eta;
