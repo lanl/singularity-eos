@@ -28,14 +28,14 @@ namespace IndexerUtils {
 
 // Disable unreachable code warnings for SafeSet and SafeGet
 #if defined(__clang__)
-#  pragma clang diagnostic push
-#  pragma clang diagnostic ignored "-Wunreachable-code"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
 #elif defined(__GNUC__)
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wunreachable-code"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunreachable-code"
 #elif defined(_MSC_VER)
-#  pragma warning(push)
-#  pragma warning(disable : 4702) // unreachable code
+#pragma warning(push)
+#pragma warning(disable : 4702) // unreachable code
 #endif
 
 // Identifies an indexer as a type-based indexer
@@ -133,11 +133,11 @@ PORTABLE_FORCEINLINE_FUNCTION bool SafeSet(Indexer_t &lambda, std::size_t const 
 
 // Warnings are back after this point
 #if defined(__clang__)
-#  pragma clang diagnostic pop
+#pragma clang diagnostic pop
 #elif defined(__GNUC__)
-#  pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
 #elif defined(_MSC_VER)
-#  pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 // Same as above but causes an error condition (static or dynamic) if the value
