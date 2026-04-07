@@ -52,7 +52,7 @@ AI-assisted coding
 ``singularity-eos`` requires that if AI was used to assist in code
 generation, a disclaimer must be made in a comment in the relevant
 file. Also if agentic AI was used, please have your agent dump a
-"proposed plan" markdown file in the ``plan_histories`` file. This
+"proposed plan" markdown file in the ``plan_histories`` folder. This
 provides an LLM-readable history of machine-generated changes and
 helps disentangle human-made choices from machine-made ones.
 
