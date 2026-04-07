@@ -1,4 +1,5 @@
 bin
+.codex
 .spack*
 spack.lock
 utils/variant
@@ -14,3 +15,5 @@ CMakeUserPresets.json
 build/
 goldfiles.tar.gz
 .aider*
+CMakeCache.txt
+CMakeFiles
