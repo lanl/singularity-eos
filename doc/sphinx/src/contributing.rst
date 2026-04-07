@@ -49,14 +49,14 @@ remaining tests for you.
 AI-assisted coding
 -------------------
 
-``ports-of-call`` requires that if AI was used to assist in code
+``singularity-eos`` requires that if AI was used to assist in code
 generation, a disclaimer must be made in a comment in the relevant
 file. Also if agentic AI was used, please have your agent dump a
 "proposed plan" markdown file in the ``plan_histories`` file. This
 provides an LLM-readable history of machine-generated changes and
 helps disentangle human-made choices from machine-made ones.
 
-If you submit code to ``ports-of-call`` you own that code and you are
+If you submit code to ``singularity-eos`` you own that code and you are
 responsible for understanding it. If code is submitted that the author
 does not understand, the author will be asked to resubmit changeset
 that they understand.
