@@ -138,20 +138,19 @@ inline void SetUpOutputScalingOption(EOS_INTEGER options[], EOS_REAL values[],
   inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
                    const int num, LambdaIndexer &&lambdas) const {                       \
     PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");    \
-    EosBase<EOSPAC>::NAME(std::forward<ConstRealIndexer>(IN1),                           \
-                          std::forward<ConstRealIndexer>(IN2),                           \
-                          std::forward<RealIndexer>(OUT), num,                           \
-                          std::forward<LambdaIndexer>(lambdas));                         \
+    EosBase<EOSPAC>::NAME(                                                               \
+        std::forward<ConstRealIndexer>(IN1), std::forward<ConstRealIndexer>(IN2),        \
+        std::forward<RealIndexer>(OUT), num, std::forward<LambdaIndexer>(lambdas));      \
   }                                                                                      \
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,     \
             typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>      \
   inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
                    Real * /*scratch*/, const int num, LambdaIndexer &&lambdas) const {   \
-    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation"); \
-    EosBase<EOSPAC>::NAME(std::forward<ConstRealIndexer>(IN1),                           \
-                          std::forward<ConstRealIndexer>(IN2),                           \
-                          std::forward<RealIndexer>(OUT), num,                           \
-                          std::forward<LambdaIndexer>(lambdas));                         \
+    PORTABLE_WARN(                                                                       \
+        "EOSPAC type mismatch will cause significant performance degradation");          \
+    EosBase<EOSPAC>::NAME(                                                               \
+        std::forward<ConstRealIndexer>(IN1), std::forward<ConstRealIndexer>(IN2),        \
+        std::forward<RealIndexer>(OUT), num, std::forward<LambdaIndexer>(lambdas));      \
   }
 
 // TODO(@adempsey): Add mass fractions + better multiphase support
