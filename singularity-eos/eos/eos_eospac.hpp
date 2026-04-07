@@ -34,6 +34,8 @@
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
+// This file was made in part with generative AI
+
 namespace singularity {
 
 using namespace eos_base;
