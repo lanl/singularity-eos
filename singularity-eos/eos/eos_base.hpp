@@ -179,56 +179,6 @@ char *StrCat(char *destination, const char *source) {
     NAME(IN1, IN2, OUT, num, std::forward<LambdaIndexer>(lambdas));                      \
   }
 
-#define SG_EOS_VEC_1IN_1OUT(NAME, IN1, OUT, COPY_DECL)                                   \
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>     \
-  inline void NAME(ConstRealIndexer &&IN1, RealIndexer &&OUT, const int num,             \
-                   LambdaIndexer &&lambdas) const {                                      \
-    static auto const name = SG_MEMBER_FUNC_NAME();                                      \
-    static auto const cname = name.c_str();                                              \
-    COPY_DECL copy = *(static_cast<CRTP const *>(this));                                 \
-    portableFor(                                                                         \
-        cname, 0, num,                                                                   \
-        PORTABLE_LAMBDA(const int i) { OUT[i] = copy.NAME(IN1[i], lambdas[i]); });       \
-  }                                                                                      \
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,     \
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>      \
-  inline void NAME(ConstRealIndexer &&IN1, RealIndexer &&OUT, Real * /*scratch*/,        \
-                   const int num, LambdaIndexer &&lambdas) const {                       \
-    NAME(std::forward<ConstRealIndexer>(IN1), std::forward<RealIndexer>(OUT), num,       \
-         std::forward<LambdaIndexer>(lambdas));                                          \
-  }                                                                                      \
-  template <typename LambdaIndexer>                                                      \
-  inline void NAME(const Real *IN1, Real *OUT, Real * /*scratch*/, const int num,        \
-                   LambdaIndexer &&lambdas, Transform && = Transform()) const {          \
-    NAME(IN1, OUT, num, std::forward<LambdaIndexer>(lambdas));                           \
-  }
-
-#define SG_EOS_VEC_2IN_REFOUT(NAME, IN1, IN2, OUT, COPY_DECL)                            \
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>     \
-  inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
-                   const int num, LambdaIndexer &&lambdas) const {                       \
-    static auto const name = SG_MEMBER_FUNC_NAME();                                      \
-    static auto const cname = name.c_str();                                              \
-    COPY_DECL copy = *(static_cast<CRTP const *>(this));                                 \
-    portableFor(                                                                         \
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {                                    \
-          copy.NAME(IN1[i], IN2[i], OUT[i], lambdas[i]);                                 \
-        });                                                                              \
-  }                                                                                      \
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>     \
-  inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
-                   Real * /*scratch */, const int num, LambdaIndexer &&lambdas) const {  \
-    return NAME(std::forward<ConstRealIndexer>(IN1),                                     \
-                std::forward<ConstRealIndexer>(IN2), std::forward<RealIndexer>(OUT),     \
-                num, std::forward<LambdaIndexer>(lambdas));                              \
-  }                                                                                      \
-  template <typename LambdaIndexer>                                                      \
-  inline void NAME(const Real *IN1, const Real *IN2, Real *OUT, Real * /*scratch */,     \
-                   const int num, LambdaIndexer &&lambdas, Transform && = Transform())   \
-      const {                                                                            \
-    return NAME(IN1, IN2, OUT, num, std::forward<LambdaIndexer>(lambdas));               \
-  }
-
 class Factor {
   Real value_ = 1.0;
   bool is_set_ = false;
@@ -422,7 +372,33 @@ class EosBase {
   SG_EOS_VEC_2IN_1OUT(PressureFromDensityInternalEnergy, rhos, sies, pressures,
                       const CRTP &)
   ///
-  SG_EOS_VEC_1IN_1OUT(MinInternalEnergyFromDensity, rhos, sies, const CRTP &)
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           const int num, LambdaIndexer &&lambdas) const {
+    static auto const name = SG_MEMBER_FUNC_NAME();
+    static auto const cname = name.c_str();
+    const CRTP &copy = *(static_cast<CRTP const *>(this));
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+          sies[i] = copy.MinInternalEnergyFromDensity(rhos[i], lambdas[i]);
+        });
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           Real * /*scratch*/, const int num,
+                                           LambdaIndexer &&lambdas) const {
+    MinInternalEnergyFromDensity(std::forward<ConstRealIndexer>(rhos),
+                                 std::forward<RealIndexer>(sies), num,
+                                 std::forward<LambdaIndexer>(lambdas));
+  }
+  template <typename LambdaIndexer>
+  inline void MinInternalEnergyFromDensity(const Real *rhos, Real *sies,
+                                           Real * /*scratch*/, const int num,
+                                           LambdaIndexer &&lambdas,
+                                           Transform && = Transform()) const {
+    MinInternalEnergyFromDensity(rhos, sies, num, std::forward<LambdaIndexer>(lambdas));
+  }
   ///
   SG_EOS_VEC_2IN_1OUT(EntropyFromDensityTemperature, rhos, temperatures, entropies,
                       const CRTP &)
@@ -647,7 +623,33 @@ class EosBase {
     return sie;
   }
   // Classes like EOSPAC probably wish to overload/shadow this version
-  SG_EOS_VEC_2IN_REFOUT(InternalEnergyFromDensityPressure, rhos, Ps, sies, CRTP)
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void InternalEnergyFromDensityPressure(ConstRealIndexer &&rhos,
+                                                ConstRealIndexer &&Ps, RealIndexer &&sies,
+                                                const int num,
+                                                LambdaIndexer &&lambdas) const {
+    static auto const name = SG_MEMBER_FUNC_NAME();
+    static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+          copy.InternalEnergyFromDensityPressure(rhos[i], Ps[i], sies[i], lambdas[i]);
+        });
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void InternalEnergyFromDensityPressure(ConstRealIndexer &&rhos,
+                                                ConstRealIndexer &&Ps, RealIndexer &&sies,
+                                                Real * /*scratch */, const int num,
+                                                LambdaIndexer &&lambdas) const {
+    return InternalEnergyFromDensityPressure(rhos, Ps, sies, num, lambdas);
+  }
+  template <typename LambdaIndexer>
+  inline void InternalEnergyFromDensityPressure(const Real *rhos, const Real *Ps,
+                                                Real *sies, Real * /*scratch */,
+                                                const int num, LambdaIndexer &&lambdas,
+                                                Transform && = Transform()) const {
+    return InternalEnergyFromDensityPressure(rhos, Ps, sies, num, lambdas);
+  }
 
   // Serialization
   /*
@@ -754,7 +756,5 @@ class EosBase {
 } // namespace singularity
 
 #undef SG_EOS_VEC_2IN_1OUT
-#undef SG_EOS_VEC_1IN_1OUT
-#undef SG_EOS_VEC_2IN_REFOUT
 #undef SG_MEMBER_FUNC_NAME
 #endif
