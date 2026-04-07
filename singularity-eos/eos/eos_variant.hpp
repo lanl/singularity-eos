@@ -45,8 +45,7 @@ struct NullIndexer {
 };
 
 // Helper macros to reduce boilerplate in the Variant vector forwarding
-// wrappers below. These preserve the public API shape and centralize
-// the repeated NullIndexer + PortsOfCall::visit patterns.
+// wrappers below.
 #define SG_VARIANT_VEC_2IN_1OUT(NAME, IN1, IN2, OUT)                                     \
   template <typename RealIndexer, typename ConstRealIndexer>                             \
   inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
