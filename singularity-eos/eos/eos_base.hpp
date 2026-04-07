@@ -160,30 +160,68 @@ char *StrCat(char *destination, const char *source) {
 // TODO(JMM): I decided to keep the names in the arguments to macro
 // even though it's not strictly necessary, as I think it's more
 // legible and produces more useful output in, e.g., a debugger.
+/* In order, these overloads are the following:
+   1. Base loop that loops over the scalar call
+   2. Same thing, but with a Real* scratch passed in, maybe unused.
+   3. Explicit specialization where the indexers are Real*s.
+   4. - 6. Same thing as 1.-3., but with a default execution space.
+*/
 #define SG_EOS_VEC_2IN_1OUT(NAME, IN1, IN2, OUT)                                         \
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>     \
-  inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
-                   const int num, LambdaIndexer &&lambdas) const {                       \
+  template <typename Space, typename RealIndexer, typename ConstRealIndexer,             \
+            typename LambdaIndexer,                                                      \
+            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>        \
+  inline void NAME(const Space &s, ConstRealIndexer &&IN1, ConstRealIndexer &&IN2,       \
+                   RealIndexer &&OUT, const int num, LambdaIndexer &&lambdas) const {    \
     static auto const name = SG_MEMBER_FUNC_NAME();                                      \
     static auto const cname = name.c_str();                                              \
     const CRTP &copy = *(static_cast<CRTP const *>(this));                               \
     portableFor(                                                                         \
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {                                    \
+        cname, s, 0, num, PORTABLE_LAMBDA(const int i) {                                 \
           OUT[i] = copy.NAME(IN1[i], IN2[i], lambdas[i]);                                \
         });                                                                              \
   }                                                                                      \
+  template <typename Space, typename RealIndexer, typename ConstRealIndexer,             \
+            typename LambdaIndexer,                                                      \
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,      \
+            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>        \
+  inline void NAME(const Space &s, ConstRealIndexer &&IN1, ConstRealIndexer &&IN2,       \
+                   RealIndexer &&OUT, Real * /*scratch*/, const int num,                 \
+                   LambdaIndexer &&lambdas) const {                                      \
+    NAME(s, std::forward<ConstRealIndexer>(IN1), std::forward<ConstRealIndexer>(IN2),    \
+         std::forward<RealIndexer>(OUT), num, std::forward<LambdaIndexer>(lambdas));     \
+  }                                                                                      \
+  template <typename Space, typename LambdaIndexer,                                      \
+            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>        \
+  inline void NAME(const Space &s, const Real *IN1, const Real *IN2, Real *OUT,          \
+                   Real * /*scratch*/, const int num, LambdaIndexer &&lambdas,           \
+                   Transform && = Transform()) const {                                   \
+    NAME(s, IN1, IN2, OUT, num, std::forward<LambdaIndexer>(lambdas));                   \
+  }                                                                                      \
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,     \
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>      \
+            typename =                                                                   \
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>     \
+  inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
+                   const int num, LambdaIndexer &&lambdas) const {                       \
+    NAME(PortsOfCall::Exec::Device(), std::forward<ConstRealIndexer>(IN1),               \
+         std::forward<ConstRealIndexer>(IN2), std::forward<RealIndexer>(OUT), num,       \
+         std::forward<LambdaIndexer>(lambdas));                                          \
+  }                                                                                      \
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,     \
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,      \
+            typename =                                                                   \
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>     \
   inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
                    Real * /*scratch*/, const int num, LambdaIndexer &&lambdas) const {   \
-    NAME(std::forward<ConstRealIndexer>(IN1), std::forward<ConstRealIndexer>(IN2),       \
-         std::forward<RealIndexer>(OUT), num, std::forward<LambdaIndexer>(lambdas));     \
+    NAME(PortsOfCall::Exec::Device(), std::forward<ConstRealIndexer>(IN1),               \
+         std::forward<ConstRealIndexer>(IN2), std::forward<RealIndexer>(OUT), num,       \
+         std::forward<LambdaIndexer>(lambdas));                                          \
   }                                                                                      \
   template <typename LambdaIndexer>                                                      \
   inline void NAME(const Real *IN1, const Real *IN2, Real *OUT, Real * /*scratch*/,      \
                    const int num, LambdaIndexer &&lambdas, Transform && = Transform())   \
       const {                                                                            \
-    NAME(IN1, IN2, OUT, num, std::forward<LambdaIndexer>(lambdas));                      \
+    NAME(PortsOfCall::Exec::Device(), IN1, IN2, OUT, num,                                \
+         std::forward<LambdaIndexer>(lambdas));                                          \
   }
 
 class Factor {
@@ -377,32 +415,67 @@ class EosBase {
 
   /// This is sort of what the SG_EOS_VEC would concretize too, though
   /// it has fewer arguments.
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
-                                           const int num, LambdaIndexer &&lambdas) const {
+  template <typename Space, typename RealIndexer, typename ConstRealIndexer,
+            typename LambdaIndexer,
+            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void MinInternalEnergyFromDensity(const Space &s, ConstRealIndexer &&rhos,
+                                           RealIndexer &&sies, const int num,
+                                           LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
     const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+        cname, s, 0, num, PORTABLE_LAMBDA(const int i) {
           sies[i] = copy.MinInternalEnergyFromDensity(rhos[i], lambdas[i]);
         });
   }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  template <typename Space, typename RealIndexer, typename ConstRealIndexer,
+            typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,
+            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void MinInternalEnergyFromDensity(const Space &s, ConstRealIndexer &&rhos,
+                                           RealIndexer &&sies, Real * /*scratch*/,
+                                           const int num, LambdaIndexer &&lambdas) const {
+    MinInternalEnergyFromDensity(s, std::forward<ConstRealIndexer>(rhos),
+                                 std::forward<RealIndexer>(sies), num,
+                                 std::forward<LambdaIndexer>(lambdas));
+  }
+  template <typename Space, typename LambdaIndexer,
+            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void MinInternalEnergyFromDensity(const Space &s, const Real *rhos, Real *sies,
+                                           Real * /*scratch*/, const int num,
+                                           LambdaIndexer &&lambdas,
+                                           Transform && = Transform()) const {
+    MinInternalEnergyFromDensity(s, rhos, sies, num,
+                                 std::forward<LambdaIndexer>(lambdas));
+  }
+  template <
+      typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+      typename = std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           const int num, LambdaIndexer &&lambdas) const {
+    MinInternalEnergyFromDensity(
+        PortsOfCall::Exec::Device(), std::forward<ConstRealIndexer>(rhos),
+        std::forward<RealIndexer>(sies), num, std::forward<LambdaIndexer>(lambdas));
+  }
+  template <
+      typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+      typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,
+      typename = std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            Real * /*scratch*/, const int num,
                                            LambdaIndexer &&lambdas) const {
-    MinInternalEnergyFromDensity(std::forward<ConstRealIndexer>(rhos),
-                                 std::forward<RealIndexer>(sies), num,
-                                 std::forward<LambdaIndexer>(lambdas));
+    MinInternalEnergyFromDensity(
+        PortsOfCall::Exec::Device(), std::forward<ConstRealIndexer>(rhos),
+        std::forward<RealIndexer>(sies), num, std::forward<LambdaIndexer>(lambdas));
   }
   template <typename LambdaIndexer>
   inline void MinInternalEnergyFromDensity(const Real *rhos, Real *sies,
                                            Real * /*scratch*/, const int num,
                                            LambdaIndexer &&lambdas,
                                            Transform && = Transform()) const {
-    MinInternalEnergyFromDensity(rhos, sies, num, std::forward<LambdaIndexer>(lambdas));
+    MinInternalEnergyFromDensity(PortsOfCall::Exec::Device(), rhos, sies, num,
+                                 std::forward<LambdaIndexer>(lambdas));
   }
   ///
 
@@ -417,19 +490,32 @@ class EosBase {
   SG_EOS_VEC_2IN_1OUT(GibbsFreeEnergyFromDensityTemperature, rhos, Ts, Gs)
   SG_EOS_VEC_2IN_1OUT(GibbsFreeEnergyFromDensityInternalEnergy, rhos, sies, Gs)
 
-  template <typename RealIndexer, typename LambdaIndexer>
-  inline void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-                      RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-                      const int num, const unsigned long output,
+  template <typename Space, typename RealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void FillEos(const Space &s, RealIndexer &&rhos, RealIndexer &&temps,
+                      RealIndexer &&energies, RealIndexer &&presses, RealIndexer &&cvs,
+                      RealIndexer &&bmods, const int num, const unsigned long output,
                       LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
     const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+        cname, s, 0, num, PORTABLE_LAMBDA(const int i) {
           copy.FillEos(rhos[i], temps[i], energies[i], presses[i], cvs[i], bmods[i],
                        output, lambdas[i]);
         });
+  }
+  template <typename RealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<variadic_utils::has_int_index_v<RealIndexer>>>
+  inline void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
+                      RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
+                      const int num, const unsigned long output,
+                      LambdaIndexer &&lambdas) const {
+    FillEos(PortsOfCall::Exec::Device(), std::forward<RealIndexer>(rhos),
+            std::forward<RealIndexer>(temps), std::forward<RealIndexer>(energies),
+            std::forward<RealIndexer>(presses), std::forward<RealIndexer>(cvs),
+            std::forward<RealIndexer>(bmods), num, output,
+            std::forward<LambdaIndexer>(lambdas));
   }
 
   // Report minimum values of density and temperature
