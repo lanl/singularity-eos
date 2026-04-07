@@ -153,13 +153,13 @@ char *StrCat(char *destination, const char *source) {
 
 // These macros are to reduce boilerplate in vector API. They declare
 // all the different "default" vector methods that we define in the base class.
-#define SG_EOS_VEC_2IN_1OUT(NAME, IN1, IN2, OUT, COPY_DECL)                              \
+#define SG_EOS_VEC_2IN_1OUT(NAME, IN1, IN2, OUT)                                         \
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>     \
   inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
                    const int num, LambdaIndexer &&lambdas) const {                       \
     static auto const name = SG_MEMBER_FUNC_NAME();                                      \
     static auto const cname = name.c_str();                                              \
-    COPY_DECL copy = *(static_cast<CRTP const *>(this));                                 \
+    const CRTP &copy = *(static_cast<CRTP const *>(this));                               \
     portableFor(                                                                         \
         cname, 0, num, PORTABLE_LAMBDA(const int i) {                                    \
           OUT[i] = copy.NAME(IN1[i], IN2[i], lambdas[i]);                                \
@@ -363,14 +363,10 @@ class EosBase {
   }
 
   // Vector member functions
-  SG_EOS_VEC_2IN_1OUT(TemperatureFromDensityInternalEnergy, rhos, sies, temperatures,
-                      const CRTP &)
-  SG_EOS_VEC_2IN_1OUT(InternalEnergyFromDensityTemperature, rhos, temperatures, sies,
-                      const CRTP &)
-  SG_EOS_VEC_2IN_1OUT(PressureFromDensityTemperature, rhos, temperatures, pressures,
-                      const CRTP &)
-  SG_EOS_VEC_2IN_1OUT(PressureFromDensityInternalEnergy, rhos, sies, pressures,
-                      const CRTP &)
+  SG_EOS_VEC_2IN_1OUT(TemperatureFromDensityInternalEnergy, rhos, sies, temperatures)
+  SG_EOS_VEC_2IN_1OUT(InternalEnergyFromDensityTemperature, rhos, temperatures, sies)
+  SG_EOS_VEC_2IN_1OUT(PressureFromDensityTemperature, rhos, temperatures, pressures)
+  SG_EOS_VEC_2IN_1OUT(PressureFromDensityInternalEnergy, rhos, sies, pressures)
   ///
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
@@ -400,23 +396,16 @@ class EosBase {
     MinInternalEnergyFromDensity(rhos, sies, num, std::forward<LambdaIndexer>(lambdas));
   }
   ///
-  SG_EOS_VEC_2IN_1OUT(EntropyFromDensityTemperature, rhos, temperatures, entropies,
-                      const CRTP &)
-  SG_EOS_VEC_2IN_1OUT(EntropyFromDensityInternalEnergy, rhos, sies, entropies,
-                      const CRTP &)
-  SG_EOS_VEC_2IN_1OUT(SpecificHeatFromDensityTemperature, rhos, temperatures, cvs,
-                      const CRTP &)
-  SG_EOS_VEC_2IN_1OUT(SpecificHeatFromDensityInternalEnergy, rhos, sies, cvs,
-                      const CRTP &)
-  SG_EOS_VEC_2IN_1OUT(BulkModulusFromDensityTemperature, rhos, temperatures, bmods,
-                      const CRTP &)
-  SG_EOS_VEC_2IN_1OUT(BulkModulusFromDensityInternalEnergy, rhos, sies, bmods,
-                      const CRTP &)
-  SG_EOS_VEC_2IN_1OUT(GruneisenParamFromDensityTemperature, rhos, temperatures, gm1s,
-                      CRTP)
-  SG_EOS_VEC_2IN_1OUT(GruneisenParamFromDensityInternalEnergy, rhos, sies, gm1s, CRTP)
-  SG_EOS_VEC_2IN_1OUT(GibbsFreeEnergyFromDensityTemperature, rhos, Ts, Gs, CRTP)
-  SG_EOS_VEC_2IN_1OUT(GibbsFreeEnergyFromDensityInternalEnergy, rhos, sies, Gs, CRTP)
+  SG_EOS_VEC_2IN_1OUT(EntropyFromDensityTemperature, rhos, temperatures, entropies)
+  SG_EOS_VEC_2IN_1OUT(EntropyFromDensityInternalEnergy, rhos, sies, entropies)
+  SG_EOS_VEC_2IN_1OUT(SpecificHeatFromDensityTemperature, rhos, temperatures, cvs)
+  SG_EOS_VEC_2IN_1OUT(SpecificHeatFromDensityInternalEnergy, rhos, sies, cvs)
+  SG_EOS_VEC_2IN_1OUT(BulkModulusFromDensityTemperature, rhos, temperatures, bmods)
+  SG_EOS_VEC_2IN_1OUT(BulkModulusFromDensityInternalEnergy, rhos, sies, bmods)
+  SG_EOS_VEC_2IN_1OUT(GruneisenParamFromDensityTemperature, rhos, temperatures, gm1s)
+  SG_EOS_VEC_2IN_1OUT(GruneisenParamFromDensityInternalEnergy, rhos, sies, gm1s)
+  SG_EOS_VEC_2IN_1OUT(GibbsFreeEnergyFromDensityTemperature, rhos, Ts, Gs)
+  SG_EOS_VEC_2IN_1OUT(GibbsFreeEnergyFromDensityInternalEnergy, rhos, sies, Gs)
 
   template <typename RealIndexer, typename LambdaIndexer>
   inline void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
