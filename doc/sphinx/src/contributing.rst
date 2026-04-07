@@ -58,7 +58,7 @@ helps disentangle human-made choices from machine-made ones.
 
 If you submit code to ``singularity-eos`` you own that code and you are
 responsible for understanding it. If code is submitted that the author
-does not understand, the author will be asked to resubmit changeset
+does not understand, the author will be asked to resubmit a changeset
 that they understand.
 
 Finally, please be cognizant of reviewer time and effort. Agentic AI
