@@ -36,10 +36,11 @@ namespace singularity {
 template <typename... Ts>
 using eos_variant = PortsOfCall::variant<Ts...>;
 
-// Provide default functionality when lambda isn't passed to vector functions
-// For an example of what this might concretize to
-// (albeit with fewer arguments) look for the vector implementation of
-// MinInternalEnergyFromDensity below.
+// Provide default functionality when lambda isn't passed to vector
+// functions For an example of what this might concretize to (albeit
+// with fewer arguments than the functions targeted by this macro)
+// look for the vector implementation of MinInternalEnergyFromDensity
+// below.
 // TODO(JMM): I decided to keep the names in the arguments to macro
 // even though it's not strictly necessary, as I think it's more
 // legible and produces more useful output in, e.g., a debugger.

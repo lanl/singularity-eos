@@ -153,9 +153,10 @@ char *StrCat(char *destination, const char *source) {
 
 // These macros are to reduce boilerplate in vector API. They declare
 // all the different "default" vector methods that we define in the
-// base class.  For an example of what this might concretize to
-// (albeit with fewer arguments) look for the vector implementation of
-// MinInternalEnergyFromDensity below.
+// base class. For an example of what this might concretize to (albeit
+// with fewer arguments than the functions targeted by this macro)
+// look for the vector implementation of MinInternalEnergyFromDensity
+// below.
 // TODO(JMM): I decided to keep the names in the arguments to macro
 // even though it's not strictly necessary, as I think it's more
 // legible and produces more useful output in, e.g., a debugger.
