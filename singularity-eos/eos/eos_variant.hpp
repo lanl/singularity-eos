@@ -491,7 +491,7 @@ class Variant {
   SG_VARIANT_VEC_2IN_1OUT(PressureFromDensityTemperature, rhos, temperatures, pressures)
   SG_VARIANT_VEC_2IN_1OUT(PressureFromDensityInternalEnergy, rhos, sies, pressures)
 
-  /// This is sort of what the SG_EOS_VEC would concretize too, though
+  /// This is sort of what the SG_VARIANT_VEC would concretize too, though
   /// it has fewer arguments.
   template <typename RealIndexer, typename ConstRealIndexer>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
