@@ -37,6 +37,12 @@ template <typename... Ts>
 using eos_variant = PortsOfCall::variant<Ts...>;
 
 // Provide default functionality when lambda isn't passed to vector functions
+// For an example of what this might concretize to
+// (albeit with fewer arguments) look for the vector implementation of
+// MinInternalEnergyFromDensity below.
+// TODO(JMM): I decided to keep the names in the arguments to macro
+// even though it's not strictly necessary, as I think it's more
+// legible and produces more useful output in, e.g., a debugger.
 struct NullIndexer {
   PORTABLE_FORCEINLINE_FUNCTION
   Real *operator[](int i) { return nullptr; }
@@ -484,7 +490,9 @@ class Variant {
   SG_VARIANT_VEC_2IN_1OUT(InternalEnergyFromDensityTemperature, rhos, temperatures, sies)
   SG_VARIANT_VEC_2IN_1OUT(PressureFromDensityTemperature, rhos, temperatures, pressures)
   SG_VARIANT_VEC_2IN_1OUT(PressureFromDensityInternalEnergy, rhos, sies, pressures)
-  ///
+
+  /// This is sort of what the SG_EOS_VEC would concretize too, though
+  /// it has fewer arguments.
   template <typename RealIndexer, typename ConstRealIndexer>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            const int num) const {
@@ -527,6 +535,7 @@ class Variant {
         eos_);
   }
   ///
+
   SG_VARIANT_VEC_2IN_1OUT(EntropyFromDensityTemperature, rhos, temperatures, entropies)
   SG_VARIANT_VEC_2IN_1OUT(EntropyFromDensityInternalEnergy, rhos, sies, entropies)
   SG_VARIANT_VEC_2IN_1OUT(GibbsFreeEnergyFromDensityTemperature, rhos, temperatures, Gs)

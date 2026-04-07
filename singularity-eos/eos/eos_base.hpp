@@ -152,7 +152,13 @@ char *StrCat(char *destination, const char *source) {
   Real RhoPmin(const Real temp) const { return t_.RhoPmin(temp); }
 
 // These macros are to reduce boilerplate in vector API. They declare
-// all the different "default" vector methods that we define in the base class.
+// all the different "default" vector methods that we define in the
+// base class.  For an example of what this might concretize to
+// (albeit with fewer arguments) look for the vector implementation of
+// MinInternalEnergyFromDensity below.
+// TODO(JMM): I decided to keep the names in the arguments to macro
+// even though it's not strictly necessary, as I think it's more
+// legible and produces more useful output in, e.g., a debugger.
 #define SG_EOS_VEC_2IN_1OUT(NAME, IN1, IN2, OUT)                                         \
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>     \
   inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
@@ -367,7 +373,9 @@ class EosBase {
   SG_EOS_VEC_2IN_1OUT(InternalEnergyFromDensityTemperature, rhos, temperatures, sies)
   SG_EOS_VEC_2IN_1OUT(PressureFromDensityTemperature, rhos, temperatures, pressures)
   SG_EOS_VEC_2IN_1OUT(PressureFromDensityInternalEnergy, rhos, sies, pressures)
-  ///
+
+  /// This is sort of what the SG_EOS_VEC would concretize too, though
+  /// it has fewer arguments.
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            const int num, LambdaIndexer &&lambdas) const {
@@ -396,6 +404,7 @@ class EosBase {
     MinInternalEnergyFromDensity(rhos, sies, num, std::forward<LambdaIndexer>(lambdas));
   }
   ///
+
   SG_EOS_VEC_2IN_1OUT(EntropyFromDensityTemperature, rhos, temperatures, entropies)
   SG_EOS_VEC_2IN_1OUT(EntropyFromDensityInternalEnergy, rhos, sies, entropies)
   SG_EOS_VEC_2IN_1OUT(SpecificHeatFromDensityTemperature, rhos, temperatures, cvs)
