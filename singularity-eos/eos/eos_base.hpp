@@ -707,34 +707,7 @@ class EosBase {
     eos.InternalEnergyFromDensityPressure(rho, P, sie, lambda);
     return sie;
   }
-  // Classes like EOSPAC probably wish to overload/shadow this version
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void InternalEnergyFromDensityPressure(ConstRealIndexer &&rhos,
-                                                ConstRealIndexer &&Ps, RealIndexer &&sies,
-                                                const int num,
-                                                LambdaIndexer &&lambdas) const {
-    static auto const name = SG_MEMBER_FUNC_NAME();
-    static auto const cname = name.c_str();
-    CRTP copy = *(static_cast<CRTP const *>(this));
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          copy.InternalEnergyFromDensityPressure(rhos[i], Ps[i], sies[i], lambdas[i]);
-        });
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void InternalEnergyFromDensityPressure(ConstRealIndexer &&rhos,
-                                                ConstRealIndexer &&Ps, RealIndexer &&sies,
-                                                Real * /*scratch */, const int num,
-                                                LambdaIndexer &&lambdas) const {
-    return InternalEnergyFromDensityPressure(rhos, Ps, sies, num, lambdas);
-  }
-  template <typename LambdaIndexer>
-  inline void InternalEnergyFromDensityPressure(const Real *rhos, const Real *Ps,
-                                                Real *sies, Real * /*scratch */,
-                                                const int num, LambdaIndexer &&lambdas,
-                                                Transform && = Transform()) const {
-    return InternalEnergyFromDensityPressure(rhos, Ps, sies, num, lambdas);
-  }
+  SG_EOS_VEC_2IN_1OUT(InternalEnergyFromDensityPressure, rhos, Ps, sies)
 
   // Serialization
   /*
