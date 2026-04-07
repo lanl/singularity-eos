@@ -549,32 +549,59 @@ class Variant {
   SG_VARIANT_VEC_2IN_1OUT(GruneisenParamFromDensityInternalEnergy, rhos, sies, gm1s)
   SG_VARIANT_VEC_2IN_1OUT(InternalEnergyFromDensityPressure, rhos, Ps, sies)
 
-  template <typename RealIndexer>
-  inline void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-                      RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-                      const int num, const unsigned long output) const {
+  template <typename Space, typename RealIndexer,
+            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void FillEos(const Space &s, RealIndexer &&rhos, RealIndexer &&temps,
+                      RealIndexer &&energies, RealIndexer &&presses, RealIndexer &&cvs,
+                      RealIndexer &&bmods, const int num,
+                      const unsigned long output) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return FillEos(std::forward<RealIndexer>(rhos), std::forward<RealIndexer>(temps),
+    return FillEos(s, std::forward<RealIndexer>(rhos), std::forward<RealIndexer>(temps),
                    std::forward<RealIndexer>(energies),
                    std::forward<RealIndexer>(presses), std::forward<RealIndexer>(cvs),
                    std::forward<RealIndexer>(bmods), num, output, lambdas);
   }
 
-  template <typename RealIndexer, typename LambdaIndexer>
-  inline void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-                      RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-                      const int num, const unsigned long output,
+  template <typename Space, typename RealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void FillEos(const Space &s, RealIndexer &&rhos, RealIndexer &&temps,
+                      RealIndexer &&energies, RealIndexer &&presses, RealIndexer &&cvs,
+                      RealIndexer &&bmods, const int num, const unsigned long output,
                       LambdaIndexer &&lambdas) const {
     return PortsOfCall::visit(
-        [&rhos, &temps, &energies, &presses, &cvs, &bmods, &num, &output,
+        [&s, &rhos, &temps, &energies, &presses, &cvs, &bmods, &num, &output,
          &lambdas](const auto &eos) {
           return eos.FillEos(
-              std::forward<RealIndexer>(rhos), std::forward<RealIndexer>(temps),
+              s, std::forward<RealIndexer>(rhos), std::forward<RealIndexer>(temps),
               std::forward<RealIndexer>(energies), std::forward<RealIndexer>(presses),
               std::forward<RealIndexer>(cvs), std::forward<RealIndexer>(bmods), num,
               output, std::forward<LambdaIndexer>(lambdas));
         },
         eos_);
+  }
+
+  template <typename RealIndexer,
+            typename = std::enable_if_t<variadic_utils::has_int_index_v<RealIndexer>>>
+  inline void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
+                      RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
+                      const int num, const unsigned long output) const {
+    return FillEos(PortsOfCall::Exec::Device(), std::forward<RealIndexer>(rhos),
+                   std::forward<RealIndexer>(temps), std::forward<RealIndexer>(energies),
+                   std::forward<RealIndexer>(presses), std::forward<RealIndexer>(cvs),
+                   std::forward<RealIndexer>(bmods), num, output);
+  }
+
+  template <typename RealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<variadic_utils::has_int_index_v<RealIndexer>>>
+  inline void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
+                      RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
+                      const int num, const unsigned long output,
+                      LambdaIndexer &&lambdas) const {
+    return FillEos(PortsOfCall::Exec::Device(), std::forward<RealIndexer>(rhos),
+                   std::forward<RealIndexer>(temps), std::forward<RealIndexer>(energies),
+                   std::forward<RealIndexer>(presses), std::forward<RealIndexer>(cvs),
+                   std::forward<RealIndexer>(bmods), num, output,
+                   std::forward<LambdaIndexer>(lambdas));
   }
 
   // Serialization
