@@ -55,6 +55,10 @@
 #include <spiner/sp5.hpp>
 #include <spiner/spiner_types.hpp>
 
+
+// This file was generated in part with the assistance of generative AI
+
+
 namespace singularity {
 
 using namespace eos_base;

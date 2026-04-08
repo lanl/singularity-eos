@@ -22,6 +22,10 @@
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
+
+// This file was generated in part with the assistance of generative AI
+
+
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE
 #include <catch2/catch_test_macros.hpp>
