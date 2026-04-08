@@ -154,6 +154,10 @@ inline void SetUpOutputScalingOption(EOS_INTEGER options[], EOS_REAL values[],
         std::forward<ConstRealIndexer>(IN1), std::forward<ConstRealIndexer>(IN2),        \
         std::forward<RealIndexer>(OUT), num, std::forward<LambdaIndexer>(lambdas));      \
   }
+// Does fromdensitytemperature and fromdensityinternalenergy at once
+#define SG_EOSPAC_VEC_FOR(OUTNAME)                                                       \
+  SG_EOSPAC_VEC_2IN_1OUT(OUTNAME##FromDensityTemperature, rhos, temps, OUTNAME##s)       \
+  SG_EOSPAC_VEC_2IN_1OUT(OUTNAME##FromDensityInternalEnergy, rhos, sies, OUTNAME##s)
 
 // TODO(@adempsey): Add mass fractions + better multiphase support
 class EOSPAC : public EosBase<EOSPAC> {
@@ -282,8 +286,8 @@ class EOSPAC : public EosBase<EOSPAC> {
   using EosBase<EOSPAC>::is_raw_pointer;
   SG_EOSPAC_VEC_2IN_1OUT(TemperatureFromDensityInternalEnergy, rhos, sies, temperatures)
   SG_EOSPAC_VEC_2IN_1OUT(InternalEnergyFromDensityTemperature, rhos, temperatures, sies)
-  SG_EOSPAC_VEC_2IN_1OUT(PressureFromDensityTemperature, rhos, temperatures, pressures)
-  SG_EOSPAC_VEC_2IN_1OUT(PressureFromDensityInternalEnergy, rhos, sies, pressures)
+  SG_EOSPAC_VEC_FOR(Pressure)
+
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            const int num, LambdaIndexer &&lambdas) const {
@@ -297,14 +301,11 @@ class EOSPAC : public EosBase<EOSPAC> {
     PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
     EosBase<EOSPAC>::MinInternalEnergyFromDensity(rhos, sies, num, lambdas);
   }
-  SG_EOSPAC_VEC_2IN_1OUT(EntropyFromDensityTemperature, rhos, temperatures, entropies)
-  SG_EOSPAC_VEC_2IN_1OUT(EntropyFromDensityInternalEnergy, rhos, sies, entropies)
-  SG_EOSPAC_VEC_2IN_1OUT(SpecificHeatFromDensityTemperature, rhos, temperatures, cvs)
-  SG_EOSPAC_VEC_2IN_1OUT(SpecificHeatFromDensityInternalEnergy, rhos, sies, cvs)
-  SG_EOSPAC_VEC_2IN_1OUT(BulkModulusFromDensityTemperature, rhos, temperatures, bmods)
-  SG_EOSPAC_VEC_2IN_1OUT(BulkModulusFromDensityInternalEnergy, rhos, sies, bmods)
-  SG_EOSPAC_VEC_2IN_1OUT(GruneisenParamFromDensityTemperature, rhos, temperatures, gm1s)
-  SG_EOSPAC_VEC_2IN_1OUT(GruneisenParamFromDensityInternalEnergy, rhos, sies, gm1s)
+
+  SG_EOSPAC_VEC_FOR(Entropy)
+  SG_EOSPAC_VEC_FOR(SpecificHeat)
+  SG_EOSPAC_VEC_FOR(BulkModulus)
+  SG_EOSPAC_VEC_FOR(GruneisenParam)
 
   // TODO(JMM): Add performant Gibbs Free Energy
   using EosBase<EOSPAC>::FillEos;

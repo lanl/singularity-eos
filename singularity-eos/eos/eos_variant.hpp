@@ -94,6 +94,12 @@ struct NullIndexer {
         },                                                                               \
         eos_);                                                                           \
   }
+// This one does both FromDensityTemperature and
+// FromDensityInternalEnergy at once. Not always useful, but
+// frequently is.
+#define SG_VARIANT_VEC_FOR(OUTNAME)                                                      \
+  SG_VARIANT_VEC_2IN_1OUT(OUTNAME##FromDensityTemperature, rhos, temps, OUTNAME##s)      \
+  SG_VARIANT_VEC_2IN_1OUT(OUTNAME##FromDensityInternalEnergy, rhos, sies, OUTNAME##s)
 
 template <typename... EOSs>
 class Variant {
@@ -489,8 +495,7 @@ class Variant {
   */
   SG_VARIANT_VEC_2IN_1OUT(TemperatureFromDensityInternalEnergy, rhos, sies, temperatures)
   SG_VARIANT_VEC_2IN_1OUT(InternalEnergyFromDensityTemperature, rhos, temperatures, sies)
-  SG_VARIANT_VEC_2IN_1OUT(PressureFromDensityTemperature, rhos, temperatures, pressures)
-  SG_VARIANT_VEC_2IN_1OUT(PressureFromDensityInternalEnergy, rhos, sies, pressures)
+  SG_VARIANT_VEC_FOR(Pressure)
 
   /// This is sort of what the SG_VARIANT_VEC would concretize too, though
   /// it has fewer arguments.
@@ -537,16 +542,11 @@ class Variant {
   }
   ///
 
-  SG_VARIANT_VEC_2IN_1OUT(EntropyFromDensityTemperature, rhos, temperatures, entropies)
-  SG_VARIANT_VEC_2IN_1OUT(EntropyFromDensityInternalEnergy, rhos, sies, entropies)
-  SG_VARIANT_VEC_2IN_1OUT(GibbsFreeEnergyFromDensityTemperature, rhos, temperatures, Gs)
-  SG_VARIANT_VEC_2IN_1OUT(GibbsFreeEnergyFromDensityInternalEnergy, rhos, sies, Gs)
-  SG_VARIANT_VEC_2IN_1OUT(SpecificHeatFromDensityTemperature, rhos, temperatures, cvs)
-  SG_VARIANT_VEC_2IN_1OUT(SpecificHeatFromDensityInternalEnergy, rhos, sies, cvs)
-  SG_VARIANT_VEC_2IN_1OUT(BulkModulusFromDensityTemperature, rhos, temperatures, bmods)
-  SG_VARIANT_VEC_2IN_1OUT(BulkModulusFromDensityInternalEnergy, rhos, sies, bmods)
-  SG_VARIANT_VEC_2IN_1OUT(GruneisenParamFromDensityTemperature, rhos, temperatures, gm1s)
-  SG_VARIANT_VEC_2IN_1OUT(GruneisenParamFromDensityInternalEnergy, rhos, sies, gm1s)
+  SG_VARIANT_VEC_FOR(Entropy)
+  SG_VARIANT_VEC_FOR(GibbsFreeEnergy)
+  SG_VARIANT_VEC_FOR(SpecificHeat)
+  SG_VARIANT_VEC_FOR(BulkModulus)
+  SG_VARIANT_VEC_FOR(GruneisenParam)
   SG_VARIANT_VEC_2IN_1OUT(InternalEnergyFromDensityPressure, rhos, Ps, sies)
 
   template <typename RealIndexer>
@@ -738,5 +738,6 @@ class Variant {
 };
 } // namespace singularity
 
+#undef SG_VARIANT_VEC_FOR
 #undef SG_VARIANT_VEC_2IN_1OUT
 #endif // EOS_VARIANT_HPP
