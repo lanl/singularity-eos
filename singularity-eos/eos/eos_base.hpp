@@ -27,6 +27,8 @@
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 
+// This file was generated in part with the assistance of generative AI
+
 namespace singularity {
 namespace mfuncname {
 static inline auto member_func_name(const char *type_name, const char *func_name) {
@@ -148,6 +150,47 @@ char *StrCat(char *destination, const char *source) {
   }                                                                                      \
   PORTABLE_FORCEINLINE_FUNCTION                                                          \
   Real RhoPmin(const Real temp) const { return t_.RhoPmin(temp); }
+
+// These macros are to reduce boilerplate in vector API. They declare
+// all the different "default" vector methods that we define in the
+// base class. For an example of what this might concretize to (albeit
+// with fewer arguments than the functions targeted by this macro)
+// look for the vector implementation of MinInternalEnergyFromDensity
+// below.
+// TODO(JMM): I decided to keep the names in the arguments to macro
+// even though it's not strictly necessary, as I think it's more
+// legible and produces more useful output in, e.g., a debugger.
+#define SG_EOS_VEC_2IN_1OUT(NAME, IN1, IN2, OUT)                                         \
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>     \
+  inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
+                   const int num, LambdaIndexer &&lambdas) const {                       \
+    static auto const name = SG_MEMBER_FUNC_NAME();                                      \
+    static auto const cname = name.c_str();                                              \
+    const CRTP &copy = *(static_cast<CRTP const *>(this));                               \
+    portableFor(                                                                         \
+        cname, 0, num, PORTABLE_LAMBDA(const int i) {                                    \
+          OUT[i] = copy.NAME(IN1[i], IN2[i], lambdas[i]);                                \
+        });                                                                              \
+  }                                                                                      \
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,     \
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>      \
+  inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
+                   Real * /*scratch*/, const int num, LambdaIndexer &&lambdas) const {   \
+    NAME(std::forward<ConstRealIndexer>(IN1), std::forward<ConstRealIndexer>(IN2),       \
+         std::forward<RealIndexer>(OUT), num, std::forward<LambdaIndexer>(lambdas));     \
+  }                                                                                      \
+  template <typename LambdaIndexer>                                                      \
+  inline void NAME(const Real *IN1, const Real *IN2, Real *OUT, Real * /*scratch*/,      \
+                   const int num, LambdaIndexer &&lambdas, Transform && = Transform())   \
+      const {                                                                            \
+    NAME(IN1, IN2, OUT, num, std::forward<LambdaIndexer>(lambdas));                      \
+  }
+// This one does both BlahFromDensityTemperature and
+// BlahFromDensityInternalEnergy at once. Not always useful. But
+// frequently is.
+#define SG_EOS_VEC_FOR(OUTNAME)                                                          \
+  SG_EOS_VEC_2IN_1OUT(OUTNAME##FromDensityTemperature, rhos, temperatures, OUTNAME##s)   \
+  SG_EOS_VEC_2IN_1OUT(OUTNAME##FromDensityInternalEnergy, rhos, sies, OUTNAME##s)
 
 class Factor {
   Real value_ = 1.0;
@@ -333,142 +376,12 @@ class EosBase {
   }
 
   // Vector member functions
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void
-  TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
-                                       RealIndexer &&temperatures, const int num,
-                                       LambdaIndexer &&lambdas) const {
-    static auto const name = SG_MEMBER_FUNC_NAME();
-    static auto const cname = name.c_str();
-    const CRTP &copy = *(static_cast<CRTP const *>(this));
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          temperatures[i] =
-              copy.TemperatureFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
-        });
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void
-  TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
-                                       RealIndexer &&temperatures, Real * /*scratch*/,
-                                       const int num, LambdaIndexer &&lambdas) const {
-    TemperatureFromDensityInternalEnergy(std::forward<ConstRealIndexer>(rhos),
-                                         std::forward<ConstRealIndexer>(sies),
-                                         std::forward<RealIndexer>(temperatures), num,
-                                         std::forward<LambdaIndexer>(lambdas));
-  }
+  SG_EOS_VEC_2IN_1OUT(TemperatureFromDensityInternalEnergy, rhos, sies, temperatures)
+  SG_EOS_VEC_2IN_1OUT(InternalEnergyFromDensityTemperature, rhos, temperatures, sies)
+  SG_EOS_VEC_FOR(Pressure)
 
-  template <typename LambdaIndexer>
-  inline void TemperatureFromDensityInternalEnergy(const Real *rhos, const Real *sies,
-                                                   Real *temperatures, Real * /*scratch*/,
-                                                   const int num, LambdaIndexer &&lambdas,
-                                                   Transform && = Transform()) const {
-    TemperatureFromDensityInternalEnergy(rhos, sies, temperatures, num,
-                                         std::forward<LambdaIndexer>(lambdas));
-  }
-
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                   ConstRealIndexer &&temperatures,
-                                                   RealIndexer &&sies, const int num,
-                                                   LambdaIndexer &&lambdas) const {
-    static auto const name = SG_MEMBER_FUNC_NAME();
-    static auto const cname = name.c_str();
-    const CRTP &copy = *(static_cast<CRTP const *>(this));
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          sies[i] = copy.InternalEnergyFromDensityTemperature(rhos[i], temperatures[i],
-                                                              lambdas[i]);
-        });
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                   ConstRealIndexer &&temperatures,
-                                                   RealIndexer &&sies, Real * /*scratch*/,
-                                                   const int num,
-                                                   LambdaIndexer &&lambdas) const {
-    InternalEnergyFromDensityTemperature(std::forward<ConstRealIndexer>(rhos),
-                                         std::forward<ConstRealIndexer>(temperatures),
-                                         std::forward<RealIndexer>(sies), num,
-                                         std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename LambdaIndexer>
-  inline void InternalEnergyFromDensityTemperature(const Real *rhos,
-                                                   const Real *temperatures, Real *sies,
-                                                   Real * /*scratch*/, const int num,
-                                                   LambdaIndexer &&lambdas,
-                                                   Transform && = Transform()) const {
-    InternalEnergyFromDensityTemperature(rhos, temperatures, sies, num,
-                                         std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
-                                             ConstRealIndexer &&temperatures,
-                                             RealIndexer &&pressures, const int num,
-                                             LambdaIndexer &&lambdas) const {
-    static auto const name = SG_MEMBER_FUNC_NAME();
-    static auto const cname = name.c_str();
-    const CRTP &copy = *(static_cast<CRTP const *>(this));
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          pressures[i] =
-              copy.PressureFromDensityTemperature(rhos[i], temperatures[i], lambdas[i]);
-        });
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void
-  PressureFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
-                                 RealIndexer &&pressures, Real * /*scratch*/,
-                                 const int num, LambdaIndexer &&lambdas) const {
-    PressureFromDensityTemperature(std::forward<ConstRealIndexer>(rhos),
-                                   std::forward<ConstRealIndexer>(temperatures),
-                                   std::forward<RealIndexer>(pressures), num,
-                                   std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename LambdaIndexer>
-  inline void PressureFromDensityTemperature(const Real *rhos, const Real *temperatures,
-                                             Real *pressures, Real * /*scratch*/,
-                                             const int num, LambdaIndexer &&lambdas,
-                                             Transform && = Transform()) const {
-    PressureFromDensityTemperature(rhos, temperatures, pressures, num,
-                                   std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                ConstRealIndexer &&sies,
-                                                RealIndexer &&pressures, const int num,
-                                                LambdaIndexer &&lambdas) const {
-    static auto const name = SG_MEMBER_FUNC_NAME();
-    static auto const cname = name.c_str();
-    const CRTP &copy = *(static_cast<CRTP const *>(this));
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          pressures[i] =
-              copy.PressureFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
-        });
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void
-  PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
-                                    RealIndexer &&pressures, Real * /*scratch*/,
-                                    const int num, LambdaIndexer &&lambdas) const {
-    PressureFromDensityInternalEnergy(
-        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
-        std::forward<RealIndexer>(pressures), num, std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename LambdaIndexer>
-  inline void PressureFromDensityInternalEnergy(const Real *rhos, const Real *sies,
-                                                Real *pressures, Real * /*scratch*/,
-                                                const int num, LambdaIndexer &&lambdas,
-                                                Transform && = Transform()) const {
-    PressureFromDensityInternalEnergy(rhos, sies, pressures, num,
-                                      std::forward<LambdaIndexer>(lambdas));
-  }
-  ///
+  /// This is sort of what the SG_EOS_VEC would concretize too, though
+  /// it has fewer arguments.
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            const int num, LambdaIndexer &&lambdas) const {
@@ -494,344 +407,15 @@ class EosBase {
                                            Real * /*scratch*/, const int num,
                                            LambdaIndexer &&lambdas,
                                            Transform && = Transform()) const {
-    MinInternalEnergyFromDensity(rhos, num, std::forward<LambdaIndexer>(lambdas));
+    MinInternalEnergyFromDensity(rhos, sies, num, std::forward<LambdaIndexer>(lambdas));
   }
   ///
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void EntropyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            RealIndexer &&entropies, const int num,
-                                            LambdaIndexer &&lambdas) const {
-    static auto const name = SG_MEMBER_FUNC_NAME();
-    static auto const cname = name.c_str();
-    const CRTP &copy = *(static_cast<CRTP const *>(this));
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          entropies[i] =
-              copy.EntropyFromDensityTemperature(rhos[i], temperatures[i], lambdas[i]);
-        });
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void
-  EntropyFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
-                                RealIndexer &&entropies, Real * /*scratch*/,
-                                const int num, LambdaIndexer &&lambdas) const {
-    EntropyFromDensityTemperature(std::forward<ConstRealIndexer>(rhos),
-                                  std::forward<ConstRealIndexer>(temperatures),
-                                  std::forward<RealIndexer>(entropies), num,
-                                  std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename LambdaIndexer>
-  inline void EntropyFromDensityTemperature(const Real *rhos, const Real *temperatures,
-                                            Real *entropies, Real * /*scratch*/,
-                                            const int num, LambdaIndexer &&lambdas,
-                                            Transform && = Transform()) const {
-    EntropyFromDensityTemperature(rhos, temperatures, entropies, num,
-                                  std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&sies,
-                                               RealIndexer &&entropies, const int num,
-                                               LambdaIndexer &&lambdas) const {
-    static auto const name = SG_MEMBER_FUNC_NAME();
-    static auto const cname = name.c_str();
-    const CRTP &copy = *(static_cast<CRTP const *>(this));
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          entropies[i] =
-              copy.EntropyFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
-        });
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void
-  EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
-                                   RealIndexer &&entropies, Real * /*scratch*/,
-                                   const int num, LambdaIndexer &&lambdas) const {
-    EntropyFromDensityInternalEnergy(
-        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
-        std::forward<RealIndexer>(entropies), num, std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename LambdaIndexer>
-  inline void EntropyFromDensityInternalEnergy(const Real *rhos, const Real *sies,
-                                               Real *entropies, Real * /*scratch*/,
-                                               const int num, LambdaIndexer &&lambdas,
-                                               Transform && = Transform()) const {
-    EntropyFromDensityInternalEnergy(rhos, sies, entropies, num,
-                                     std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                 ConstRealIndexer &&temperatures,
-                                                 RealIndexer &&cvs, const int num,
-                                                 LambdaIndexer &&lambdas) const {
-    static auto const name = SG_MEMBER_FUNC_NAME();
-    static auto const cname = name.c_str();
-    const CRTP &copy = *(static_cast<CRTP const *>(this));
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          cvs[i] = copy.SpecificHeatFromDensityTemperature(rhos[i], temperatures[i],
-                                                           lambdas[i]);
-        });
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                 ConstRealIndexer &&temperatures,
-                                                 RealIndexer &&cvs, Real * /*scratch*/,
-                                                 const int num,
-                                                 LambdaIndexer &&lambdas) const {
-    SpecificHeatFromDensityTemperature(std::forward<ConstRealIndexer>(rhos),
-                                       std::forward<ConstRealIndexer>(temperatures),
-                                       std::forward<RealIndexer>(cvs), num,
-                                       std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename LambdaIndexer>
-  inline void SpecificHeatFromDensityTemperature(const Real *rhos,
-                                                 const Real *temperatures, Real *cvs,
-                                                 Real * /*scratch*/, const int num,
-                                                 LambdaIndexer &&lambdas,
-                                                 Transform && = Transform()) const {
-    SpecificHeatFromDensityTemperature(rhos, temperatures, cvs, num,
-                                       std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                    ConstRealIndexer &&sies,
-                                                    RealIndexer &&cvs, const int num,
-                                                    LambdaIndexer &&lambdas) const {
-    static auto const name = SG_MEMBER_FUNC_NAME();
-    static auto const cname = name.c_str();
-    const CRTP &copy = *(static_cast<CRTP const *>(this));
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          cvs[i] =
-              copy.SpecificHeatFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
-        });
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void
-  SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
-                                        RealIndexer &&cvs, Real * /*scratch*/,
-                                        const int num, LambdaIndexer &&lambdas) const {
-    SpecificHeatFromDensityInternalEnergy(
-        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
-        std::forward<RealIndexer>(cvs), num, std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename LambdaIndexer>
-  inline void SpecificHeatFromDensityInternalEnergy(const Real *rhos, const Real *sies,
-                                                    Real *cvs, Real * /*scratch*/,
-                                                    const int num,
-                                                    LambdaIndexer &&lambdas,
-                                                    Transform && = Transform()) const {
-    SpecificHeatFromDensityInternalEnergy(rhos, sies, cvs, num,
-                                          std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                ConstRealIndexer &&temperatures,
-                                                RealIndexer &&bmods, const int num,
-                                                LambdaIndexer &&lambdas) const {
-    static auto const name = SG_MEMBER_FUNC_NAME();
-    static auto const cname = name.c_str();
-    const CRTP &copy = *(static_cast<CRTP const *>(this));
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          bmods[i] = copy.BulkModulusFromDensityTemperature(rhos[i], temperatures[i],
-                                                            lambdas[i]);
-        });
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                ConstRealIndexer &&temperatures,
-                                                RealIndexer &&bmods, Real * /*scratch*/,
-                                                const int num,
-                                                LambdaIndexer &&lambdas) const {
-    BulkModulusFromDensityTemperature(std::forward<ConstRealIndexer>(rhos),
-                                      std::forward<ConstRealIndexer>(temperatures),
-                                      std::forward<RealIndexer>(bmods), num,
-                                      std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename LambdaIndexer>
-  inline void BulkModulusFromDensityTemperature(const Real *rhos,
-                                                const Real *temperatures, Real *bmods,
-                                                Real * /*scratch*/, const int num,
-                                                LambdaIndexer &&lambdas,
-                                                Transform && = Transform()) const {
-    BulkModulusFromDensityTemperature(rhos, temperatures, bmods, num,
-                                      std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                   ConstRealIndexer &&sies,
-                                                   RealIndexer &&bmods, const int num,
-                                                   LambdaIndexer &&lambdas) const {
-    static auto const name = SG_MEMBER_FUNC_NAME();
-    static auto const cname = name.c_str();
-    const CRTP &copy = *(static_cast<CRTP const *>(this));
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          bmods[i] =
-              copy.BulkModulusFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
-        });
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void
-  BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
-                                       RealIndexer &&bmods, Real * /*scratch*/,
-                                       const int num, LambdaIndexer &&lambdas) const {
-    BulkModulusFromDensityInternalEnergy(
-        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
-        std::forward<RealIndexer>(bmods), num, std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename LambdaIndexer>
-  inline void BulkModulusFromDensityInternalEnergy(const Real *rhos, const Real *sies,
-                                                   Real *bmods, Real * /*scratch*/,
-                                                   const int num, LambdaIndexer &&lambdas,
-                                                   Transform && = Transform()) const {
-    BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, num,
-                                         std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                   ConstRealIndexer &&temperatures,
-                                                   RealIndexer &&gm1s, const int num,
-                                                   LambdaIndexer &&lambdas) const {
-    static auto const name = SG_MEMBER_FUNC_NAME();
-    static auto const cname = name.c_str();
-    CRTP copy = *(static_cast<CRTP const *>(this));
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          gm1s[i] = copy.GruneisenParamFromDensityTemperature(rhos[i], temperatures[i],
-                                                              lambdas[i]);
-        });
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                   ConstRealIndexer &&temperatures,
-                                                   RealIndexer &&gm1s, Real * /*scratch*/,
-                                                   const int num,
-                                                   LambdaIndexer &&lambdas) const {
-    GruneisenParamFromDensityTemperature(std::forward<ConstRealIndexer>(rhos),
-                                         std::forward<ConstRealIndexer>(temperatures),
-                                         std::forward<RealIndexer>(gm1s), num,
-                                         std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename LambdaIndexer>
-  inline void GruneisenParamFromDensityTemperature(const Real *rhos,
-                                                   const Real *temperatures, Real *gm1s,
-                                                   Real * /*scratch*/, const int num,
-                                                   LambdaIndexer &&lambdas,
-                                                   Transform && = Transform()) const {
-    GruneisenParamFromDensityTemperature(rhos, temperatures, gm1s, num,
-                                         std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                      ConstRealIndexer &&sies,
-                                                      RealIndexer &&gm1s, const int num,
-                                                      LambdaIndexer &&lambdas) const {
-    static auto const name = SG_MEMBER_FUNC_NAME();
-    static auto const cname = name.c_str();
-    CRTP copy = *(static_cast<CRTP const *>(this));
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          gm1s[i] =
-              copy.GruneisenParamFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
-        });
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                      ConstRealIndexer &&sies,
-                                                      RealIndexer &&gm1s,
-                                                      Real * /*scratch*/, const int num,
-                                                      LambdaIndexer &&lambdas) const {
-    GruneisenParamFromDensityInternalEnergy(
-        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
-        std::forward<RealIndexer>(gm1s), num, std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename LambdaIndexer>
-  inline void GruneisenParamFromDensityInternalEnergy(const Real *rhos, const Real *sies,
-                                                      Real *gm1s, Real * /*scratch*/,
-                                                      const int num,
-                                                      LambdaIndexer &&lambdas,
-                                                      Transform && = Transform()) const {
-    GruneisenParamFromDensityInternalEnergy(rhos, sies, gm1s, num,
-                                            std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void GibbsFreeEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                    ConstRealIndexer &&Ts,
-                                                    RealIndexer &&Gs, const int num,
-                                                    LambdaIndexer &&lambdas) const {
-    static auto const name = SG_MEMBER_FUNC_NAME();
-    static auto const cname = name.c_str();
-    CRTP copy = *(static_cast<CRTP const *>(this));
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          Gs[i] = copy.GibbsFreeEnergyFromDensityTemperature(rhos[i], Ts[i], lambdas[i]);
-        });
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void
-  GibbsFreeEnergyFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&Ts,
-                                        RealIndexer &&Gs, Real * /*scratch*/,
-                                        const int num, LambdaIndexer &&lambdas) const {
-    GibbsFreeEnergyFromDensityTemperature(
-        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(Ts),
-        std::forward<RealIndexer>(Gs), num, std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename LambdaIndexer>
-  inline void GibbsFreeEnergyFromDensityTemperature(const Real *rhos, const Real *Ts,
-                                                    Real *Gs, Real * /*scratch*/,
-                                                    const int num,
-                                                    LambdaIndexer &&lambdas,
-                                                    Transform && = Transform()) const {
-    GibbsFreeEnergyFromDensityTemperature(rhos, Ts, Gs, num,
-                                          std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void GibbsFreeEnergyFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                       ConstRealIndexer &&sies,
-                                                       RealIndexer &&Gs, const int num,
-                                                       LambdaIndexer &&lambdas) const {
-    static auto const name = SG_MEMBER_FUNC_NAME();
-    static auto const cname = name.c_str();
-    CRTP copy = *(static_cast<CRTP const *>(this));
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          Gs[i] =
-              copy.GibbsFreeEnergyFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
-        });
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void GibbsFreeEnergyFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                       ConstRealIndexer &&sies,
-                                                       RealIndexer &&Gs,
-                                                       Real * /*scratch*/, const int num,
-                                                       LambdaIndexer &&lambdas) const {
-    GibbsFreeEnergyFromDensityInternalEnergy(
-        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
-        std::forward<RealIndexer>(Gs), num, std::forward<LambdaIndexer>(lambdas));
-  }
-  template <typename LambdaIndexer>
-  inline void GibbsFreeEnergyFromDensityInternalEnergy(const Real *rhos, const Real *sies,
-                                                       Real *Gs, Real * /*scratch*/,
-                                                       const int num,
-                                                       LambdaIndexer &&lambdas,
-                                                       Transform && = Transform()) const {
-    GibbsFreeEnergyFromDensityInternalEnergy(rhos, sies, Gs, num,
-                                             std::forward<LambdaIndexer>(lambdas));
-  }
+
+  SG_EOS_VEC_FOR(Entropy)
+  SG_EOS_VEC_FOR(SpecificHeat)
+  SG_EOS_VEC_FOR(BulkModulus)
+  SG_EOS_VEC_FOR(GruneisenParam)
+  SG_EOS_VEC_FOR(GibbsFreeEnergy)
 
   template <typename RealIndexer, typename LambdaIndexer>
   inline void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
@@ -1170,5 +754,7 @@ class EosBase {
 } // namespace eos_base
 } // namespace singularity
 
+#undef SG_EOS_VEC_FOR
+#undef SG_EOS_VEC_2IN_1OUT
 #undef SG_MEMBER_FUNC_NAME
 #endif
