@@ -223,6 +223,12 @@ char *StrCat(char *destination, const char *source) {
     NAME(PortsOfCall::Exec::Device(), IN1, IN2, OUT, num,                                \
          std::forward<LambdaIndexer>(lambdas));                                          \
   }
+// This one does both BlahFromDensityTemperature and
+// BlahFromDensityInternalEnergy at once. Not always useful. But
+// frequently is.
+#define SG_EOS_VEC_FOR(OUTNAME)                                                          \
+  SG_EOS_VEC_2IN_1OUT(OUTNAME##FromDensityTemperature, rhos, temperatures, OUTNAME##s)   \
+  SG_EOS_VEC_2IN_1OUT(OUTNAME##FromDensityInternalEnergy, rhos, sies, OUTNAME##s)
 
 class Factor {
   Real value_ = 1.0;
@@ -410,8 +416,7 @@ class EosBase {
   // Vector member functions
   SG_EOS_VEC_2IN_1OUT(TemperatureFromDensityInternalEnergy, rhos, sies, temperatures)
   SG_EOS_VEC_2IN_1OUT(InternalEnergyFromDensityTemperature, rhos, temperatures, sies)
-  SG_EOS_VEC_2IN_1OUT(PressureFromDensityTemperature, rhos, temperatures, pressures)
-  SG_EOS_VEC_2IN_1OUT(PressureFromDensityInternalEnergy, rhos, sies, pressures)
+  SG_EOS_VEC_FOR(Pressure)
 
   /// This is sort of what the SG_EOS_VEC would concretize too, though
   /// it has fewer arguments.
@@ -479,16 +484,11 @@ class EosBase {
   }
   ///
 
-  SG_EOS_VEC_2IN_1OUT(EntropyFromDensityTemperature, rhos, temperatures, entropies)
-  SG_EOS_VEC_2IN_1OUT(EntropyFromDensityInternalEnergy, rhos, sies, entropies)
-  SG_EOS_VEC_2IN_1OUT(SpecificHeatFromDensityTemperature, rhos, temperatures, cvs)
-  SG_EOS_VEC_2IN_1OUT(SpecificHeatFromDensityInternalEnergy, rhos, sies, cvs)
-  SG_EOS_VEC_2IN_1OUT(BulkModulusFromDensityTemperature, rhos, temperatures, bmods)
-  SG_EOS_VEC_2IN_1OUT(BulkModulusFromDensityInternalEnergy, rhos, sies, bmods)
-  SG_EOS_VEC_2IN_1OUT(GruneisenParamFromDensityTemperature, rhos, temperatures, gm1s)
-  SG_EOS_VEC_2IN_1OUT(GruneisenParamFromDensityInternalEnergy, rhos, sies, gm1s)
-  SG_EOS_VEC_2IN_1OUT(GibbsFreeEnergyFromDensityTemperature, rhos, Ts, Gs)
-  SG_EOS_VEC_2IN_1OUT(GibbsFreeEnergyFromDensityInternalEnergy, rhos, sies, Gs)
+  SG_EOS_VEC_FOR(Entropy)
+  SG_EOS_VEC_FOR(SpecificHeat)
+  SG_EOS_VEC_FOR(BulkModulus)
+  SG_EOS_VEC_FOR(GruneisenParam)
+  SG_EOS_VEC_FOR(GibbsFreeEnergy)
 
   template <typename Space, typename RealIndexer, typename LambdaIndexer,
             typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
@@ -813,6 +813,7 @@ class EosBase {
 } // namespace eos_base
 } // namespace singularity
 
+#undef SG_EOS_VEC_FOR
 #undef SG_EOS_VEC_2IN_1OUT
 #undef SG_MEMBER_FUNC_NAME
 #endif
