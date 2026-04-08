@@ -1592,6 +1592,7 @@ EOSPAC::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Re
 
 } // namespace singularity
 
+#undef SG_EOSPAC_VEC_FOR
 #undef SG_EOSPAC_VEC_2IN_1OUT
 
 #endif // SINGULARITY_USE_EOSPAC
