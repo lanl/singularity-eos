@@ -179,10 +179,10 @@ inline void SetUpOutputScalingOption(EOS_INTEGER options[], EOS_REAL values[],
   }                                                                                      \
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>     \
   inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
-                   Real * /*scratch*/, const int num, LambdaIndexer &&lambdas) const {   \
+                   Real *scratch, const int num, LambdaIndexer &&lambdas) const {        \
     NAME(PortsOfCall::Exec::Host(), std::forward<ConstRealIndexer>(IN1),                 \
-         std::forward<ConstRealIndexer>(IN2), std::forward<RealIndexer>(OUT), num,       \
-         std::forward<LambdaIndexer>(lambdas));                                          \
+         std::forward<ConstRealIndexer>(IN2), std::forward<RealIndexer>(OUT), scratch,   \
+         num, std::forward<LambdaIndexer>(lambdas));                                     \
   }
 // Does fromdensitytemperature and fromdensityinternalenergy at once
 #define SG_EOSPAC_VEC_FOR(OUTNAME)                                                       \
