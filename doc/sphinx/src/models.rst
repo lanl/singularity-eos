@@ -1720,6 +1720,128 @@ constructor for ``SpinerEOSDependsRhoSie`` is identical.
   ``SpinerEOS`` model does **not** support the
   ``MeanAtomicProperties`` struct.
 
+Constructing SpinerEOS from a Generic EOS
+'''''''''''''''''''''''''''''''''''''''''''
+
+``SpinerEOSDependsRhoSie`` can also be constructed directly from any
+analytic or tabulated EOS object, allowing you to tabulate any equation
+of state into the high-performance Spiner format in memory. This is
+useful for converting analytic models (like ``IdealGas``, ``Gruneisen``,
+etc.) into tabulated form, or for creating custom resolution tables
+from existing EOS models.
+
+The constructor has the signature:
+
+.. code-block:: cpp
+
+  template <typename EOS>
+  SpinerEOSDependsRhoSie(const EOS &source_eos,
+                         const SpinerTableGridParams &params,
+                         bool reproducibility_mode = false);
+
+where ``source_eos`` is any EOS object that provides the standard
+singularity-eos interface (at minimum:
+``TemperatureFromDensityInternalEnergy``,
+``InternalEnergyFromDensityTemperature``,
+``PressureFromDensityTemperature``, and
+``PressureFromDensityInternalEnergy``). The ``params`` struct controls
+the grid construction and material properties.
+
+The ``SpinerTableGridParams`` struct contains grid parameters that match
+the options available in ``sesame2spiner``:
+
+.. code-block:: cpp
+
+  struct SpinerTableGridParams {
+    // Density bounds
+    Real rhoMin, rhoMax;
+    int numRho = -1;           // -1 means use numRhoPerDecade
+    int numRhoPerDecade = 350;
+
+    // Temperature bounds
+    Real TMin, TMax;
+    int numT = -1;             // -1 means use numTPerDecade
+    int numTPerDecade = 100;
+
+    // Specific internal energy bounds
+    Real sieMin, sieMax;
+    int numSie = -1;           // -1 means use numSiePerDecade
+    int numSiePerDecade = 100;
+
+    // Material properties
+    int matid = 0;
+    Real Abar = NaN;           // defaults from source EOS if available
+    Real Zbar = NaN;
+    Real rhoNormal = NaN;      // defaults to geometric mean of bounds
+
+    // Piecewise grid options (see Piecewise Spiner Grids section)
+    bool piecewiseRho = true;
+    bool piecewiseT = true;
+    bool piecewiseSie = true;
+    Real rhoCoarseFactorLo = 3.0;
+    Real rhoCoarseFactorHi = 5.0;
+    Real TCoarseFactor = 1.5;
+    Real sieCoarseFactor = 1.5;
+    Real rhoFineDiameterDecades = 1.5;
+    Real TSplitPoint = 1e4;
+
+    // Advanced options
+    Real shrinklRhoBounds = 0.0;
+    Real shrinklTBounds = 0.0;
+    Real shrinkleBounds = 0.0;
+    Real strictlyPositiveMinRho = 1e-8;
+    Real strictlyPositiveMinT = 1e-2;
+  };
+
+Defaults follow the ``sesame2spiner`` tool conventions. The grid
+construction automatically handles offset computation for negative
+values (especially important for specific internal energy).
+
+Example usage:
+
+.. code-block:: cpp
+
+  #include <singularity-eos/eos/eos.hpp>
+
+  // Create an analytic EOS
+  constexpr Real Cv = 2.0;
+  constexpr Real gm1 = 0.4;
+  IdealGas ideal(gm1, Cv);
+
+  // Set up grid parameters
+  SpinerTableGridParams params;
+  params.rhoMin = 1e-3;
+  params.rhoMax = 1e3;
+  params.TMin = 1e2;
+  params.TMax = 1e5;
+  params.sieMin = Cv * params.TMin;
+  params.sieMax = Cv * params.TMax;
+  params.matid = 1001;
+  params.numRhoPerDecade = 100;  // optional: finer resolution
+
+  // Construct SpinerEOS from the IdealGas
+  SpinerEOSDependsRhoSie spiner_eos(ideal, params);
+
+  // Use like any other SpinerEOS
+  Real P = spiner_eos.PressureFromDensityTemperature(rho, T);
+  Real T_out = spiner_eos.TemperatureFromDensityInternalEnergy(rho, sie);
+
+.. note::
+
+  This constructor only supports ``TableSplit::Total``. Electron-only
+  and ion-cold splits are not available for generic EOS, as these
+  require additional physics that generic EOS models may not provide.
+
+.. note::
+
+  If the source EOS provides ``BulkModulusFromDensityTemperature`` or
+  ``BulkModulusFromDensityInternalEnergy`` methods, they will be used
+  directly. Otherwise, bulk modulus is computed from finite differences
+  of pressure. The same applies to thermodynamic derivatives. Similarly,
+  if the source EOS provides ``Abar()`` and ``Zbar()`` methods and these
+  properties are not specified in ``params``, they will be extracted
+  from the source EOS.
+
 Additionally Spiner EOS models support mass fraction lookups of the form
 
 .. code-block:: cpp
