@@ -525,8 +525,9 @@ available member function.
 
 .. warning::
 
-  EOSPAC does **not** support non-host execution spaces. Calling them
-  will result in undefined behavior.
+  EOSPAC does **not** support selection of execution spaces. You will
+  get whatever execution space (likely host) that the EOSPAC backend
+  has been configured for.
 
 The Evaluate Methods
 ~~~~~~~~~~~~~~~~~~~~~~
