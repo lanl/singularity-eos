@@ -5,6 +5,7 @@
 ### Added (new features/APIs/variables/...)
 - [[PR623]](https://github.com/lanl/singularity-eos/pull/623) Expanded the sesame2spiner syntax to support multiple material definitions in one input file.
 - [[PR618]](https://github.com/lanl/singularity-eos/pull/618) Add PTDerivativesFromPreferred for computing derivatives of a mixture  in a cell
+- [[PR630]](https://github.com/lanl/singularity-eos/pull/630) Thread execution spaces through vector API.
 
 ### Fixed (Repair bugs, etc)
 
