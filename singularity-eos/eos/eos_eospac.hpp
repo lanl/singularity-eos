@@ -326,22 +326,22 @@ class EOSPAC : public EosBase<EOSPAC> {
   SG_EOSPAC_VEC_2IN_1OUT(InternalEnergyFromDensityTemperature, rhos, temperatures, sies)
   SG_EOSPAC_VEC_FOR(Pressure)
 
-  template <typename Space, typename RealIndexer, typename ConstRealIndexer,
-            typename LambdaIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename RealIndexer, typename ConstRealIndexer,
+      typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void MinInternalEnergyFromDensity([[maybe_unused]] const Space &s,
                                            ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            const int num, LambdaIndexer &&lambdas) const {
     PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
     EosBase<EOSPAC>::MinInternalEnergyFromDensity(s, rhos, sies, num, lambdas);
   }
-  template <typename Space, typename RealIndexer, typename ConstRealIndexer,
-            typename LambdaIndexer,
-            typename EnableIfNotRaw =
-                std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename RealIndexer, typename ConstRealIndexer,
+      typename LambdaIndexer,
+      typename EnableIfNotRaw =
+          std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void MinInternalEnergyFromDensity([[maybe_unused]] const Space &s,
                                            ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            Real * /*scratch*/, const int num,
@@ -349,22 +349,20 @@ class EOSPAC : public EosBase<EOSPAC> {
     PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
     EosBase<EOSPAC>::MinInternalEnergyFromDensity(s, rhos, sies, num, lambdas);
   }
-  template <
-      typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-      typename EnableIfIndexed =
-          std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename EnableIfIndexed =
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            const int num, LambdaIndexer &&lambdas) const {
     MinInternalEnergyFromDensity(
         PortsOfCall::Exec::Host(), std::forward<ConstRealIndexer>(rhos),
         std::forward<RealIndexer>(sies), num, std::forward<LambdaIndexer>(lambdas));
   }
-  template <
-      typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-      typename EnableIfNotRaw =
-          std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,
-      typename EnableIfIndexed =
-          std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename EnableIfNotRaw =
+                std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,
+            typename EnableIfIndexed =
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            Real * /*scratch*/, const int num,
                                            LambdaIndexer &&lambdas) const {
@@ -386,9 +384,9 @@ class EOSPAC : public EosBase<EOSPAC> {
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(AZbar_)
 
   // EOSPAC vector implementations
-  template <typename Space, typename LambdaIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void TemperatureFromDensityInternalEnergy(
       [[maybe_unused]] const Space &s, const Real *rhos, const Real *sies,
       Real *temperatures, Real *scratch, const int num, LambdaIndexer /*lambdas*/,
@@ -425,9 +423,9 @@ class EOSPAC : public EosBase<EOSPAC> {
         std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
   }
 
-  template <typename Space, typename LambdaIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void PressureFromDensityTemperature(const Space &space, const Real *rhos,
                                              const Real *temperatures, Real *pressures,
                                              Real *scratch, const int num,
@@ -466,9 +464,9 @@ class EOSPAC : public EosBase<EOSPAC> {
         std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
   }
 
-  template <typename Space, typename LambdaIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void EntropyFromDensityTemperature([[maybe_unused]] const Space &space,
                                             const Real *rhos, const Real *temperatures,
                                             Real *entropies, Real *scratch, const int num,
@@ -506,9 +504,9 @@ class EOSPAC : public EosBase<EOSPAC> {
         std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
   }
 
-  template <typename Space, typename LambdaIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void FillEos([[maybe_unused]] const Space &space, Real *rhos, Real *temps,
                       Real *energies, Real *presses, Real *cvs, Real *bmods,
                       Real *scratch, const int num, const unsigned long output,
@@ -625,9 +623,9 @@ class EOSPAC : public EosBase<EOSPAC> {
             scratch, num, output, std::forward<LambdaIndexer>(lambdas));
   }
 
-  template <typename Space, typename LambdaIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void InternalEnergyFromDensityTemperature(
       [[maybe_unused]] const Space &space, const Real *rhos, const Real *temperatures,
       Real *sies, Real *scratch, const int num, LambdaIndexer /*lambdas*/,
@@ -668,9 +666,9 @@ class EOSPAC : public EosBase<EOSPAC> {
         std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
   }
 
-  template <typename Space, typename LambdaIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void
   PressureFromDensityInternalEnergy([[maybe_unused]] const Space &space, const Real *rhos,
                                     const Real *sies, Real *pressures, Real *scratch,
@@ -709,9 +707,9 @@ class EOSPAC : public EosBase<EOSPAC> {
                                       std::forward<Transform>(transform));
   }
 
-  template <typename Space, typename LambdaIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void MinInternalEnergyFromDensity([[maybe_unused]] const Space &space,
                                            const Real *rhos, Real *sies, Real *scratch,
                                            const int num, LambdaIndexer /*lambdas*/,
@@ -745,9 +743,9 @@ class EOSPAC : public EosBase<EOSPAC> {
                                  std::forward<Transform>(transform));
   }
 
-  template <typename Space, typename LambdaIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void SpecificHeatFromDensityTemperature(
       [[maybe_unused]] const Space &space, const Real *rhos, const Real *temperatures,
       Real *cvs, Real *scratch, const int num, LambdaIndexer /*lambdas*/,
@@ -795,9 +793,9 @@ class EOSPAC : public EosBase<EOSPAC> {
                                        std::forward<Transform>(transform));
   }
 
-  template <typename Space, typename LambdaIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void SpecificHeatFromDensityInternalEnergy(
       [[maybe_unused]] const Space &space, const Real *rhos, const Real *sies, Real *cvs,
       Real *scratch, const int num, LambdaIndexer /*lambdas*/,
@@ -870,9 +868,9 @@ class EOSPAC : public EosBase<EOSPAC> {
         std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
   }
 
-  template <typename Space, typename LambdaIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void
   BulkModulusFromDensityTemperature([[maybe_unused]] const Space &space, const Real *rhos,
                                     const Real *temperatures, Real *bmods, Real *scratch,
@@ -952,9 +950,9 @@ class EOSPAC : public EosBase<EOSPAC> {
         std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
   }
 
-  template <typename Space, typename LambdaIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void BulkModulusFromDensityInternalEnergy(
       [[maybe_unused]] const Space &space, const Real *rhos, const Real *sies,
       Real *bmods, Real *scratch, const int num, LambdaIndexer /*lambdas*/,
@@ -1051,9 +1049,9 @@ class EOSPAC : public EosBase<EOSPAC> {
         std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
   }
 
-  template <typename Space, typename LambdaIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void GruneisenParamFromDensityTemperature(
       [[maybe_unused]] const Space &space, const Real *rhos, const Real *temperatures,
       Real *gm1s, Real *scratch, const int num, LambdaIndexer /*lambdas*/,
@@ -1108,9 +1106,9 @@ class EOSPAC : public EosBase<EOSPAC> {
         std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
   }
 
-  template <typename Space, typename LambdaIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void GruneisenParamFromDensityInternalEnergy(
       [[maybe_unused]] const Space &space, const Real *rhos, const Real *sies, Real *gm1s,
       Real *scratch, const int num, LambdaIndexer /*lambdas*/,

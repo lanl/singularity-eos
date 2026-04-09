@@ -546,9 +546,9 @@ class Variant {
 
   /// This is sort of what the SG_VARIANT_VEC would concretize too, though
   /// it has fewer arguments.
-  template <typename Space, typename RealIndexer, typename ConstRealIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename RealIndexer, typename ConstRealIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void MinInternalEnergyFromDensity(const Space &s, ConstRealIndexer &&rhos,
                                            RealIndexer &&sies, const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
@@ -556,10 +556,10 @@ class Variant {
                                         std::forward<RealIndexer>(sies), num, lambdas);
   }
 
-  template <typename Space, typename RealIndexer, typename ConstRealIndexer,
-            typename LambdaIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename RealIndexer, typename ConstRealIndexer,
+      typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void MinInternalEnergyFromDensity(const Space &s, ConstRealIndexer &&rhos,
                                            RealIndexer &&sies, const int num,
                                            LambdaIndexer &&lambdas) const {
@@ -572,9 +572,9 @@ class Variant {
         eos_);
   }
 
-  template <typename Space, typename RealIndexer, typename ConstRealIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename RealIndexer, typename ConstRealIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void MinInternalEnergyFromDensity(const Space &s, ConstRealIndexer &&rhos,
                                            RealIndexer &&sies, Real *scratch,
                                            const int num) const {
@@ -584,10 +584,10 @@ class Variant {
                                         lambdas);
   }
 
-  template <typename Space, typename RealIndexer, typename ConstRealIndexer,
-            typename LambdaIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename RealIndexer, typename ConstRealIndexer,
+      typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void MinInternalEnergyFromDensity(const Space &s, ConstRealIndexer &&rhos,
                                            RealIndexer &&sies, Real *scratch,
                                            const int num, LambdaIndexer &&lambdas) const {
@@ -599,10 +599,9 @@ class Variant {
         },
         eos_);
   }
-  template <
-      typename RealIndexer, typename ConstRealIndexer,
-      typename EnableIfIndexed =
-          std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+  template <typename RealIndexer, typename ConstRealIndexer,
+            typename EnableIfIndexed =
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            const int num) const {
     return MinInternalEnergyFromDensity(PortsOfCall::Exec::Device(),
@@ -610,10 +609,9 @@ class Variant {
                                         std::forward<RealIndexer>(sies), num);
   }
 
-  template <
-      typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-      typename EnableIfIndexed =
-          std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename EnableIfIndexed =
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            const int num, LambdaIndexer &&lambdas) const {
     return MinInternalEnergyFromDensity(
@@ -621,10 +619,9 @@ class Variant {
         std::forward<RealIndexer>(sies), num, std::forward<LambdaIndexer>(lambdas));
   }
 
-  template <
-      typename RealIndexer, typename ConstRealIndexer,
-      typename EnableIfIndexed =
-          std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+  template <typename RealIndexer, typename ConstRealIndexer,
+            typename EnableIfIndexed =
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            Real *scratch, const int num) const {
     return MinInternalEnergyFromDensity(PortsOfCall::Exec::Device(),
@@ -632,10 +629,9 @@ class Variant {
                                         std::forward<RealIndexer>(sies), scratch, num);
   }
 
-  template <
-      typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-      typename EnableIfIndexed =
-          std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename EnableIfIndexed =
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            Real *scratch, const int num,
                                            LambdaIndexer &&lambdas) const {
@@ -653,9 +649,9 @@ class Variant {
   SG_VARIANT_VEC_FOR(GruneisenParam)
   SG_VARIANT_VEC_2IN_1OUT(InternalEnergyFromDensityPressure, rhos, Ps, sies)
 
-  template <typename Space, typename RealIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename RealIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void FillEos(const Space &s, RealIndexer &&rhos, RealIndexer &&temps,
                       RealIndexer &&energies, RealIndexer &&presses, RealIndexer &&cvs,
                       RealIndexer &&bmods, const int num,
@@ -667,9 +663,9 @@ class Variant {
                    std::forward<RealIndexer>(bmods), num, output, lambdas);
   }
 
-  template <typename Space, typename RealIndexer, typename LambdaIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename RealIndexer, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void FillEos(const Space &s, RealIndexer &&rhos, RealIndexer &&temps,
                       RealIndexer &&energies, RealIndexer &&presses, RealIndexer &&cvs,
                       RealIndexer &&bmods, const int num, const unsigned long output,
@@ -686,9 +682,8 @@ class Variant {
         eos_);
   }
 
-  template <typename RealIndexer,
-            typename EnableIfIndexed =
-                std::enable_if_t<variadic_utils::has_int_index_v<RealIndexer>>>
+  template <typename RealIndexer, typename EnableIfIndexed = std::enable_if_t<
+                                      variadic_utils::has_int_index_v<RealIndexer>>>
   inline void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
                       RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
                       const int num, const unsigned long output) const {

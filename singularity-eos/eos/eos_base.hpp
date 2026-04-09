@@ -425,10 +425,10 @@ class EosBase {
 
   /// This is sort of what the SG_EOS_VEC would concretize too, though
   /// it has fewer arguments.
-  template <typename Space, typename RealIndexer, typename ConstRealIndexer,
-            typename LambdaIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename RealIndexer, typename ConstRealIndexer,
+      typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void MinInternalEnergyFromDensity(const Space &s, ConstRealIndexer &&rhos,
                                            RealIndexer &&sies, const int num,
                                            LambdaIndexer &&lambdas) const {
@@ -440,12 +440,12 @@ class EosBase {
           sies[i] = copy.MinInternalEnergyFromDensity(rhos[i], lambdas[i]);
         });
   }
-  template <typename Space, typename RealIndexer, typename ConstRealIndexer,
-            typename LambdaIndexer,
-            typename EnableIfNotRaw =
-                std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename RealIndexer, typename ConstRealIndexer,
+      typename LambdaIndexer,
+      typename EnableIfNotRaw =
+          std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void MinInternalEnergyFromDensity(const Space &s, ConstRealIndexer &&rhos,
                                            RealIndexer &&sies, Real * /*scratch*/,
                                            const int num, LambdaIndexer &&lambdas) const {
@@ -453,9 +453,9 @@ class EosBase {
                                  std::forward<RealIndexer>(sies), num,
                                  std::forward<LambdaIndexer>(lambdas));
   }
-  template <typename Space, typename LambdaIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void MinInternalEnergyFromDensity(const Space &s, const Real *rhos, Real *sies,
                                            Real * /*scratch*/, const int num,
                                            LambdaIndexer &&lambdas,
@@ -463,22 +463,20 @@ class EosBase {
     MinInternalEnergyFromDensity(s, rhos, sies, num,
                                  std::forward<LambdaIndexer>(lambdas));
   }
-  template <
-      typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-      typename EnableIfIndexed =
-          std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename EnableIfIndexed =
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            const int num, LambdaIndexer &&lambdas) const {
     MinInternalEnergyFromDensity(
         PortsOfCall::Exec::Device(), std::forward<ConstRealIndexer>(rhos),
         std::forward<RealIndexer>(sies), num, std::forward<LambdaIndexer>(lambdas));
   }
-  template <
-      typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-      typename EnableIfNotRaw =
-          std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,
-      typename EnableIfIndexed =
-          std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename EnableIfNotRaw =
+                std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,
+            typename EnableIfIndexed =
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            Real * /*scratch*/, const int num,
                                            LambdaIndexer &&lambdas) const {
@@ -502,9 +500,9 @@ class EosBase {
   SG_EOS_VEC_FOR(GruneisenParam)
   SG_EOS_VEC_FOR(GibbsFreeEnergy)
 
-  template <typename Space, typename RealIndexer, typename LambdaIndexer,
-            typename EnableIfSpace =
-                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  template <
+      typename Space, typename RealIndexer, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void FillEos(const Space &s, RealIndexer &&rhos, RealIndexer &&temps,
                       RealIndexer &&energies, RealIndexer &&presses, RealIndexer &&cvs,
                       RealIndexer &&bmods, const int num, const unsigned long output,
