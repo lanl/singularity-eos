@@ -475,6 +475,23 @@ The vector API is templated to accept accessors. We do note, however,
 that vectorization may suffer if your underlying data structure is not
 contiguous in memory.
 
+Execution spaces for the vector API
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``singularity-eos`` borrows from the `Kokkos`_ notion of an *execution
+space*. Each vector API call accepts an execution space as an optional
+first argument, telling ``singularity-eos`` where to launch work,
+either on CPU or GPU (for example). These are implemented via
+`ports-of-call`_. By default, the two execution spaces available are
+``PortsOfCall::Exec::Host`` and ``PortsOfCall::Exec::Device``. If you
+build with the serial backend, these are equivalent. If you build with
+``Kokkos`` enabled, you may also pass in any valid ``Kokkos``
+execution space.
+
+.. _Kokkos: https://kokkos.org/kokkos-core-wiki/
+
+.. _ports-of-call: https://lanl.github.io/ports-of-call/main/index.html
+
 .. _eospac_vector:
 
 EOSPAC Vector Functions
@@ -505,6 +522,11 @@ available member function.
    // call EOSPAC eos vector function with scratch buffer
    eos.TemperatureFromDensityInternalEnergy(density.data(), energy.data(), temperature.data(),
                                             scratch.data(), density.size());
+
+.. warning::
+
+  EOSPAC does **not** support non-host execution spaces. Calling them
+  will result in undefined behavior.
 
 The Evaluate Methods
 ~~~~~~~~~~~~~~~~~~~~~~
