@@ -21,6 +21,10 @@
 
 #include <singularity-eos/eos/eos_base.hpp>
 
+/* TODO(JMM):
+   These macros shrink the amount of boiler plate overloads necessary
+   for modifiers.
+ */
 #define SG_MODIFIER_DEVICE_WRAP_2IN_1OUT(NAME)                                           \
   template <typename LambdaIndexer>                                                      \
   inline void NAME(const Real *in1, const Real *in2, Real *out, Real *scratch,           \
