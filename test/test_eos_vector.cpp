@@ -33,7 +33,7 @@ using EOS = singularity::Variant<IdealGas>;
 
 namespace {
 template <typename EosType>
-void CheckHostExecVectorApi(const EOS &eos) {
+void CheckHostExecVectorApi(const EosType &eos) {
   constexpr Real Cv = 5.0;
   constexpr Real gm1 = 0.4;
   constexpr int num = 3;
