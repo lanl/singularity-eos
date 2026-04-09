@@ -12,6 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+// This file was created in part with generative AI
+
 #ifndef _SINGULARITY_EOS_EOS_FLOORED_ENERGY_
 #define _SINGULARITY_EOS_EOS_FLOORED_ENERGY_
 
@@ -150,29 +152,58 @@ class FlooredEnergy : public EosBase<FlooredEnergy<T>> {
   }
 
   // vector implementations
-  inline void choose_max_sie(const Real *sies, Real *sie_use, const int num) const {
+  template <typename Space, typename EnableIfSpace =
+                                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void choose_max_sie(const Space &s, const Real *sies, Real *sie_use,
+                             const int num) const {
     // This code makes the assumption that `sie_use` is first populated with the
     // apprioriate minimum values
     static auto const name = singularity::mfuncname::member_func_name(
         typeid(FlooredEnergy<T>).name(), __func__);
     static auto const cname = name.c_str();
     portableFor(
-        cname, 0, num,
+        cname, s, 0, num,
         PORTABLE_LAMBDA(const int i) { sie_use[i] = std::max(sies[i], sie_use[i]); });
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void
+  TemperatureFromDensityInternalEnergy(const Space &s, const Real *rhos, const Real *sies,
+                                       Real *temperatures, Real *scratch, const int num,
+                                       LambdaIndexer &&lambdas,
+                                       Transform &&transform = Transform()) const {
+    Real *sie_used = scratch;
+    // First populate sies with minimum energies
+    t_.MinInternalEnergyFromDensity(s, rhos, sie_used, num, lambdas);
+    // Chose the maximum between the input and the minimum energy
+    choose_max_sie(s, sies, sie_used, num);
+    t_.TemperatureFromDensityInternalEnergy(
+        s, rhos, sie_used, temperatures, &scratch[num], num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
   inline void TemperatureFromDensityInternalEnergy(
       const Real *rhos, const Real *sies, Real *temperatures, Real *scratch,
       const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
-    Real *sie_used = scratch;
-    // First populate sies with minimum energies
-    t_.MinInternalEnergyFromDensity(rhos, sie_used, num, lambdas);
-    // Chose the maximum between the input and the minimum energy
-    choose_max_sie(sies, sie_used, num);
-    t_.TemperatureFromDensityInternalEnergy(rhos, sie_used, temperatures, &scratch[num],
-                                            num, std::forward<LambdaIndexer>(lambdas),
-                                            std::forward<Transform>(transform));
+    TemperatureFromDensityInternalEnergy(
+        PortsOfCall::Exec::Device(), rhos, sies, temperatures, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void PressureFromDensityTemperature(const Space &s, const Real *rhos,
+                                             const Real *temperatures, Real *pressures,
+                                             Real *scratch, const int num,
+                                             LambdaIndexer &&lambdas,
+                                             Transform &&transform = Transform()) const {
+    t_.PressureFromDensityTemperature(s, rhos, temperatures, pressures, scratch, num,
+                                      std::forward<LambdaIndexer>(lambdas),
+                                      std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
@@ -180,9 +211,25 @@ class FlooredEnergy : public EosBase<FlooredEnergy<T>> {
                                              Real *pressures, Real *scratch,
                                              const int num, LambdaIndexer &&lambdas,
                                              Transform &&transform = Transform()) const {
-    t_.PressureFromDensityTemperature(rhos, temperatures, pressures, scratch, num,
-                                      std::forward<LambdaIndexer>(lambdas),
-                                      std::forward<Transform>(transform));
+    PressureFromDensityTemperature(
+        PortsOfCall::Exec::Device(), rhos, temperatures, pressures, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void PressureFromDensityInternalEnergy(
+      const Space &s, const Real *rhos, const Real *sies, Real *pressures, Real *scratch,
+      const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    Real *sie_used = scratch;
+    // First populate sies with minimum energies
+    t_.MinInternalEnergyFromDensity(s, rhos, sie_used, num, lambdas);
+    // Chose the maximum between the input and the minimum energy
+    choose_max_sie(s, sies, sie_used, num);
+    t_.PressureFromDensityInternalEnergy(s, rhos, sie_used, pressures, &scratch[num], num,
+                                         std::forward<LambdaIndexer>(lambdas),
+                                         std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
@@ -190,67 +237,134 @@ class FlooredEnergy : public EosBase<FlooredEnergy<T>> {
   PressureFromDensityInternalEnergy(const Real *rhos, const Real *sies, Real *pressures,
                                     Real *scratch, const int num, LambdaIndexer &&lambdas,
                                     Transform &&transform = Transform()) const {
-    Real *sie_used = scratch;
-    // First populate sies with minimum energies
-    t_.MinInternalEnergyFromDensity(rhos, sie_used, num, lambdas);
-    // Chose the maximum between the input and the minimum energy
-    choose_max_sie(sies, sie_used, num);
-    t_.PressureFromDensityInternalEnergy(rhos, sie_used, pressures, &scratch[num], num,
-                                         std::forward<LambdaIndexer>(lambdas),
-                                         std::forward<Transform>(transform));
+    PressureFromDensityInternalEnergy(PortsOfCall::Exec::Device(), rhos, sies, pressures,
+                                      scratch, num, std::forward<LambdaIndexer>(lambdas),
+                                      std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void MinInternalEnergyFromDensity(const Space &s, const Real *rhos, Real *sies,
+                                           Real *scratch, const int num,
+                                           LambdaIndexer &&lambdas,
+                                           Transform &&transform = Transform()) const {
+    t_.MinInternalEnergyFromDensity(s, rhos, sies, &scratch[num], num,
+                                    std::forward<LambdaIndexer>(lambdas),
+                                    std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
   inline void MinInternalEnergyFromDensity(const Real *rhos, Real *sies, Real *scratch,
                                            const int num, LambdaIndexer &&lambdas,
                                            Transform &&transform = Transform()) const {
-    t_.MinInternalEnergyFromDensity(rhos, sies, &scratch[num], num,
-                                    std::forward<LambdaIndexer>(lambdas),
-                                    std::forward<Transform>(transform));
+    MinInternalEnergyFromDensity(PortsOfCall::Exec::Device(), rhos, sies, scratch, num,
+                                 std::forward<LambdaIndexer>(lambdas),
+                                 std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void
+  SpecificHeatFromDensityTemperature(const Space &s, const Real *rhos,
+                                     const Real *temperatures, Real *cvs, Real *scratch,
+                                     const int num, LambdaIndexer &&lambdas,
+                                     Transform &&transform = Transform()) const {
+    t_.SpecificHeatFromDensityTemperature(s, rhos, temperatures, cvs, scratch, num,
+                                          std::forward<LambdaIndexer>(lambdas),
+                                          std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
   inline void SpecificHeatFromDensityTemperature(
       const Real *rhos, const Real *temperatures, Real *cvs, Real *scratch, const int num,
       LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
-    t_.SpecificHeatFromDensityTemperature(rhos, temperatures, cvs, scratch, num,
-                                          std::forward<LambdaIndexer>(lambdas),
-                                          std::forward<Transform>(transform));
+    SpecificHeatFromDensityTemperature(
+        PortsOfCall::Exec::Device(), rhos, temperatures, cvs, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void SpecificHeatFromDensityInternalEnergy(
+      const Space &s, const Real *rhos, const Real *sies, Real *cvs, Real *scratch,
+      const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    Real *sie_used = scratch;
+    // First populate sies with minimum energies
+    t_.MinInternalEnergyFromDensity(s, rhos, sie_used, num, lambdas);
+    // Chose the maximum between the input and the minimum energy
+    choose_max_sie(s, sies, sie_used, num);
+    t_.SpecificHeatFromDensityInternalEnergy(s, rhos, sie_used, cvs, &scratch[num], num,
+                                             std::forward<LambdaIndexer>(lambdas),
+                                             std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
   inline void SpecificHeatFromDensityInternalEnergy(
       const Real *rhos, const Real *sies, Real *cvs, Real *scratch, const int num,
       LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
-    Real *sie_used = scratch;
-    // First populate sies with minimum energies
-    t_.MinInternalEnergyFromDensity(rhos, sie_used, num, lambdas);
-    // Chose the maximum between the input and the minimum energy
-    choose_max_sie(sies, sie_used, num);
-    t_.SpecificHeatFromDensityInternalEnergy(rhos, sie_used, cvs, &scratch[num], num,
-                                             std::forward<LambdaIndexer>(lambdas),
-                                             std::forward<Transform>(transform));
+    SpecificHeatFromDensityInternalEnergy(
+        PortsOfCall::Exec::Device(), rhos, sies, cvs, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void
+  BulkModulusFromDensityTemperature(const Space &s, const Real *rhos,
+                                    const Real *temperatures, Real *bmods, Real *scratch,
+                                    const int num, LambdaIndexer &&lambdas,
+                                    Transform &&transform = Transform()) const {
+    t_.BulkModulusFromDensityTemperature(s, rhos, temperatures, bmods, scratch, num,
+                                         std::forward<LambdaIndexer>(lambdas),
+                                         std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
   inline void BulkModulusFromDensityTemperature(
       const Real *rhos, const Real *temperatures, Real *bmods, Real *scratch,
       const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
-    t_.BulkModulusFromDensityTemperature(rhos, temperatures, bmods, scratch, num,
-                                         std::forward<LambdaIndexer>(lambdas),
-                                         std::forward<Transform>(transform));
+    BulkModulusFromDensityTemperature(
+        PortsOfCall::Exec::Device(), rhos, temperatures, bmods, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void BulkModulusFromDensityInternalEnergy(
+      const Space &s, const Real *rhos, const Real *sies, Real *bmods, Real *scratch,
+      const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    Real *sie_used = scratch;
+    // First populate sies with minimum energies
+    t_.MinInternalEnergyFromDensity(s, rhos, sie_used, num, lambdas);
+    // Chose the maximum between the input and the minimum energy
+    choose_max_sie(s, sies, sie_used, num);
+    t_.BulkModulusFromDensityInternalEnergy(s, rhos, sie_used, bmods, &scratch[num], num,
+                                            std::forward<LambdaIndexer>(lambdas),
+                                            std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
   inline void BulkModulusFromDensityInternalEnergy(
       const Real *rhos, const Real *sies, Real *bmods, Real *scratch, const int num,
       LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
-    Real *sie_used = scratch;
-    // First populate sies with minimum energies
-    t_.MinInternalEnergyFromDensity(rhos, sie_used, num, lambdas);
-    // Chose the maximum between the input and the minimum energy
-    choose_max_sie(sies, sie_used, num);
-    t_.BulkModulusFromDensityInternalEnergy(rhos, sie_used, bmods, &scratch[num], num,
+    BulkModulusFromDensityInternalEnergy(
+        PortsOfCall::Exec::Device(), rhos, sies, bmods, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void GruneisenParamFromDensityTemperature(
+      const Space &s, const Real *rhos, const Real *temperatures, Real *gm1s,
+      Real *scratch, const int num, LambdaIndexer &&lambdas,
+      Transform &&transform = Transform()) const {
+    t_.GruneisenParamFromDensityTemperature(s, rhos, temperatures, gm1s, scratch, num,
                                             std::forward<LambdaIndexer>(lambdas),
                                             std::forward<Transform>(transform));
   }
@@ -259,32 +373,68 @@ class FlooredEnergy : public EosBase<FlooredEnergy<T>> {
   inline void GruneisenParamFromDensityTemperature(
       const Real *rhos, const Real *temperatures, Real *gm1s, Real *scratch,
       const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
-    t_.GruneisenParamFromDensityTemperature(rhos, temperatures, gm1s, scratch, num,
-                                            std::forward<LambdaIndexer>(lambdas),
-                                            std::forward<Transform>(transform));
+    GruneisenParamFromDensityTemperature(
+        PortsOfCall::Exec::Device(), rhos, temperatures, gm1s, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void GruneisenParamFromDensityInternalEnergy(
+      const Space &s, const Real *rhos, const Real *sies, Real *gm1s, Real *scratch,
+      const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    Real *sie_used = scratch;
+    // First populate sies with minimum energies
+    t_.MinInternalEnergyFromDensity(s, rhos, sie_used, num, lambdas);
+    // Chose the maximum between the input and the minimum energy
+    choose_max_sie(s, sies, sie_used, num);
+    t_.GruneisenParamFromDensityInternalEnergy(s, rhos, sie_used, gm1s, &scratch[num],
+                                               num, std::forward<LambdaIndexer>(lambdas),
+                                               std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
   inline void GruneisenParamFromDensityInternalEnergy(
       const Real *rhos, const Real *sies, Real *gm1s, Real *scratch, const int num,
       LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
-    Real *sie_used = scratch;
-    // First populate sies with minimum energies
-    t_.MinInternalEnergyFromDensity(rhos, sie_used, num, lambdas);
-    // Chose the maximum between the input and the minimum energy
-    choose_max_sie(sies, sie_used, num);
-    t_.GruneisenParamFromDensityInternalEnergy(rhos, sie_used, gm1s, &scratch[num], num,
-                                               std::forward<LambdaIndexer>(lambdas),
-                                               std::forward<Transform>(transform));
+    GruneisenParamFromDensityInternalEnergy(
+        PortsOfCall::Exec::Device(), rhos, sies, gm1s, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void InternalEnergyFromDensityTemperature(
+      const Space &s, const Real *rhos, const Real *temperatures, Real *sies,
+      Real *scratch, const int num, LambdaIndexer &&lambdas,
+      Transform &&transform = Transform()) const {
+    t_.InternalEnergyFromDensityTemperature(s, rhos, temperatures, sies, scratch, num,
+                                            std::forward<LambdaIndexer>(lambdas),
+                                            std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
   inline void InternalEnergyFromDensityTemperature(
       const Real *rhos, const Real *temperatures, Real *sies, Real *scratch,
       const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
-    t_.InternalEnergyFromDensityTemperature(rhos, temperatures, sies, scratch, num,
-                                            std::forward<LambdaIndexer>(lambdas),
-                                            std::forward<Transform>(transform));
+    InternalEnergyFromDensityTemperature(
+        PortsOfCall::Exec::Device(), rhos, temperatures, sies, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void EntropyFromDensityTemperature(const Space &s, const Real *rhos,
+                                            const Real *temperatures, Real *entropies,
+                                            Real *scratch, const int num,
+                                            LambdaIndexer &&lambdas,
+                                            Transform &&transform = Transform()) const {
+    t_.EntropyFromDensityTemperature(s, rhos, temperatures, entropies, scratch, num,
+                                     std::forward<LambdaIndexer>(lambdas),
+                                     std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
@@ -292,9 +442,25 @@ class FlooredEnergy : public EosBase<FlooredEnergy<T>> {
                                             Real *entropies, Real *scratch, const int num,
                                             LambdaIndexer &&lambdas,
                                             Transform &&transform = Transform()) const {
-    t_.EntropyFromDensityTemperature(rhos, temperatures, entropies, scratch, num,
-                                     std::forward<LambdaIndexer>(lambdas),
-                                     std::forward<Transform>(transform));
+    EntropyFromDensityTemperature(
+        PortsOfCall::Exec::Device(), rhos, temperatures, entropies, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void EntropyFromDensityInternalEnergy(
+      const Space &s, const Real *rhos, const Real *sies, Real *entropies, Real *scratch,
+      const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    Real *sie_used = scratch;
+    // First populate sies with minimum energies
+    t_.MinInternalEnergyFromDensity(s, rhos, sie_used, num, lambdas);
+    // Chose the maximum between the input and the minimum energy
+    choose_max_sie(s, sies, sie_used, num);
+    t_.EntropyFromDensityInternalEnergy(s, rhos, sie_used, entropies, &scratch[num], num,
+                                        std::forward<LambdaIndexer>(lambdas),
+                                        std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
@@ -302,14 +468,9 @@ class FlooredEnergy : public EosBase<FlooredEnergy<T>> {
   EntropyFromDensityInternalEnergy(const Real *rhos, const Real *sies, Real *entropies,
                                    Real *scratch, const int num, LambdaIndexer &&lambdas,
                                    Transform &&transform = Transform()) const {
-    Real *sie_used = scratch;
-    // First populate sies with minimum energies
-    t_.MinInternalEnergyFromDensity(rhos, sie_used, num, lambdas);
-    // Chose the maximum between the input and the minimum energy
-    choose_max_sie(sies, sie_used, num);
-    t_.EntropyFromDensityInternalEnergy(rhos, sies, entropies, &scratch[num], num,
-                                        std::forward<LambdaIndexer>(lambdas),
-                                        std::forward<Transform>(transform));
+    EntropyFromDensityInternalEnergy(PortsOfCall::Exec::Device(), rhos, sies, entropies,
+                                     scratch, num, std::forward<LambdaIndexer>(lambdas),
+                                     std::forward<Transform>(transform));
   }
 
   constexpr static inline int nlambda() noexcept { return T::nlambda(); }

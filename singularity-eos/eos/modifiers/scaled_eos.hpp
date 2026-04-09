@@ -12,6 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+// This file was created in part with generative AI
+
 #ifndef _SINGULARITY_EOS_EOS_SCALED_EOS_
 #define _SINGULARITY_EOS_EOS_SCALED_EOS_
 
@@ -187,15 +189,42 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   }
 
   // vector implementations
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void
+  TemperatureFromDensityInternalEnergy(const Space &s, const Real *rhos, const Real *sies,
+                                       Real *temperatures, Real *scratch, const int num,
+                                       LambdaIndexer &&lambdas,
+                                       Transform &&transform = Transform()) const {
+    transform.x.apply(scale_);
+    transform.y.apply(inv_scale_);
+    t_.TemperatureFromDensityInternalEnergy(s, rhos, sies, temperatures, scratch, num,
+                                            std::forward<LambdaIndexer>(lambdas),
+                                            std::forward<Transform>(transform));
+  }
+
   template <typename LambdaIndexer>
   inline void TemperatureFromDensityInternalEnergy(
       const Real *rhos, const Real *sies, Real *temperatures, Real *scratch,
       const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    TemperatureFromDensityInternalEnergy(
+        PortsOfCall::Exec::Device(), rhos, sies, temperatures, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void PressureFromDensityTemperature(const Space &s, const Real *rhos,
+                                             const Real *temperatures, Real *pressures,
+                                             Real *scratch, const int num,
+                                             LambdaIndexer &&lambdas,
+                                             Transform &&transform = Transform()) const {
     transform.x.apply(scale_);
-    transform.y.apply(inv_scale_);
-    t_.TemperatureFromDensityInternalEnergy(rhos, sies, temperatures, scratch, num,
-                                            std::forward<LambdaIndexer>(lambdas),
-                                            std::forward<Transform>(transform));
+    t_.PressureFromDensityTemperature(s, rhos, temperatures, pressures, scratch, num,
+                                      std::forward<LambdaIndexer>(lambdas),
+                                      std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
@@ -203,10 +232,22 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
                                              Real *pressures, Real *scratch,
                                              const int num, LambdaIndexer &&lambdas,
                                              Transform &&transform = Transform()) const {
+    PressureFromDensityTemperature(
+        PortsOfCall::Exec::Device(), rhos, temperatures, pressures, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void PressureFromDensityInternalEnergy(
+      const Space &s, const Real *rhos, const Real *sies, Real *pressures, Real *scratch,
+      const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
     transform.x.apply(scale_);
-    t_.PressureFromDensityTemperature(rhos, temperatures, pressures, scratch, num,
-                                      std::forward<LambdaIndexer>(lambdas),
-                                      std::forward<Transform>(transform));
+    transform.y.apply(inv_scale_);
+    t_.PressureFromDensityInternalEnergy(s, rhos, sies, pressures, scratch, num,
+                                         std::forward<LambdaIndexer>(lambdas),
+                                         std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
@@ -214,61 +255,132 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   PressureFromDensityInternalEnergy(const Real *rhos, const Real *sies, Real *pressures,
                                     Real *scratch, const int num, LambdaIndexer &&lambdas,
                                     Transform &&transform = Transform()) const {
+    PressureFromDensityInternalEnergy(PortsOfCall::Exec::Device(), rhos, sies, pressures,
+                                      scratch, num, std::forward<LambdaIndexer>(lambdas),
+                                      std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void MinInternalEnergyFromDensity(const Space &s, const Real *rhos, Real *sies,
+                                           Real *scratch, const int num,
+                                           LambdaIndexer &&lambdas,
+                                           Transform &&transform = Transform()) const {
     transform.x.apply(scale_);
-    transform.y.apply(inv_scale_);
-    t_.PressureFromDensityInternalEnergy(rhos, sies, pressures, scratch, num,
-                                         std::forward<LambdaIndexer>(lambdas),
-                                         std::forward<Transform>(transform));
+    t_.MinInternalEnergyFromDensity(s, rhos, sies, scratch, num,
+                                    std::forward<LambdaIndexer>(lambdas),
+                                    std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
   inline void MinInternalEnergyFromDensity(const Real *rhos, Real *sies, Real *scratch,
                                            const int num, LambdaIndexer &&lambdas,
                                            Transform &&transform = Transform()) const {
+    MinInternalEnergyFromDensity(PortsOfCall::Exec::Device(), rhos, sies, scratch, num,
+                                 std::forward<LambdaIndexer>(lambdas),
+                                 std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void
+  SpecificHeatFromDensityTemperature(const Space &s, const Real *rhos,
+                                     const Real *temperatures, Real *cvs, Real *scratch,
+                                     const int num, LambdaIndexer &&lambdas,
+                                     Transform &&transform = Transform()) const {
     transform.x.apply(scale_);
-    t_.MinInternalEnergyFromDensity(rhos, sies, scratch, num,
-                                    std::forward<LambdaIndexer>(lambdas),
-                                    std::forward<Transform>(transform));
+    t_.SpecificHeatFromDensityTemperature(s, rhos, temperatures, cvs, scratch, num,
+                                          std::forward<LambdaIndexer>(lambdas),
+                                          std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
   inline void SpecificHeatFromDensityTemperature(
       const Real *rhos, const Real *temperatures, Real *cvs, Real *scratch, const int num,
       LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    SpecificHeatFromDensityTemperature(
+        PortsOfCall::Exec::Device(), rhos, temperatures, cvs, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void SpecificHeatFromDensityInternalEnergy(
+      const Space &s, const Real *rhos, const Real *sies, Real *cvs, Real *scratch,
+      const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
     transform.x.apply(scale_);
-    t_.SpecificHeatFromDensityTemperature(rhos, temperatures, cvs, scratch, num,
-                                          std::forward<LambdaIndexer>(lambdas),
-                                          std::forward<Transform>(transform));
+    transform.y.apply(inv_scale_);
+    t_.SpecificHeatFromDensityInternalEnergy(s, rhos, sies, cvs, scratch, num,
+                                             std::forward<LambdaIndexer>(lambdas),
+                                             std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
   inline void SpecificHeatFromDensityInternalEnergy(
       const Real *rhos, const Real *sies, Real *cvs, Real *scratch, const int num,
       LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    SpecificHeatFromDensityInternalEnergy(
+        PortsOfCall::Exec::Device(), rhos, sies, cvs, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void
+  BulkModulusFromDensityTemperature(const Space &s, const Real *rhos,
+                                    const Real *temperatures, Real *bmods, Real *scratch,
+                                    const int num, LambdaIndexer &&lambdas,
+                                    Transform &&transform = Transform()) const {
     transform.x.apply(scale_);
-    transform.y.apply(inv_scale_);
-    t_.SpecificHeatFromDensityInternalEnergy(rhos, sies, cvs, scratch, num,
-                                             std::forward<LambdaIndexer>(lambdas),
-                                             std::forward<Transform>(transform));
+    t_.BulkModulusFromDensityTemperature(s, rhos, temperatures, bmods, scratch, num,
+                                         std::forward<LambdaIndexer>(lambdas),
+                                         std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
   inline void BulkModulusFromDensityTemperature(
       const Real *rhos, const Real *temperatures, Real *bmods, Real *scratch,
       const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    BulkModulusFromDensityTemperature(
+        PortsOfCall::Exec::Device(), rhos, temperatures, bmods, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void BulkModulusFromDensityInternalEnergy(
+      const Space &s, const Real *rhos, const Real *sies, Real *bmods, Real *scratch,
+      const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
     transform.x.apply(scale_);
-    t_.BulkModulusFromDensityTemperature(rhos, temperatures, bmods, scratch, num,
-                                         std::forward<LambdaIndexer>(lambdas),
-                                         std::forward<Transform>(transform));
+    transform.y.apply(inv_scale_);
+    t_.BulkModulusFromDensityInternalEnergy(s, rhos, sies, bmods, scratch, num,
+                                            std::forward<LambdaIndexer>(lambdas),
+                                            std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
   inline void BulkModulusFromDensityInternalEnergy(
       const Real *rhos, const Real *sies, Real *bmods, Real *scratch, const int num,
       LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    BulkModulusFromDensityInternalEnergy(
+        PortsOfCall::Exec::Device(), rhos, sies, bmods, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void GruneisenParamFromDensityTemperature(
+      const Space &s, const Real *rhos, const Real *temperatures, Real *gm1s,
+      Real *scratch, const int num, LambdaIndexer &&lambdas,
+      Transform &&transform = Transform()) const {
     transform.x.apply(scale_);
-    transform.y.apply(inv_scale_);
-    t_.BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, scratch, num,
+    t_.GruneisenParamFromDensityTemperature(s, rhos, temperatures, gm1s, scratch, num,
                                             std::forward<LambdaIndexer>(lambdas),
                                             std::forward<Transform>(transform));
   }
@@ -277,31 +389,68 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   inline void GruneisenParamFromDensityTemperature(
       const Real *rhos, const Real *temperatures, Real *gm1s, Real *scratch,
       const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    GruneisenParamFromDensityTemperature(
+        PortsOfCall::Exec::Device(), rhos, temperatures, gm1s, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void GruneisenParamFromDensityInternalEnergy(
+      const Space &s, const Real *rhos, const Real *sies, Real *gm1s, Real *scratch,
+      const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
     transform.x.apply(scale_);
-    t_.GruneisenParamFromDensityTemperature(rhos, temperatures, gm1s, scratch, num,
-                                            std::forward<LambdaIndexer>(lambdas),
-                                            std::forward<Transform>(transform));
+    transform.y.apply(inv_scale_);
+    t_.GruneisenParamFromDensityInternalEnergy(s, rhos, sies, gm1s, scratch, num,
+                                               std::forward<LambdaIndexer>(lambdas),
+                                               std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
   inline void GruneisenParamFromDensityInternalEnergy(
       const Real *rhos, const Real *sies, Real *gm1s, Real *scratch, const int num,
       LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
-    transform.x.apply(scale_);
-    transform.y.apply(inv_scale_);
-    t_.GruneisenParamFromDensityInternalEnergy(rhos, sies, gm1s, scratch, num,
-                                               std::forward<LambdaIndexer>(lambdas),
-                                               std::forward<Transform>(transform));
+    GruneisenParamFromDensityInternalEnergy(
+        PortsOfCall::Exec::Device(), rhos, sies, gm1s, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void InternalEnergyFromDensityTemperature(
+      const Space &s, const Real *rhos, const Real *temperatures, Real *sies,
+      Real *scratch, const int num, LambdaIndexer &&lambdas,
+      Transform &&transform = Transform()) const {
+    transform.f.apply(scale_);
+    t_.InternalEnergyFromDensityTemperature(s, rhos, temperatures, sies, scratch, num,
+                                            std::forward<LambdaIndexer>(lambdas),
+                                            std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
   inline void InternalEnergyFromDensityTemperature(
       const Real *rhos, const Real *temperatures, Real *sies, Real *scratch,
       const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    InternalEnergyFromDensityTemperature(
+        PortsOfCall::Exec::Device(), rhos, temperatures, sies, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void EntropyFromDensityTemperature(const Space &s, const Real *rhos,
+                                            const Real *temperatures, Real *entropies,
+                                            Real *scratch, const int num,
+                                            LambdaIndexer &&lambdas,
+                                            Transform &&transform = Transform()) const {
+    transform.x.apply(scale_);
     transform.f.apply(scale_);
-    t_.InternalEnergyFromDensityTemperature(rhos, temperatures, sies, scratch, num,
-                                            std::forward<LambdaIndexer>(lambdas),
-                                            std::forward<Transform>(transform));
+    t_.EntropyFromDensityTemperature(s, rhos, temperatures, entropies, scratch, num,
+                                     std::forward<LambdaIndexer>(lambdas),
+                                     std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
@@ -309,11 +458,23 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
                                             Real *entropies, Real *scratch, const int num,
                                             LambdaIndexer &&lambdas,
                                             Transform &&transform = Transform()) const {
+    EntropyFromDensityTemperature(
+        PortsOfCall::Exec::Device(), rhos, temperatures, entropies, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void EntropyFromDensityInternalEnergy(
+      const Space &s, const Real *rhos, const Real *sies, Real *entropies, Real *scratch,
+      const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
     transform.x.apply(scale_);
+    transform.y.apply(inv_scale_);
     transform.f.apply(scale_);
-    t_.EntropyFromDensityTemperature(rhos, temperatures, entropies, scratch, num,
-                                     std::forward<LambdaIndexer>(lambdas),
-                                     std::forward<Transform>(transform));
+    t_.EntropyFromDensityInternalEnergy(s, rhos, sies, entropies, scratch, num,
+                                        std::forward<LambdaIndexer>(lambdas),
+                                        std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
@@ -321,12 +482,9 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   EntropyFromDensityInternalEnergy(const Real *rhos, const Real *sies, Real *entropies,
                                    Real *scratch, const int num, LambdaIndexer &&lambdas,
                                    Transform &&transform = Transform()) const {
-    transform.x.apply(scale_);
-    transform.y.apply(inv_scale_);
-    transform.f.apply(scale_);
-    t_.EntropyFromDensityInternalEnergy(rhos, sies, entropies, scratch, num,
-                                        std::forward<LambdaIndexer>(lambdas),
-                                        std::forward<Transform>(transform));
+    EntropyFromDensityInternalEnergy(PortsOfCall::Exec::Device(), rhos, sies, entropies,
+                                     scratch, num, std::forward<LambdaIndexer>(lambdas),
+                                     std::forward<Transform>(transform));
   }
 
   constexpr static inline int nlambda() noexcept { return T::nlambda(); }
