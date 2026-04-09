@@ -333,7 +333,6 @@ bool eosMassFraction(int matid, const Bounds &lRhoBounds, const Bounds &lTBounds
                      std::string &phase_names, Verbosity eospacWarn) {
   using namespace EospacWrapper;
 
-  EOS_INTEGER errorCode = EOS_OK;
   constexpr int NT = 2;
   EOS_INTEGER tableHandle[NT];
   EOS_INTEGER tableType[NT] = {EOS_M_DT, EOS_Comment};
