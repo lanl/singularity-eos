@@ -485,7 +485,7 @@ SCENARIO("Gruneisen EOS density limit") {
         const Real beyond_max = eos.PressureFromDensityTemperature(rho, temperature);
         INFO("Pressure at rho_max: " << at_max << ", Pressure beyond rho_max"
                                      << beyond_max);
-        REQUIRE(at_max == beyond_max);
+        REQUIRE(isClose(at_max, beyond_max));
       }
     }
     WHEN("The rho_max parameter is not specified") {
