@@ -139,12 +139,6 @@ inline void SetUpOutputScalingOption(EOS_INTEGER options[], EOS_REAL values[],
 // TODO(JMM): Execution spaces are not properly passed through EOSPAC
 // and I'm not sure how to make that work. For now, we just have a
 // disclaimer in the docs. Execution space is ignored.
-//
-// TODO(JMM): The first two overloads are the warnings for not using
-// the Real* or scratch specializations. They take an execution
-// space. The second two declarations are general and trigger for the
-// relevant functions below to reduce the number of overloads.
-//
 #define SG_EOSPAC_VEC_2IN_1OUT(NAME, IN1, IN2, OUT)                                      \
   template <typename Space, typename RealIndexer, typename ConstRealIndexer,             \
             typename LambdaIndexer,                                                      \
@@ -406,7 +400,6 @@ class EOSPAC : public EosBase<EOSPAC> {
         std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
   }
 
-  // no-space overload handled by macros
   template <typename Space, typename LambdaIndexer,
             typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void PressureFromDensityTemperature(const Space &space, const Real *rhos,
@@ -436,8 +429,17 @@ class EOSPAC : public EosBase<EOSPAC> {
     eosSafeInterpolate(&table, num, R, T, P, dPdr, dPdT, "PofRT", Verbosity::Quiet,
                        options, values, nopts);
   }
+  template <typename LambdaIndexer>
+  inline void PressureFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                             Real *pressures, Real *scratch,
+                                             const int num,
+                                             [[maybe_unused]] LambdaIndexer &&lambdas,
+                                             Transform &&transform = Transform()) const {
+    PressureFromDensityTemperature(
+        PortsOfCall::Exec::Host(), rhos, temperatures, pressures, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
 
-  // no-space overload handled by macros
   template <typename Space, typename LambdaIndexer,
             typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void EntropyFromDensityTemperature([[maybe_unused]] const Space &space,
@@ -466,6 +468,15 @@ class EOSPAC : public EosBase<EOSPAC> {
 
     eosSafeInterpolate(&table, num, R, T, S, dSdr, dSdT, "SofRT", Verbosity::Quiet,
                        options, values, nopts);
+  }
+  template <typename LambdaIndexer>
+  inline void EntropyFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                            Real *entropies, Real *scratch, const int num,
+                                            [[maybe_unused]] LambdaIndexer &&lambdas,
+                                            Transform &&transform = Transform()) const {
+    EntropyFromDensityTemperature(
+        PortsOfCall::Exec::Host(), rhos, temperatures, entropies, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
   }
 
   template <typename Space, typename LambdaIndexer,
@@ -586,7 +597,6 @@ class EOSPAC : public EosBase<EOSPAC> {
             scratch, num, output, std::forward<LambdaIndexer>(lambdas));
   }
 
-  // no-space overload handled by macros
   template <typename Space, typename LambdaIndexer,
             typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void InternalEnergyFromDensityTemperature(
@@ -618,8 +628,16 @@ class EOSPAC : public EosBase<EOSPAC> {
     eosSafeInterpolate(&table, num, R, T, E, DEDR, DEDT, "EofRT", Verbosity::Quiet,
                        options, values, nopts);
   }
+  template <typename LambdaIndexer>
+  inline void InternalEnergyFromDensityTemperature(
+      const Real *rhos, const Real *temperatures, Real *sies, Real *scratch,
+      const int num, [[maybe_unused]] LambdaIndexer &&lambdas,
+      Transform &&transform = Transform()) const {
+    InternalEnergyFromDensityTemperature(
+        PortsOfCall::Exec::Host(), rhos, temperatures, sies, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
 
-  // no-space overload handled by macros
   template <typename Space, typename LambdaIndexer,
             typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void
@@ -648,6 +666,15 @@ class EOSPAC : public EosBase<EOSPAC> {
 
     eosSafeInterpolate(&table, num, R, E, P, dPdr, dPde, "PofRE", Verbosity::Quiet,
                        options, values, nopts);
+  }
+  template <typename LambdaIndexer>
+  inline void PressureFromDensityInternalEnergy(
+      const Real *rhos, const Real *sies, Real *pressures, Real *scratch,
+      const int num, [[maybe_unused]] LambdaIndexer &&lambdas,
+      Transform &&transform = Transform()) const {
+    PressureFromDensityInternalEnergy(
+        PortsOfCall::Exec::Host(), rhos, sies, pressures, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
   }
 
   template <typename Space, typename LambdaIndexer,
@@ -685,7 +712,6 @@ class EOSPAC : public EosBase<EOSPAC> {
                                  std::forward<Transform>(transform));
   }
 
-  // no-space overload handled by macros
   template <typename Space, typename LambdaIndexer,
             typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void SpecificHeatFromDensityTemperature(
@@ -724,8 +750,16 @@ class EOSPAC : public EosBase<EOSPAC> {
               cvFromSesame(std::max(DEDT[i], 0.0)); // Here we do something to the data!
         });
   }
+  template <typename LambdaIndexer>
+  inline void SpecificHeatFromDensityTemperature(
+      const Real *rhos, const Real *temperatures, Real *cvs, Real *scratch,
+      const int num, [[maybe_unused]] LambdaIndexer &&lambdas,
+      Transform &&transform = Transform()) const {
+    SpecificHeatFromDensityTemperature(
+        PortsOfCall::Exec::Host(), rhos, temperatures, cvs, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
 
-  // no-space overload handled by macros
   template <typename Space, typename LambdaIndexer,
             typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void SpecificHeatFromDensityInternalEnergy(
@@ -789,8 +823,16 @@ class EOSPAC : public EosBase<EOSPAC> {
                            std::max(DEDT[i], 0.0)); // Here we do something to the data!
         });
   }
+  template <typename LambdaIndexer>
+  inline void SpecificHeatFromDensityInternalEnergy(
+      const Real *rhos, const Real *sies, Real *cvs, Real *scratch, const int num,
+      [[maybe_unused]] LambdaIndexer &&lambdas,
+      Transform &&transform = Transform()) const {
+    SpecificHeatFromDensityInternalEnergy(
+        PortsOfCall::Exec::Host(), rhos, sies, cvs, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
 
-  // no-space overload handled by macros
   template <typename Space, typename LambdaIndexer,
             typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void
@@ -861,8 +903,16 @@ class EOSPAC : public EosBase<EOSPAC> {
           bmods[i] = f * bulkModulusFromSesame(std::max(BMOD, 0.0));
         });
   }
+  template <typename LambdaIndexer>
+  inline void BulkModulusFromDensityTemperature(
+      const Real *rhos, const Real *temperatures, Real *bmods, Real *scratch,
+      const int num, [[maybe_unused]] LambdaIndexer &&lambdas,
+      Transform &&transform = Transform()) const {
+    BulkModulusFromDensityTemperature(
+        PortsOfCall::Exec::Host(), rhos, temperatures, bmods, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
 
-  // no-space overload handled by macros
   template <typename Space, typename LambdaIndexer,
             typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void BulkModulusFromDensityInternalEnergy(
@@ -950,8 +1000,16 @@ class EOSPAC : public EosBase<EOSPAC> {
           bmods[i] = f * bulkModulusFromSesame(std::max(BMOD, 0.0));
         });
   }
+  template <typename LambdaIndexer>
+  inline void BulkModulusFromDensityInternalEnergy(
+      const Real *rhos, const Real *sies, Real *bmods, Real *scratch, const int num,
+      [[maybe_unused]] LambdaIndexer &&lambdas,
+      Transform &&transform = Transform()) const {
+    BulkModulusFromDensityInternalEnergy(
+        PortsOfCall::Exec::Host(), rhos, sies, bmods, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
 
-  // no-space overload handled by macros
   template <typename Space, typename LambdaIndexer,
             typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void GruneisenParamFromDensityTemperature(
@@ -997,8 +1055,16 @@ class EOSPAC : public EosBase<EOSPAC> {
           gm1s[i] = f * robust::ratio(pressureFromSesame(sieToSesame(DPDE)), x * R[i]);
         });
   }
+  template <typename LambdaIndexer>
+  inline void GruneisenParamFromDensityTemperature(
+      const Real *rhos, const Real *temperatures, Real *gm1s, Real *scratch,
+      const int num, [[maybe_unused]] LambdaIndexer &&lambdas,
+      Transform &&transform = Transform()) const {
+    GruneisenParamFromDensityTemperature(
+        PortsOfCall::Exec::Host(), rhos, temperatures, gm1s, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
 
-  // no-space overload handled by macros
   template <typename Space, typename LambdaIndexer,
             typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void GruneisenParamFromDensityInternalEnergy(
@@ -1062,6 +1128,15 @@ class EOSPAC : public EosBase<EOSPAC> {
           const Real DPDE = DPDT[i] / DEDT[i];
           gm1s[i] = f * robust::ratio(pressureFromSesame(sieToSesame(DPDE)), x * R[i]);
         });
+  }
+  template <typename LambdaIndexer>
+  inline void GruneisenParamFromDensityInternalEnergy(
+      const Real *rhos, const Real *sies, Real *gm1s, Real *scratch, const int num,
+      [[maybe_unused]] LambdaIndexer &&lambdas,
+      Transform &&transform = Transform()) const {
+    GruneisenParamFromDensityInternalEnergy(
+        PortsOfCall::Exec::Host(), rhos, sies, gm1s, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
   }
 
   static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
