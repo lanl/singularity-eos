@@ -169,7 +169,8 @@ char *StrCat(char *destination, const char *source) {
 #define SG_EOS_VEC_2IN_1OUT(NAME, IN1, IN2, OUT)                                         \
   template <typename Space, typename RealIndexer, typename ConstRealIndexer,             \
             typename LambdaIndexer,                                                      \
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>        \
+            typename EnableIfSpace =                                                     \
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>               \
   inline void NAME(const Space &s, ConstRealIndexer &&IN1, ConstRealIndexer &&IN2,       \
                    RealIndexer &&OUT, const int num, LambdaIndexer &&lambdas) const {    \
     static auto const name = SG_MEMBER_FUNC_NAME();                                      \
@@ -182,8 +183,10 @@ char *StrCat(char *destination, const char *source) {
   }                                                                                      \
   template <typename Space, typename RealIndexer, typename ConstRealIndexer,             \
             typename LambdaIndexer,                                                      \
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,      \
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>        \
+            typename EnableIfNotRaw =                                                    \
+                std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,             \
+            typename EnableIfSpace =                                                     \
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>               \
   inline void NAME(const Space &s, ConstRealIndexer &&IN1, ConstRealIndexer &&IN2,       \
                    RealIndexer &&OUT, Real * /*scratch*/, const int num,                 \
                    LambdaIndexer &&lambdas) const {                                      \
@@ -191,14 +194,15 @@ char *StrCat(char *destination, const char *source) {
          std::forward<RealIndexer>(OUT), num, std::forward<LambdaIndexer>(lambdas));     \
   }                                                                                      \
   template <typename Space, typename LambdaIndexer,                                      \
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>        \
+            typename EnableIfSpace =                                                     \
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>               \
   inline void NAME(const Space &s, const Real *IN1, const Real *IN2, Real *OUT,          \
                    Real * /*scratch*/, const int num, LambdaIndexer &&lambdas,           \
                    Transform && = Transform()) const {                                   \
     NAME(s, IN1, IN2, OUT, num, std::forward<LambdaIndexer>(lambdas));                   \
   }                                                                                      \
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,     \
-            typename =                                                                   \
+            typename EnableIfIndexed =                                                   \
                 std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>     \
   inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
                    const int num, LambdaIndexer &&lambdas) const {                       \
@@ -207,8 +211,9 @@ char *StrCat(char *destination, const char *source) {
          std::forward<LambdaIndexer>(lambdas));                                          \
   }                                                                                      \
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,     \
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,      \
-            typename =                                                                   \
+            typename EnableIfNotRaw =                                                    \
+                std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,             \
+            typename EnableIfIndexed =                                                   \
                 std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>     \
   inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
                    Real * /*scratch*/, const int num, LambdaIndexer &&lambdas) const {   \
@@ -422,7 +427,8 @@ class EosBase {
   /// it has fewer arguments.
   template <typename Space, typename RealIndexer, typename ConstRealIndexer,
             typename LambdaIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void MinInternalEnergyFromDensity(const Space &s, ConstRealIndexer &&rhos,
                                            RealIndexer &&sies, const int num,
                                            LambdaIndexer &&lambdas) const {
@@ -436,8 +442,10 @@ class EosBase {
   }
   template <typename Space, typename RealIndexer, typename ConstRealIndexer,
             typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfNotRaw =
+                std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void MinInternalEnergyFromDensity(const Space &s, ConstRealIndexer &&rhos,
                                            RealIndexer &&sies, Real * /*scratch*/,
                                            const int num, LambdaIndexer &&lambdas) const {
@@ -446,7 +454,8 @@ class EosBase {
                                  std::forward<LambdaIndexer>(lambdas));
   }
   template <typename Space, typename LambdaIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void MinInternalEnergyFromDensity(const Space &s, const Real *rhos, Real *sies,
                                            Real * /*scratch*/, const int num,
                                            LambdaIndexer &&lambdas,
@@ -456,7 +465,8 @@ class EosBase {
   }
   template <
       typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-      typename = std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+      typename EnableIfIndexed =
+          std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            const int num, LambdaIndexer &&lambdas) const {
     MinInternalEnergyFromDensity(
@@ -465,8 +475,10 @@ class EosBase {
   }
   template <
       typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-      typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,
-      typename = std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+      typename EnableIfNotRaw =
+          std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,
+      typename EnableIfIndexed =
+          std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            Real * /*scratch*/, const int num,
                                            LambdaIndexer &&lambdas) const {
@@ -491,7 +503,8 @@ class EosBase {
   SG_EOS_VEC_FOR(GibbsFreeEnergy)
 
   template <typename Space, typename RealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void FillEos(const Space &s, RealIndexer &&rhos, RealIndexer &&temps,
                       RealIndexer &&energies, RealIndexer &&presses, RealIndexer &&cvs,
                       RealIndexer &&bmods, const int num, const unsigned long output,
@@ -506,7 +519,8 @@ class EosBase {
         });
   }
   template <typename RealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<variadic_utils::has_int_index_v<RealIndexer>>>
+            typename EnableIfIndexed =
+                std::enable_if_t<variadic_utils::has_int_index_v<RealIndexer>>>
   inline void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
                       RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
                       const int num, const unsigned long output,
