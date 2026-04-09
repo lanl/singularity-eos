@@ -164,19 +164,29 @@ inline void SetUpOutputScalingOption(EOS_INTEGER options[], EOS_REAL values[],
         s, std::forward<ConstRealIndexer>(IN1), std::forward<ConstRealIndexer>(IN2),     \
         std::forward<RealIndexer>(OUT), num, std::forward<LambdaIndexer>(lambdas));      \
   }                                                                                      \
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>     \
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,     \
+            typename =                                                                   \
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>     \
   inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
                    const int num, LambdaIndexer &&lambdas) const {                       \
-    NAME(PortsOfCall::Exec::Host(), std::forward<ConstRealIndexer>(IN1),                 \
-         std::forward<ConstRealIndexer>(IN2), std::forward<RealIndexer>(OUT), num,       \
-         std::forward<LambdaIndexer>(lambdas));                                          \
+    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");    \
+    EosBase<EOSPAC>::NAME(                                                               \
+        PortsOfCall::Exec::Host(), std::forward<ConstRealIndexer>(IN1),                  \
+        std::forward<ConstRealIndexer>(IN2), std::forward<RealIndexer>(OUT), num,        \
+        std::forward<LambdaIndexer>(lambdas));                                           \
   }                                                                                      \
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>     \
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,     \
+            typename =                                                                   \
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>,     \
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>      \
   inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
                    Real *scratch, const int num, LambdaIndexer &&lambdas) const {        \
-    NAME(PortsOfCall::Exec::Host(), std::forward<ConstRealIndexer>(IN1),                 \
-         std::forward<ConstRealIndexer>(IN2), std::forward<RealIndexer>(OUT), scratch,   \
-         num, std::forward<LambdaIndexer>(lambdas));                                     \
+    PORTABLE_WARN(                                                                       \
+        "EOSPAC type mismatch will cause significant performance degradation");          \
+    EosBase<EOSPAC>::NAME(                                                               \
+        PortsOfCall::Exec::Host(), std::forward<ConstRealIndexer>(IN1),                  \
+        std::forward<ConstRealIndexer>(IN2), std::forward<RealIndexer>(OUT), scratch,    \
+        num, std::forward<LambdaIndexer>(lambdas));                                      \
   }
 // Does fromdensitytemperature and fromdensityinternalenergy at once
 #define SG_EOSPAC_VEC_FOR(OUTNAME)                                                       \
@@ -332,15 +342,19 @@ class EOSPAC : public EosBase<EOSPAC> {
     PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
     EosBase<EOSPAC>::MinInternalEnergyFromDensity(s, rhos, sies, num, lambdas);
   }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  template <
+      typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+      typename = std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            const int num, LambdaIndexer &&lambdas) const {
     MinInternalEnergyFromDensity(
         PortsOfCall::Exec::Host(), std::forward<ConstRealIndexer>(rhos),
         std::forward<RealIndexer>(sies), num, std::forward<LambdaIndexer>(lambdas));
   }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  template <
+      typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+      typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,
+      typename = std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            Real * /*scratch*/, const int num,
                                            LambdaIndexer &&lambdas) const {
@@ -629,10 +643,11 @@ class EOSPAC : public EosBase<EOSPAC> {
                        options, values, nopts);
   }
   template <typename LambdaIndexer>
-  inline void InternalEnergyFromDensityTemperature(
-      const Real *rhos, const Real *temperatures, Real *sies, Real *scratch,
-      const int num, [[maybe_unused]] LambdaIndexer &&lambdas,
-      Transform &&transform = Transform()) const {
+  inline void
+  InternalEnergyFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                       Real *sies, Real *scratch, const int num,
+                                       [[maybe_unused]] LambdaIndexer &&lambdas,
+                                       Transform &&transform = Transform()) const {
     InternalEnergyFromDensityTemperature(
         PortsOfCall::Exec::Host(), rhos, temperatures, sies, scratch, num,
         std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
@@ -668,13 +683,14 @@ class EOSPAC : public EosBase<EOSPAC> {
                        options, values, nopts);
   }
   template <typename LambdaIndexer>
-  inline void PressureFromDensityInternalEnergy(
-      const Real *rhos, const Real *sies, Real *pressures, Real *scratch,
-      const int num, [[maybe_unused]] LambdaIndexer &&lambdas,
-      Transform &&transform = Transform()) const {
-    PressureFromDensityInternalEnergy(
-        PortsOfCall::Exec::Host(), rhos, sies, pressures, scratch, num,
-        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  inline void
+  PressureFromDensityInternalEnergy(const Real *rhos, const Real *sies, Real *pressures,
+                                    Real *scratch, const int num,
+                                    [[maybe_unused]] LambdaIndexer &&lambdas,
+                                    Transform &&transform = Transform()) const {
+    PressureFromDensityInternalEnergy(PortsOfCall::Exec::Host(), rhos, sies, pressures,
+                                      scratch, num, std::forward<LambdaIndexer>(lambdas),
+                                      std::forward<Transform>(transform));
   }
 
   template <typename Space, typename LambdaIndexer,
@@ -751,13 +767,14 @@ class EOSPAC : public EosBase<EOSPAC> {
         });
   }
   template <typename LambdaIndexer>
-  inline void SpecificHeatFromDensityTemperature(
-      const Real *rhos, const Real *temperatures, Real *cvs, Real *scratch,
-      const int num, [[maybe_unused]] LambdaIndexer &&lambdas,
-      Transform &&transform = Transform()) const {
-    SpecificHeatFromDensityTemperature(
-        PortsOfCall::Exec::Host(), rhos, temperatures, cvs, scratch, num,
-        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  inline void
+  SpecificHeatFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                     Real *cvs, Real *scratch, const int num,
+                                     [[maybe_unused]] LambdaIndexer &&lambdas,
+                                     Transform &&transform = Transform()) const {
+    SpecificHeatFromDensityTemperature(PortsOfCall::Exec::Host(), rhos, temperatures, cvs,
+                                       scratch, num, std::forward<LambdaIndexer>(lambdas),
+                                       std::forward<Transform>(transform));
   }
 
   template <typename Space, typename LambdaIndexer,
@@ -824,10 +841,11 @@ class EOSPAC : public EosBase<EOSPAC> {
         });
   }
   template <typename LambdaIndexer>
-  inline void SpecificHeatFromDensityInternalEnergy(
-      const Real *rhos, const Real *sies, Real *cvs, Real *scratch, const int num,
-      [[maybe_unused]] LambdaIndexer &&lambdas,
-      Transform &&transform = Transform()) const {
+  inline void
+  SpecificHeatFromDensityInternalEnergy(const Real *rhos, const Real *sies, Real *cvs,
+                                        Real *scratch, const int num,
+                                        [[maybe_unused]] LambdaIndexer &&lambdas,
+                                        Transform &&transform = Transform()) const {
     SpecificHeatFromDensityInternalEnergy(
         PortsOfCall::Exec::Host(), rhos, sies, cvs, scratch, num,
         std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
@@ -904,10 +922,11 @@ class EOSPAC : public EosBase<EOSPAC> {
         });
   }
   template <typename LambdaIndexer>
-  inline void BulkModulusFromDensityTemperature(
-      const Real *rhos, const Real *temperatures, Real *bmods, Real *scratch,
-      const int num, [[maybe_unused]] LambdaIndexer &&lambdas,
-      Transform &&transform = Transform()) const {
+  inline void
+  BulkModulusFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                    Real *bmods, Real *scratch, const int num,
+                                    [[maybe_unused]] LambdaIndexer &&lambdas,
+                                    Transform &&transform = Transform()) const {
     BulkModulusFromDensityTemperature(
         PortsOfCall::Exec::Host(), rhos, temperatures, bmods, scratch, num,
         std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
@@ -1001,10 +1020,11 @@ class EOSPAC : public EosBase<EOSPAC> {
         });
   }
   template <typename LambdaIndexer>
-  inline void BulkModulusFromDensityInternalEnergy(
-      const Real *rhos, const Real *sies, Real *bmods, Real *scratch, const int num,
-      [[maybe_unused]] LambdaIndexer &&lambdas,
-      Transform &&transform = Transform()) const {
+  inline void
+  BulkModulusFromDensityInternalEnergy(const Real *rhos, const Real *sies, Real *bmods,
+                                       Real *scratch, const int num,
+                                       [[maybe_unused]] LambdaIndexer &&lambdas,
+                                       Transform &&transform = Transform()) const {
     BulkModulusFromDensityInternalEnergy(
         PortsOfCall::Exec::Host(), rhos, sies, bmods, scratch, num,
         std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
@@ -1056,10 +1076,11 @@ class EOSPAC : public EosBase<EOSPAC> {
         });
   }
   template <typename LambdaIndexer>
-  inline void GruneisenParamFromDensityTemperature(
-      const Real *rhos, const Real *temperatures, Real *gm1s, Real *scratch,
-      const int num, [[maybe_unused]] LambdaIndexer &&lambdas,
-      Transform &&transform = Transform()) const {
+  inline void
+  GruneisenParamFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                       Real *gm1s, Real *scratch, const int num,
+                                       [[maybe_unused]] LambdaIndexer &&lambdas,
+                                       Transform &&transform = Transform()) const {
     GruneisenParamFromDensityTemperature(
         PortsOfCall::Exec::Host(), rhos, temperatures, gm1s, scratch, num,
         std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
@@ -1130,10 +1151,11 @@ class EOSPAC : public EosBase<EOSPAC> {
         });
   }
   template <typename LambdaIndexer>
-  inline void GruneisenParamFromDensityInternalEnergy(
-      const Real *rhos, const Real *sies, Real *gm1s, Real *scratch, const int num,
-      [[maybe_unused]] LambdaIndexer &&lambdas,
-      Transform &&transform = Transform()) const {
+  inline void
+  GruneisenParamFromDensityInternalEnergy(const Real *rhos, const Real *sies, Real *gm1s,
+                                          Real *scratch, const int num,
+                                          [[maybe_unused]] LambdaIndexer &&lambdas,
+                                          Transform &&transform = Transform()) const {
     GruneisenParamFromDensityInternalEnergy(
         PortsOfCall::Exec::Host(), rhos, sies, gm1s, scratch, num,
         std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
