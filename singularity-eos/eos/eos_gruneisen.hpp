@@ -292,7 +292,7 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real
           maxbound = std::min(min_extremum, maxbound);
         }
       } // s3 > 0 ; else
-    }   // discriminant >= 0
+    } // discriminant >= 0
     if (poly(minbound) * poly(maxbound) < 0.) {
       // Root is appropriately bounded
       using RootFinding1D::regula_falsi;
