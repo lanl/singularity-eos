@@ -84,7 +84,7 @@ class RootCounts {
       counts_[i] = 0;
   }
   PORTABLE_INLINE_FUNCTION void increment(std::size_t i) const {
-    PORTABLE_REQUIRE(i < nbins_ && i >= 0, "Index in bounds");
+    PORTABLE_REQUIRE(i < nbins_, "Index in bounds");
 #ifdef PORTABILITY_STRATEGY_NONE
     counts_[i] += 1;
 #endif // PORTABILITY_STRATEGY_NONE
@@ -96,11 +96,11 @@ class RootCounts {
     return tot;
   }
   PORTABLE_INLINE_FUNCTION const Real &operator[](const std::size_t i) const {
-    PORTABLE_REQUIRE(i < nbins_ && i >= 0, "Index in bounds");
+    PORTABLE_REQUIRE(i < nbins_, "Index in bounds");
     return counts_[i];
   }
   PORTABLE_INLINE_FUNCTION Real &operator[](const std::size_t i) {
-    PORTABLE_REQUIRE(i < nbins_ && i >= 0, "Index in bounds");
+    PORTABLE_REQUIRE(i < nbins_, "Index in bounds");
     return counts_[i];
   }
   PORTABLE_INLINE_FUNCTION void print_counts() const {

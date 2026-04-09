@@ -46,6 +46,33 @@ internal tests will not be run automatically. So when the code is
 ready for merge, you must ask a project maintainer to trigger the
 remaining tests for you.
 
+AI-assisted coding
+-------------------
+
+``singularity-eos`` requires that if AI was used to assist in code
+generation, a disclaimer must be made in a comment in the relevant
+file. Also if agentic AI was used, please have your agent dump a
+"proposed plan" markdown file in the ``plan_histories`` folder. This
+provides an LLM-readable history of machine-generated changes and
+helps disentangle human-made choices from machine-made ones. For
+example, if you used codex or claude code, use a workflow like this
+one:
+
+1. Ask the agentic framework to propose a plan targeting your problem.
+2. Tell it to dump the plan into a new file in ``plan_histories``
+3. Iterate until you're happy with the code and submit an MR.
+4. After submitting the MR, rename the new file to be prefixed by the MR number and commit it.
+
+If you submit code to ``singularity-eos`` you own that code and you are
+responsible for understanding it. If code is submitted that the author
+does not understand, the author will be asked to resubmit a changeset
+that they understand.
+
+Finally, please be cognizant of reviewer time and effort. Agentic AI
+can create changesets much faster than a human can review them. When
+possible, please break up large changes and refactors into
+human-parse-able chunks.
+
 Expectations for code review
 -----------------------------
 
