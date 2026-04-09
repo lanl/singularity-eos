@@ -55,7 +55,8 @@ struct NullIndexer {
 // wrappers below.
 #define SG_VARIANT_VEC_2IN_1OUT(NAME, IN1, IN2, OUT)                                     \
   template <typename Space, typename RealIndexer, typename ConstRealIndexer,             \
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>        \
+            typename EnableIfSpace =                                                     \
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>               \
   inline void NAME(const Space &s, ConstRealIndexer &&IN1, ConstRealIndexer &&IN2,       \
                    RealIndexer &&OUT, const int num) const {                             \
     NullIndexer lambdas{};                                                               \
@@ -65,7 +66,8 @@ struct NullIndexer {
   }                                                                                      \
   template <typename Space, typename RealIndexer, typename ConstRealIndexer,             \
             typename LambdaIndexer,                                                      \
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>        \
+            typename EnableIfSpace =                                                     \
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>               \
   inline void NAME(const Space &s, ConstRealIndexer &&IN1, ConstRealIndexer &&IN2,       \
                    RealIndexer &&OUT, const int num, LambdaIndexer &&lambdas) const {    \
     return PortsOfCall::visit(                                                           \
@@ -78,7 +80,8 @@ struct NullIndexer {
         eos_);                                                                           \
   }                                                                                      \
   template <typename Space, typename RealIndexer, typename ConstRealIndexer,             \
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>        \
+            typename EnableIfSpace =                                                     \
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>               \
   inline void NAME(const Space &s, ConstRealIndexer &&IN1, ConstRealIndexer &&IN2,       \
                    RealIndexer &&OUT, Real *scratch, const int num) const {              \
     NullIndexer lambdas{};                                                               \
@@ -88,7 +91,8 @@ struct NullIndexer {
   }                                                                                      \
   template <typename Space, typename RealIndexer, typename ConstRealIndexer,             \
             typename LambdaIndexer,                                                      \
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>        \
+            typename EnableIfSpace =                                                     \
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>               \
   inline void NAME(const Space &s, ConstRealIndexer &&IN1, ConstRealIndexer &&IN2,       \
                    RealIndexer &&OUT, Real *scratch, const int num,                      \
                    LambdaIndexer &&lambdas) const {                                      \
@@ -102,7 +106,7 @@ struct NullIndexer {
         eos_);                                                                           \
   }                                                                                      \
   template <typename RealIndexer, typename ConstRealIndexer,                             \
-            typename =                                                                   \
+            typename EnableIfIndexed =                                                   \
                 std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>     \
   inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
                    const int num) const {                                                \
@@ -111,7 +115,7 @@ struct NullIndexer {
                 num);                                                                    \
   }                                                                                      \
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,     \
-            typename =                                                                   \
+            typename EnableIfIndexed =                                                   \
                 std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>     \
   inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
                    const int num, LambdaIndexer &&lambdas) const {                       \
@@ -120,7 +124,7 @@ struct NullIndexer {
                 num, std::forward<LambdaIndexer>(lambdas));                              \
   }                                                                                      \
   template <typename RealIndexer, typename ConstRealIndexer,                             \
-            typename =                                                                   \
+            typename EnableIfIndexed =                                                   \
                 std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>     \
   inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
                    Real *scratch, const int num) const {                                 \
@@ -129,7 +133,7 @@ struct NullIndexer {
                 scratch, num);                                                           \
   }                                                                                      \
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,     \
-            typename =                                                                   \
+            typename EnableIfIndexed =                                                   \
                 std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>     \
   inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
                    Real *scratch, const int num, LambdaIndexer &&lambdas) const {        \
@@ -543,7 +547,8 @@ class Variant {
   /// This is sort of what the SG_VARIANT_VEC would concretize too, though
   /// it has fewer arguments.
   template <typename Space, typename RealIndexer, typename ConstRealIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void MinInternalEnergyFromDensity(const Space &s, ConstRealIndexer &&rhos,
                                            RealIndexer &&sies, const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
@@ -553,7 +558,8 @@ class Variant {
 
   template <typename Space, typename RealIndexer, typename ConstRealIndexer,
             typename LambdaIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void MinInternalEnergyFromDensity(const Space &s, ConstRealIndexer &&rhos,
                                            RealIndexer &&sies, const int num,
                                            LambdaIndexer &&lambdas) const {
@@ -567,7 +573,8 @@ class Variant {
   }
 
   template <typename Space, typename RealIndexer, typename ConstRealIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void MinInternalEnergyFromDensity(const Space &s, ConstRealIndexer &&rhos,
                                            RealIndexer &&sies, Real *scratch,
                                            const int num) const {
@@ -579,7 +586,8 @@ class Variant {
 
   template <typename Space, typename RealIndexer, typename ConstRealIndexer,
             typename LambdaIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void MinInternalEnergyFromDensity(const Space &s, ConstRealIndexer &&rhos,
                                            RealIndexer &&sies, Real *scratch,
                                            const int num, LambdaIndexer &&lambdas) const {
@@ -593,7 +601,8 @@ class Variant {
   }
   template <
       typename RealIndexer, typename ConstRealIndexer,
-      typename = std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+      typename EnableIfIndexed =
+          std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            const int num) const {
     return MinInternalEnergyFromDensity(PortsOfCall::Exec::Device(),
@@ -603,7 +612,8 @@ class Variant {
 
   template <
       typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-      typename = std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+      typename EnableIfIndexed =
+          std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            const int num, LambdaIndexer &&lambdas) const {
     return MinInternalEnergyFromDensity(
@@ -613,7 +623,8 @@ class Variant {
 
   template <
       typename RealIndexer, typename ConstRealIndexer,
-      typename = std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+      typename EnableIfIndexed =
+          std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            Real *scratch, const int num) const {
     return MinInternalEnergyFromDensity(PortsOfCall::Exec::Device(),
@@ -623,7 +634,8 @@ class Variant {
 
   template <
       typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-      typename = std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+      typename EnableIfIndexed =
+          std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            Real *scratch, const int num,
                                            LambdaIndexer &&lambdas) const {
@@ -642,7 +654,8 @@ class Variant {
   SG_VARIANT_VEC_2IN_1OUT(InternalEnergyFromDensityPressure, rhos, Ps, sies)
 
   template <typename Space, typename RealIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void FillEos(const Space &s, RealIndexer &&rhos, RealIndexer &&temps,
                       RealIndexer &&energies, RealIndexer &&presses, RealIndexer &&cvs,
                       RealIndexer &&bmods, const int num,
@@ -655,7 +668,8 @@ class Variant {
   }
 
   template <typename Space, typename RealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void FillEos(const Space &s, RealIndexer &&rhos, RealIndexer &&temps,
                       RealIndexer &&energies, RealIndexer &&presses, RealIndexer &&cvs,
                       RealIndexer &&bmods, const int num, const unsigned long output,
@@ -673,7 +687,8 @@ class Variant {
   }
 
   template <typename RealIndexer,
-            typename = std::enable_if_t<variadic_utils::has_int_index_v<RealIndexer>>>
+            typename EnableIfIndexed =
+                std::enable_if_t<variadic_utils::has_int_index_v<RealIndexer>>>
   inline void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
                       RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
                       const int num, const unsigned long output) const {
@@ -684,7 +699,8 @@ class Variant {
   }
 
   template <typename RealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<variadic_utils::has_int_index_v<RealIndexer>>>
+            typename EnableIfIndexed =
+                std::enable_if_t<variadic_utils::has_int_index_v<RealIndexer>>>
   inline void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
                       RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
                       const int num, const unsigned long output,

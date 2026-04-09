@@ -142,7 +142,8 @@ inline void SetUpOutputScalingOption(EOS_INTEGER options[], EOS_REAL values[],
 #define SG_EOSPAC_VEC_2IN_1OUT(NAME, IN1, IN2, OUT)                                      \
   template <typename Space, typename RealIndexer, typename ConstRealIndexer,             \
             typename LambdaIndexer,                                                      \
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>        \
+            typename EnableIfSpace =                                                     \
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>               \
   inline void NAME([[maybe_unused]] const Space &s, ConstRealIndexer &&IN1,              \
                    ConstRealIndexer &&IN2, RealIndexer &&OUT, const int num,             \
                    LambdaIndexer &&lambdas) const {                                      \
@@ -153,8 +154,10 @@ inline void SetUpOutputScalingOption(EOS_INTEGER options[], EOS_REAL values[],
   }                                                                                      \
   template <typename Space, typename RealIndexer, typename ConstRealIndexer,             \
             typename LambdaIndexer,                                                      \
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,      \
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>        \
+            typename EnableIfNotRaw =                                                    \
+                std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,             \
+            typename EnableIfSpace =                                                     \
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>               \
   inline void NAME([[maybe_unused]] const Space &s, ConstRealIndexer &&IN1,              \
                    ConstRealIndexer &&IN2, RealIndexer &&OUT, Real * /*scratch*/,        \
                    const int num, LambdaIndexer &&lambdas) const {                       \
@@ -165,7 +168,7 @@ inline void SetUpOutputScalingOption(EOS_INTEGER options[], EOS_REAL values[],
         std::forward<RealIndexer>(OUT), num, std::forward<LambdaIndexer>(lambdas));      \
   }                                                                                      \
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,     \
-            typename =                                                                   \
+            typename EnableIfIndexed =                                                   \
                 std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>     \
   inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
                    const int num, LambdaIndexer &&lambdas) const {                       \
@@ -176,9 +179,10 @@ inline void SetUpOutputScalingOption(EOS_INTEGER options[], EOS_REAL values[],
         std::forward<LambdaIndexer>(lambdas));                                           \
   }                                                                                      \
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,     \
-            typename =                                                                   \
+            typename EnableIfIndexed =                                                   \
                 std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>,     \
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>      \
+            typename EnableIfNotRaw =                                                    \
+                std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>             \
   inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
                    Real *scratch, const int num, LambdaIndexer &&lambdas) const {        \
     PORTABLE_WARN(                                                                       \
@@ -324,7 +328,8 @@ class EOSPAC : public EosBase<EOSPAC> {
 
   template <typename Space, typename RealIndexer, typename ConstRealIndexer,
             typename LambdaIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void MinInternalEnergyFromDensity([[maybe_unused]] const Space &s,
                                            ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            const int num, LambdaIndexer &&lambdas) const {
@@ -333,8 +338,10 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
   template <typename Space, typename RealIndexer, typename ConstRealIndexer,
             typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfNotRaw =
+                std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void MinInternalEnergyFromDensity([[maybe_unused]] const Space &s,
                                            ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            Real * /*scratch*/, const int num,
@@ -344,7 +351,8 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
   template <
       typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-      typename = std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+      typename EnableIfIndexed =
+          std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            const int num, LambdaIndexer &&lambdas) const {
     MinInternalEnergyFromDensity(
@@ -353,8 +361,10 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
   template <
       typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-      typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,
-      typename = std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+      typename EnableIfNotRaw =
+          std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,
+      typename EnableIfIndexed =
+          std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            Real * /*scratch*/, const int num,
                                            LambdaIndexer &&lambdas) const {
@@ -377,7 +387,8 @@ class EOSPAC : public EosBase<EOSPAC> {
 
   // EOSPAC vector implementations
   template <typename Space, typename LambdaIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void TemperatureFromDensityInternalEnergy(
       [[maybe_unused]] const Space &s, const Real *rhos, const Real *sies,
       Real *temperatures, Real *scratch, const int num, LambdaIndexer /*lambdas*/,
@@ -415,7 +426,8 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
 
   template <typename Space, typename LambdaIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void PressureFromDensityTemperature(const Space &space, const Real *rhos,
                                              const Real *temperatures, Real *pressures,
                                              Real *scratch, const int num,
@@ -455,7 +467,8 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
 
   template <typename Space, typename LambdaIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void EntropyFromDensityTemperature([[maybe_unused]] const Space &space,
                                             const Real *rhos, const Real *temperatures,
                                             Real *entropies, Real *scratch, const int num,
@@ -494,7 +507,8 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
 
   template <typename Space, typename LambdaIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void FillEos([[maybe_unused]] const Space &space, Real *rhos, Real *temps,
                       Real *energies, Real *presses, Real *cvs, Real *bmods,
                       Real *scratch, const int num, const unsigned long output,
@@ -612,7 +626,8 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
 
   template <typename Space, typename LambdaIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void InternalEnergyFromDensityTemperature(
       [[maybe_unused]] const Space &space, const Real *rhos, const Real *temperatures,
       Real *sies, Real *scratch, const int num, LambdaIndexer /*lambdas*/,
@@ -654,7 +669,8 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
 
   template <typename Space, typename LambdaIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void
   PressureFromDensityInternalEnergy([[maybe_unused]] const Space &space, const Real *rhos,
                                     const Real *sies, Real *pressures, Real *scratch,
@@ -694,7 +710,8 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
 
   template <typename Space, typename LambdaIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void MinInternalEnergyFromDensity([[maybe_unused]] const Space &space,
                                            const Real *rhos, Real *sies, Real *scratch,
                                            const int num, LambdaIndexer /*lambdas*/,
@@ -729,7 +746,8 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
 
   template <typename Space, typename LambdaIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void SpecificHeatFromDensityTemperature(
       [[maybe_unused]] const Space &space, const Real *rhos, const Real *temperatures,
       Real *cvs, Real *scratch, const int num, LambdaIndexer /*lambdas*/,
@@ -778,7 +796,8 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
 
   template <typename Space, typename LambdaIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void SpecificHeatFromDensityInternalEnergy(
       [[maybe_unused]] const Space &space, const Real *rhos, const Real *sies, Real *cvs,
       Real *scratch, const int num, LambdaIndexer /*lambdas*/,
@@ -852,7 +871,8 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
 
   template <typename Space, typename LambdaIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void
   BulkModulusFromDensityTemperature([[maybe_unused]] const Space &space, const Real *rhos,
                                     const Real *temperatures, Real *bmods, Real *scratch,
@@ -933,7 +953,8 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
 
   template <typename Space, typename LambdaIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void BulkModulusFromDensityInternalEnergy(
       [[maybe_unused]] const Space &space, const Real *rhos, const Real *sies,
       Real *bmods, Real *scratch, const int num, LambdaIndexer /*lambdas*/,
@@ -1031,7 +1052,8 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
 
   template <typename Space, typename LambdaIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void GruneisenParamFromDensityTemperature(
       [[maybe_unused]] const Space &space, const Real *rhos, const Real *temperatures,
       Real *gm1s, Real *scratch, const int num, LambdaIndexer /*lambdas*/,
@@ -1087,7 +1109,8 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
 
   template <typename Space, typename LambdaIndexer,
-            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+            typename EnableIfSpace =
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void GruneisenParamFromDensityInternalEnergy(
       [[maybe_unused]] const Space &space, const Real *rhos, const Real *sies, Real *gm1s,
       Real *scratch, const int num, LambdaIndexer /*lambdas*/,
