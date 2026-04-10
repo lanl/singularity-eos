@@ -55,6 +55,10 @@
 #include <spiner/sp5.hpp>
 #include <spiner/spiner_types.hpp>
 
+
+// This file was generated in part with the assistance of generative AI
+
+
 namespace singularity {
 
 using namespace eos_base;
@@ -75,6 +79,177 @@ using namespace eos_base;
   - An ideal gas term
   mitigated by Ye and (1-Ye) to control how important each term is.
  */
+
+// Grid parameters for constructing Spiner tables from generic EOS
+// Defaults match sesame2spiner behavior
+struct SpinerTableGridParams {
+  // Density bounds
+  Real rhoMin, rhoMax;
+  int numRho = -1; // -1 means use numRhoPerDecade
+  int numRhoPerDecade = 350;
+  Real shrinklRhoBounds = 0.0;
+
+  // Temperature bounds
+  Real TMin, TMax;
+  int numT = -1;
+  int numTPerDecade = 100;
+  Real shrinklTBounds = 0.0;
+
+  // SIE bounds (energy can be negative!)
+  Real sieMin, sieMax;
+  int numSie = -1;
+  int numSiePerDecade = 100;
+  Real shrinkleBounds = 0.0;
+
+  // Offset control (usually automatic, but allow override)
+  // Set to -1 for auto-compute (default behavior)
+  Real rhoOffset = -1.0;
+  Real TOffset = -1.0;
+  Real sieOffset = -1.0;
+
+  // Enforce positive minimums (like sesame2spiner does for rho/T)
+  // Set to <= 0 to disable enforcement
+  Real strictlyPositiveMinRho = 1e-8;
+  Real strictlyPositiveMinT = 1e-2;
+  Real strictlyPositiveMinSie = -1.0; // disabled for sie (can be negative)
+
+  // Material properties
+  int matid = 0;
+  Real Abar = std::numeric_limits<Real>::signaling_NaN();
+  Real Zbar = std::numeric_limits<Real>::signaling_NaN();
+  Real rhoNormal = std::numeric_limits<Real>::signaling_NaN();
+
+  // Piecewise grid options (advanced - follow sesame2spiner defaults)
+  bool piecewiseRho = true;
+  bool piecewiseT = true;
+  bool piecewiseSie = true;
+  Real rhoCoarseFactorLo = 3.0;
+  Real rhoCoarseFactorHi = 5.0;
+  Real TCoarseFactor = 1.5;
+  Real sieCoarseFactor = 1.5;
+  Real rhoFineDiameterDecades = 1.5;
+  Real TSplitPoint = 1e4;
+
+  // Optional: fine grid bounds override (advanced use)
+  Real rhoFineMin = -1.0; // -1 means use diameter
+  Real rhoFineMax = -1.0;
+};
+
+// Method detection helpers for optional EOS methods
+// Isolated in separate namespace for easy C++20 migration to concepts
+namespace eos_builder {
+
+// C++17 implementation using detection idiom
+#if __cplusplus < 202002L
+
+// Detection helper
+template <typename...>
+using void_t = void;
+
+// Detect BulkModulusFromDensityTemperature
+template <typename EOS, typename = void>
+struct has_bmod_rho_T : std::false_type {};
+
+template <typename EOS>
+struct has_bmod_rho_T<
+    EOS, void_t<decltype(std::declval<EOS>().BulkModulusFromDensityTemperature(
+             std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
+
+// Detect BulkModulusFromDensityInternalEnergy
+template <typename EOS, typename = void>
+struct has_bmod_rho_sie : std::false_type {};
+
+template <typename EOS>
+struct has_bmod_rho_sie<
+    EOS, void_t<decltype(std::declval<EOS>().BulkModulusFromDensityInternalEnergy(
+             std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
+
+// Detect Abar() method
+template <typename EOS, typename = void>
+struct has_abar : std::false_type {};
+
+template <typename EOS>
+struct has_abar<EOS, void_t<decltype(std::declval<EOS>().Abar())>> : std::true_type {};
+
+// Detect Zbar() method
+template <typename EOS, typename = void>
+struct has_zbar : std::false_type {};
+
+template <typename EOS>
+struct has_zbar<EOS, void_t<decltype(std::declval<EOS>().Zbar())>> : std::true_type {};
+
+// Detect PressureFromDensityInternalEnergy
+template <typename EOS, typename = void>
+struct has_P_rho_sie : std::false_type {};
+
+template <typename EOS>
+struct has_P_rho_sie<
+    EOS, void_t<decltype(std::declval<EOS>().PressureFromDensityInternalEnergy(
+             std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
+
+// Convenience constexpr bools
+template <typename EOS>
+inline constexpr bool has_bmod_rho_T_v = has_bmod_rho_T<EOS>::value;
+
+template <typename EOS>
+inline constexpr bool has_bmod_rho_sie_v = has_bmod_rho_sie<EOS>::value;
+
+template <typename EOS>
+inline constexpr bool has_abar_v = has_abar<EOS>::value;
+
+template <typename EOS>
+inline constexpr bool has_zbar_v = has_zbar<EOS>::value;
+
+template <typename EOS>
+inline constexpr bool has_P_rho_sie_v = has_P_rho_sie<EOS>::value;
+
+#else
+// C++20 implementation using concepts (for future migration)
+
+template <typename EOS>
+concept has_bmod_rho_T = requires(EOS eos, Real rho, Real T) {
+  { eos.BulkModulusFromDensityTemperature(rho, T) } -> std::same_as<Real>;
+};
+
+template <typename EOS>
+concept has_bmod_rho_sie = requires(EOS eos, Real rho, Real sie) {
+  { eos.BulkModulusFromDensityInternalEnergy(rho, sie) } -> std::same_as<Real>;
+};
+
+template <typename EOS>
+concept has_abar = requires(EOS eos) {
+  { eos.Abar() } -> std::same_as<Real>;
+};
+
+template <typename EOS>
+concept has_zbar = requires(EOS eos) {
+  { eos.Zbar() } -> std::same_as<Real>;
+};
+
+template <typename EOS>
+concept has_P_rho_sie = requires(EOS eos, Real rho, Real sie) {
+  { eos.PressureFromDensityInternalEnergy(rho, sie) } -> std::same_as<Real>;
+};
+
+// For compatibility with C++17 code, provide _v helpers
+template <typename EOS>
+inline constexpr bool has_bmod_rho_T_v = has_bmod_rho_T<EOS>;
+
+template <typename EOS>
+inline constexpr bool has_bmod_rho_sie_v = has_bmod_rho_sie<EOS>;
+
+template <typename EOS>
+inline constexpr bool has_abar_v = has_abar<EOS>;
+
+template <typename EOS>
+inline constexpr bool has_zbar_v = has_zbar<EOS>;
+
+template <typename EOS>
+inline constexpr bool has_P_rho_sie_v = has_P_rho_sie<EOS>;
+
+#endif
+
+} // namespace eos_builder
 
 template <template <class> class TransformerT = transformations::NullTransform>
 class SpinerEOSDependsRhoSieTransformable
@@ -126,6 +301,11 @@ class SpinerEOSDependsRhoSieTransformable
                                              bool pmin_vapor_dome = false)
       : SpinerEOSDependsRhoSieTransformable(filename, materialName, TableSplit::Total,
                                             reproducibility_mode, pmin_vapor_dome) {}
+  // Constructor from generic EOS object
+  template <typename EOS>
+  inline SpinerEOSDependsRhoSieTransformable(const EOS &source_eos,
+                                             const SpinerTableGridParams &params,
+                                             bool reproducibility_mode = false);
   inline SpinerEOSDependsRhoSieTransformable GetOnDevice();
 
   PORTABLE_INLINE_FUNCTION void CheckParams() const {
@@ -1041,6 +1221,460 @@ inline SpinerEOSDependsRhoSieTransformable<
   spiner_common::h5_safe_gclose(matGroup);
   spiner_common::h5_safe_gclose(coldGroup);
   spiner_common::h5_safe_fclose(file);
+}
+
+// Constructor from generic EOS object
+template <template <class> class TransformerT>
+template <typename EOS>
+inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
+    SpinerEOSDependsRhoSieTransformable(const EOS &source_eos,
+                                        const SpinerTableGridParams &params,
+                                        bool reproducibility_mode)
+    : matid_(params.matid), split_(TableSplit::Total),
+      reproducible_(reproducibility_mode), pmin_vapor_dome_(false),
+      memoryStatus_(DataStatus::OnHost) {
+
+  using namespace spiner_common;
+
+  // Apply strictly positive minimums
+  Real rhoMin = params.rhoMin;
+  Real rhoMax = params.rhoMax;
+  Real TMin = params.TMin;
+  Real TMax = params.TMax;
+  Real sieMin = params.sieMin;
+  Real sieMax = params.sieMax;
+
+  if (params.strictlyPositiveMinRho > 0 && rhoMin < params.strictlyPositiveMinRho) {
+    rhoMin = params.strictlyPositiveMinRho;
+  }
+  if (params.strictlyPositiveMinT > 0 && TMin < params.strictlyPositiveMinT) {
+    TMin = params.strictlyPositiveMinT;
+  }
+  if (params.strictlyPositiveMinSie > 0 && sieMin < params.strictlyPositiveMinSie) {
+    sieMin = params.strictlyPositiveMinSie;
+  }
+
+  // Determine reference density (for piecewise grids)
+  Real rhoAnchor = std::isnan(params.rhoNormal) ? 1.0 : params.rhoNormal;
+  if (std::isnan(rhoAnchor) || rhoAnchor <= 0 || rhoAnchor > 1e8) {
+    rhoAnchor = std::sqrt(rhoMin * rhoMax); // geometric mean
+  }
+
+  // Construct Bounds objects for rho, T, and sie
+  using Bounds = table_utils::Bounds<3>;
+  Bounds lRhoBounds, lTBounds, leBounds;
+
+  // Determine number of points
+  int numRho = params.numRho;
+  if (numRho <= 0) {
+    numRho = Bounds::getNumPointsFromPPD(rhoMin, rhoMax, params.numRhoPerDecade);
+  }
+  int numT = params.numT;
+  if (numT <= 0) {
+    numT = Bounds::getNumPointsFromPPD(TMin, TMax, params.numTPerDecade);
+  }
+  int numSie = params.numSie;
+  if (numSie <= 0) {
+    numSie = Bounds::getNumPointsFromPPD(sieMin, sieMax, params.numSiePerDecade);
+  }
+
+  // Build grids (piecewise or uniform)
+  if (params.piecewiseRho) {
+    if (params.rhoFineMin > 0 && params.rhoFineMax > 0) {
+      lRhoBounds = Bounds(Bounds::ThreeGrids(), rhoMin, rhoMax, rhoAnchor,
+                          params.rhoFineMin, params.rhoFineMax, params.numRhoPerDecade,
+                          params.rhoCoarseFactorLo, params.rhoCoarseFactorHi, true,
+                          params.shrinklRhoBounds);
+    } else {
+      lRhoBounds = Bounds(Bounds::ThreeGrids(), rhoMin, rhoMax, rhoAnchor,
+                          params.rhoFineDiameterDecades, params.numRhoPerDecade,
+                          params.rhoCoarseFactorLo, params.rhoCoarseFactorHi, true,
+                          params.shrinklRhoBounds);
+    }
+  } else {
+    lRhoBounds = Bounds(rhoMin, rhoMax, numRho, true, params.shrinklRhoBounds, rhoAnchor);
+  }
+
+  constexpr Real TAnchor = 298.15; // Room temperature
+  if (params.piecewiseT) {
+    lTBounds = Bounds(Bounds::TwoGrids(), TMin, TMax, TAnchor, params.TSplitPoint,
+                      params.numTPerDecade, params.TCoarseFactor, true,
+                      params.shrinklTBounds);
+  } else {
+    lTBounds = Bounds(TMin, TMax, numT, true, params.shrinklTBounds, TAnchor);
+  }
+
+  if (params.piecewiseSie) {
+    // Compute sie at anchor points for split
+    Real sieAnchor = source_eos.InternalEnergyFromDensityTemperature(rhoAnchor, TAnchor);
+    Real sieSplitPoint =
+        source_eos.InternalEnergyFromDensityTemperature(rhoAnchor, params.TSplitPoint);
+    leBounds = Bounds(Bounds::TwoGrids(), sieMin, sieMax, sieAnchor, sieSplitPoint,
+                      params.numSiePerDecade, params.sieCoarseFactor, true,
+                      params.shrinkleBounds);
+  } else {
+    leBounds = Bounds(sieMin, sieMax, numSie, true, params.shrinkleBounds);
+  }
+
+  // Override offsets if user specified
+  if (params.rhoOffset >= 0) lRhoBounds.offset = params.rhoOffset;
+  if (params.TOffset >= 0) lTBounds.offset = params.TOffset;
+  if (params.sieOffset >= 0) leBounds.offset = params.sieOffset;
+
+  // Store offsets and grid info
+  lRhoOffset_ = lRhoBounds.offset;
+  lTOffset_ = lTBounds.offset;
+  lEOffset_ = leBounds.offset;
+  numRho_ = lRhoBounds.grid.nPoints();
+  numT_ = lTBounds.grid.nPoints();
+  lRhoMin_ = lRhoBounds.grid.min();
+  lRhoMax_ = lRhoBounds.grid.max();
+  rhoMax_ = from_log(lRhoMax_, lRhoOffset_);
+
+  // Allocate databoxes
+  sie_.resize(numRho_, numT_);
+  sie_.setRange(1, lRhoBounds.grid);
+  sie_.setRange(0, lTBounds.grid);
+
+  T_.resize(numRho_, leBounds.grid.nPoints());
+  T_.setRange(1, lRhoBounds.grid);
+  T_.setRange(0, leBounds.grid);
+
+  dependsRhoT_.P.resize(numRho_, numT_);
+  dependsRhoT_.P.setRange(1, lRhoBounds.grid);
+  dependsRhoT_.P.setRange(0, lTBounds.grid);
+
+  dependsRhoT_.bMod.resize(numRho_, numT_);
+  dependsRhoT_.bMod.setRange(1, lRhoBounds.grid);
+  dependsRhoT_.bMod.setRange(0, lTBounds.grid);
+
+  dependsRhoT_.dPdRho.resize(numRho_, numT_);
+  dependsRhoT_.dPdRho.setRange(1, lRhoBounds.grid);
+  dependsRhoT_.dPdRho.setRange(0, lTBounds.grid);
+
+  dependsRhoT_.dPdE.resize(numRho_, numT_);
+  dependsRhoT_.dPdE.setRange(1, lRhoBounds.grid);
+  dependsRhoT_.dPdE.setRange(0, lTBounds.grid);
+
+  dependsRhoT_.dTdRho.resize(numRho_, numT_);
+  dependsRhoT_.dTdRho.setRange(1, lRhoBounds.grid);
+  dependsRhoT_.dTdRho.setRange(0, lTBounds.grid);
+
+  dependsRhoT_.dTdE.resize(numRho_, numT_);
+  dependsRhoT_.dTdE.setRange(1, lRhoBounds.grid);
+  dependsRhoT_.dTdE.setRange(0, lTBounds.grid);
+
+  dependsRhoT_.dEdRho.resize(numRho_, numT_);
+  dependsRhoT_.dEdRho.setRange(1, lRhoBounds.grid);
+  dependsRhoT_.dEdRho.setRange(0, lTBounds.grid);
+
+  dependsRhoSie_.P.resize(numRho_, leBounds.grid.nPoints());
+  dependsRhoSie_.P.setRange(1, lRhoBounds.grid);
+  dependsRhoSie_.P.setRange(0, leBounds.grid);
+
+  dependsRhoSie_.bMod.resize(numRho_, leBounds.grid.nPoints());
+  dependsRhoSie_.bMod.setRange(1, lRhoBounds.grid);
+  dependsRhoSie_.bMod.setRange(0, leBounds.grid);
+
+  dependsRhoSie_.dPdRho.resize(numRho_, leBounds.grid.nPoints());
+  dependsRhoSie_.dPdRho.setRange(1, lRhoBounds.grid);
+  dependsRhoSie_.dPdRho.setRange(0, leBounds.grid);
+
+  dependsRhoSie_.dPdE.resize(numRho_, leBounds.grid.nPoints());
+  dependsRhoSie_.dPdE.setRange(1, lRhoBounds.grid);
+  dependsRhoSie_.dPdE.setRange(0, leBounds.grid);
+
+  dependsRhoSie_.dTdRho.resize(numRho_, leBounds.grid.nPoints());
+  dependsRhoSie_.dTdRho.setRange(1, lRhoBounds.grid);
+  dependsRhoSie_.dTdRho.setRange(0, leBounds.grid);
+
+  dependsRhoSie_.dTdE.resize(numRho_, leBounds.grid.nPoints());
+  dependsRhoSie_.dTdE.setRange(1, lRhoBounds.grid);
+  dependsRhoSie_.dTdE.setRange(0, leBounds.grid);
+
+  dependsRhoSie_.dEdRho.resize(numRho_, leBounds.grid.nPoints());
+  dependsRhoSie_.dEdRho.setRange(1, lRhoBounds.grid);
+  dependsRhoSie_.dEdRho.setRange(0, leBounds.grid);
+
+  PCold_.resize(numRho_);
+  PCold_.setRange(0, lRhoBounds.grid);
+
+  sieCold_.resize(numRho_);
+  sieCold_.setRange(0, lRhoBounds.grid);
+
+  bModCold_.resize(numRho_);
+  bModCold_.setRange(0, lRhoBounds.grid);
+
+  dPdRhoCold_.resize(numRho_);
+  dPdRhoCold_.setRange(0, lRhoBounds.grid);
+
+  // Placeholder: We don't have mass fractions for generic EOS yet
+  has_mf = false;
+
+  // Populate tables - dependsRhoT (sie, P, etc. as function of rho, T)
+  for (int j = 0; j < numRho_; j++) {
+    Real lRho = lRhoBounds.grid.x(j);
+    Real rho = from_log(lRho, lRhoOffset_);
+
+    for (int i = 0; i < numT_; i++) {
+      Real lT = lTBounds.grid.x(i);
+      Real T = from_log(lT, lTOffset_);
+
+      // Evaluate source EOS
+      Real sie = source_eos.InternalEnergyFromDensityTemperature(rho, T);
+      Real P = source_eos.PressureFromDensityTemperature(rho, T);
+
+      sie_(j, i) = sie;
+      dependsRhoT_.P(j, i) = P;
+
+      // Bulk modulus will be computed by calcBMod_() after derivatives are populated
+      dependsRhoT_.bMod(j, i) = robust::EPS();
+
+      // Derivatives - use finite differences for now
+      // dPdRho at constant T
+      {
+        Real h = rho * 1e-6;
+        Real P_plus = source_eos.PressureFromDensityTemperature(rho + h, T);
+        Real P_minus = source_eos.PressureFromDensityTemperature(rho - h, T);
+        dependsRhoT_.dPdRho(j, i) = (P_plus - P_minus) / (2.0 * h);
+      }
+
+      // dPdE at constant rho (via dPdT and dEdT)
+      {
+        Real h = T * 1e-6;
+        Real P_plus = source_eos.PressureFromDensityTemperature(rho, T + h);
+        Real P_minus = source_eos.PressureFromDensityTemperature(rho, T - h);
+        Real dPdT = (P_plus - P_minus) / (2.0 * h);
+
+        Real E_plus = source_eos.InternalEnergyFromDensityTemperature(rho, T + h);
+        Real E_minus = source_eos.InternalEnergyFromDensityTemperature(rho, T - h);
+        Real dEdT = (E_plus - E_minus) / (2.0 * h);
+
+        if (std::abs(dEdT) > robust::EPS()) {
+          dependsRhoT_.dPdE(j, i) = dPdT / dEdT;
+        } else {
+          dependsRhoT_.dPdE(j, i) = 0.0;
+        }
+      }
+
+      // dEdRho at constant T
+      {
+        Real h = rho * 1e-6;
+        Real E_plus = source_eos.InternalEnergyFromDensityTemperature(rho + h, T);
+        Real E_minus = source_eos.InternalEnergyFromDensityTemperature(rho - h, T);
+        dependsRhoT_.dEdRho(j, i) = (E_plus - E_minus) / (2.0 * h);
+      }
+
+      // dTdE at constant rho (inverse of dEdT)
+      {
+        Real h = T * 1e-6;
+        Real E_plus = source_eos.InternalEnergyFromDensityTemperature(rho, T + h);
+        Real E_minus = source_eos.InternalEnergyFromDensityTemperature(rho, T - h);
+        Real dEdT = (E_plus - E_minus) / (2.0 * h);
+
+        if (std::abs(dEdT) > robust::EPS()) {
+          dependsRhoT_.dTdE(j, i) = 1.0 / dEdT;
+        } else {
+          dependsRhoT_.dTdE(j, i) = 0.0;
+        }
+      }
+
+      // dTdRho at constant E (more complex - requires solving)
+      // For now, use approximation: dTdRho_E = -dEdRho / dEdT
+      {
+        Real dEdRho = dependsRhoT_.dEdRho(j, i);
+        Real dTdE = dependsRhoT_.dTdE(j, i);
+        dependsRhoT_.dTdRho(j, i) = -dEdRho * dTdE;
+      }
+    }
+  }
+
+  // Populate tables - dependsRhoSie (T, P, etc. as function of rho, sie)
+  const int numSieGrid = leBounds.grid.nPoints();
+  for (int j = 0; j < numRho_; j++) {
+    Real lRho = lRhoBounds.grid.x(j);
+    Real rho = from_log(lRho, lRhoOffset_);
+
+    for (int i = 0; i < numSieGrid; i++) {
+      Real lE = leBounds.grid.x(i);
+      Real sie = from_log(lE, lEOffset_);
+
+      // Evaluate source EOS
+      Real T = source_eos.TemperatureFromDensityInternalEnergy(rho, sie);
+      Real P;
+
+      T_(j, i) = T;
+
+      // Compute pressure and derivatives at constant sie
+      // Use PressureFromDensityInternalEnergy if available for correct derivatives
+      if constexpr (eos_builder::has_P_rho_sie_v<EOS>) {
+        P = source_eos.PressureFromDensityInternalEnergy(rho, sie);
+        dependsRhoSie_.P(j, i) = P;
+
+        // Bulk modulus will be computed by calcBMod_() after derivatives are populated
+        dependsRhoSie_.bMod(j, i) = robust::EPS();
+
+        // dPdRho at constant sie
+        {
+          Real h = rho * 1e-6;
+          Real P_plus = source_eos.PressureFromDensityInternalEnergy(rho + h, sie);
+          Real P_minus = source_eos.PressureFromDensityInternalEnergy(rho - h, sie);
+          dependsRhoSie_.dPdRho(j, i) = (P_plus - P_minus) / (2.0 * h);
+        }
+
+        // dPdE at constant rho
+        {
+          Real h = sie * 1e-6;
+          if (std::abs(h) < 1e-12) h = 1e-12;
+          Real P_plus = source_eos.PressureFromDensityInternalEnergy(rho, sie + h);
+          Real P_minus = source_eos.PressureFromDensityInternalEnergy(rho, sie - h);
+          dependsRhoSie_.dPdE(j, i) = (P_plus - P_minus) / (2.0 * h);
+        }
+      } else {
+        // TODO(future): Fallback for EOS without PressureFromDensityInternalEnergy
+        // Can use chain rule to convert from (rho,T) derivatives:
+        //   (dP/drho)_E = (dP/drho)_T - (dP/dT)_rho * (dE/drho)_T / (dE/dT)_rho
+        //   (dP/dE)_rho = (dP/dT)_rho / (dE/dT)_rho
+        // Similar approach used in sesame2spiner. For now, require this method.
+        P = source_eos.PressureFromDensityTemperature(rho, T);
+        dependsRhoSie_.P(j, i) = P;
+
+        // Compute approximate derivatives at (rho, T) and convert
+        // This is less accurate but allows more general EOS
+        Real h_rho = rho * 1e-6;
+        Real P_plus = source_eos.PressureFromDensityTemperature(rho + h_rho, T);
+        Real P_minus = source_eos.PressureFromDensityTemperature(rho - h_rho, T);
+        Real dPdRho_T = (P_plus - P_minus) / (2.0 * h_rho);
+
+        Real h_T = T * 1e-6;
+        P_plus = source_eos.PressureFromDensityTemperature(rho, T + h_T);
+        P_minus = source_eos.PressureFromDensityTemperature(rho, T - h_T);
+        Real dPdT_rho = (P_plus - P_minus) / (2.0 * h_T);
+
+        Real E_plus = source_eos.InternalEnergyFromDensityTemperature(rho + h_rho, T);
+        Real E_minus = source_eos.InternalEnergyFromDensityTemperature(rho - h_rho, T);
+        Real dEdRho_T = (E_plus - E_minus) / (2.0 * h_rho);
+
+        E_plus = source_eos.InternalEnergyFromDensityTemperature(rho, T + h_T);
+        E_minus = source_eos.InternalEnergyFromDensityTemperature(rho, T - h_T);
+        Real dEdT_rho = (E_plus - E_minus) / (2.0 * h_T);
+
+        // Chain rule conversions
+        if (std::abs(dEdT_rho) > robust::EPS()) {
+          dependsRhoSie_.dPdE(j, i) = dPdT_rho / dEdT_rho;
+          dependsRhoSie_.dPdRho(j, i) = dPdRho_T - dPdT_rho * dEdRho_T / dEdT_rho;
+        } else {
+          dependsRhoSie_.dPdE(j, i) = 0.0;
+          dependsRhoSie_.dPdRho(j, i) = dPdRho_T;
+        }
+
+        // Bulk modulus will be computed by calcBMod_() after derivatives are populated
+        dependsRhoSie_.bMod(j, i) = robust::EPS();
+      }
+
+      // dTdRho at constant sie
+      {
+        Real h = rho * 1e-6;
+        Real T_plus = source_eos.TemperatureFromDensityInternalEnergy(rho + h, sie);
+        Real T_minus = source_eos.TemperatureFromDensityInternalEnergy(rho - h, sie);
+        dependsRhoSie_.dTdRho(j, i) = (T_plus - T_minus) / (2.0 * h);
+      }
+
+      // dTdE at constant rho
+      {
+        Real h = sie * 1e-6;
+        if (std::abs(h) < 1e-12) h = 1e-12;
+        Real T_plus = source_eos.TemperatureFromDensityInternalEnergy(rho, sie + h);
+        Real T_minus = source_eos.TemperatureFromDensityInternalEnergy(rho, sie - h);
+        dependsRhoSie_.dTdE(j, i) = (T_plus - T_minus) / (2.0 * h);
+      }
+
+      // dEdRho at constant T (requires inverting T(rho, sie))
+      // Approximate: use chain rule via dTdRho and dTdE
+      {
+        Real dTdRho = dependsRhoSie_.dTdRho(j, i);
+        Real dTdE = dependsRhoSie_.dTdE(j, i);
+        if (std::abs(dTdE) > robust::EPS()) {
+          dependsRhoSie_.dEdRho(j, i) = -dTdRho / dTdE;
+        } else {
+          dependsRhoSie_.dEdRho(j, i) = 0.0;
+        }
+      }
+    }
+  }
+
+  // Populate cold curves (minimum temperature)
+  Real Tmin = from_log(lTBounds.grid.min(), lTOffset_);
+  for (int j = 0; j < numRho_; j++) {
+    Real lRho = lRhoBounds.grid.x(j);
+    Real rho = from_log(lRho, lRhoOffset_);
+
+    sieCold_(j) = source_eos.InternalEnergyFromDensityTemperature(rho, Tmin);
+    PCold_(j) = source_eos.PressureFromDensityTemperature(rho, Tmin);
+
+    // dPdRho cold
+    Real h = rho * 1e-6;
+    Real P_plus = source_eos.PressureFromDensityTemperature(rho + h, Tmin);
+    Real P_minus = source_eos.PressureFromDensityTemperature(rho - h, Tmin);
+    dPdRhoCold_(j) = (P_plus - P_minus) / (2.0 * h);
+
+    // bMod cold
+    bModCold_(j) = rho * dPdRhoCold_(j);
+    if (bModCold_(j) < 0) bModCold_(j) = robust::EPS();
+  }
+
+  // Fix up bulk modulus using existing method
+  calcBMod_(dependsRhoT_);
+  calcBMod_(dependsRhoSie_);
+
+  // Set up extrapolation data
+  PlRhoMax_ = dependsRhoT_.P.slice(numRho_ - 1);
+  dPdRhoMax_ = dependsRhoT_.dPdRho.slice(numRho_ - 1);
+
+  // Compute minimum pressure curve
+  PMin_ = SetRhoPMin(dependsRhoT_.P, rho_at_pmin_, pmin_vapor_dome_, VAPOR_DPDR_THRESH,
+                     lRhoOffset_);
+
+  // Material properties
+  if constexpr (eos_builder::has_abar_v<EOS>) {
+    AZbar_.Abar = std::isnan(params.Abar) ? source_eos.Abar() : params.Abar;
+  } else {
+    AZbar_.Abar = std::isnan(params.Abar) ? 1.0 : params.Abar;
+  }
+
+  if constexpr (eos_builder::has_zbar_v<EOS>) {
+    AZbar_.Zbar = std::isnan(params.Zbar) ? source_eos.Zbar() : params.Zbar;
+  } else {
+    AZbar_.Zbar = std::isnan(params.Zbar) ? 1.0 : params.Zbar;
+  }
+
+  // Reference state
+  rhoNormal_ = rhoAnchor;
+  Real lRhoNormal = to_log(rhoNormal_, lRhoOffset_);
+  if (!(lRhoMin_ < lRhoNormal && lRhoNormal < lRhoMax_)) {
+    lRhoNormal = 0.5 * (lRhoMin_ + lRhoMax_);
+    rhoNormal_ = from_log(lRhoNormal, lRhoOffset_);
+  }
+
+  TNormal_ = ROOM_TEMPERATURE;
+  Real lTNormal = to_log(TNormal_, lTOffset_);
+  Real lTMin = sie_.range(0).min();
+  Real lTMax = sie_.range(0).max();
+  if (!(lTMin < lTNormal && lTNormal < lTMax)) {
+    lTNormal = 0.5 * (lTMin + lTMax);
+    TNormal_ = from_log(lTNormal, lTOffset_);
+  }
+
+  sieNormal_ = sie_.interpToReal(lRhoNormal, lTNormal);
+  PNormal_ = dependsRhoT_.P.interpToReal(lRhoNormal, lTNormal);
+  CvNormal_ = 1.0 / dependsRhoT_.dTdE.interpToReal(lRhoNormal, lTNormal);
+  bModNormal_ = dependsRhoT_.bMod.interpToReal(lRhoNormal, lTNormal);
+  dPdENormal_ = dependsRhoT_.dPdE.interpToReal(lRhoNormal, lTNormal);
+  Real dPdR = dependsRhoT_.dPdRho.interpToReal(lRhoNormal, lTNormal);
+  dVdTNormal_ = dPdENormal_ * CvNormal_ / (rhoNormal_ * rhoNormal_ * dPdR);
+
+  // Initialize transformer
+  InitializeTransformer();
 }
 
 using SpinerEOSDependsRhoSie =
