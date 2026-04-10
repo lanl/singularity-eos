@@ -54,7 +54,7 @@ Real make_bounded(const Real val, const Real vmin, const Real vmax) {
 }
 
 template <typename T>
-PORTABLE_FORCEINLINE_FUNCTION auto sgn(const T &val) {
+PORTABLE_FORCEINLINE_FUNCTION int sgn(const T &val) {
   if constexpr (std::is_unsigned_v<T>) {
     return 1;
   } else {
