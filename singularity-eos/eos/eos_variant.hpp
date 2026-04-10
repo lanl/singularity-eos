@@ -54,45 +54,92 @@ struct NullIndexer {
 // Helper macros to reduce boilerplate in the Variant vector forwarding
 // wrappers below.
 #define SG_VARIANT_VEC_2IN_1OUT(NAME, IN1, IN2, OUT)                                     \
-  template <typename RealIndexer, typename ConstRealIndexer>                             \
-  inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
-                   const int num) const {                                                \
+  template <typename Space, typename RealIndexer, typename ConstRealIndexer,             \
+            typename EnableIfSpace =                                                     \
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>               \
+  inline void NAME(const Space &s, ConstRealIndexer &&IN1, ConstRealIndexer &&IN2,       \
+                   RealIndexer &&OUT, const int num) const {                             \
     NullIndexer lambdas{};                                                               \
-    return NAME(std::forward<ConstRealIndexer>(IN1),                                     \
+    return NAME(s, std::forward<ConstRealIndexer>(IN1),                                  \
                 std::forward<ConstRealIndexer>(IN2), std::forward<RealIndexer>(OUT),     \
                 num, lambdas);                                                           \
   }                                                                                      \
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>     \
-  inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
-                   const int num, LambdaIndexer &&lambdas) const {                       \
+  template <typename Space, typename RealIndexer, typename ConstRealIndexer,             \
+            typename LambdaIndexer,                                                      \
+            typename EnableIfSpace =                                                     \
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>               \
+  inline void NAME(const Space &s, ConstRealIndexer &&IN1, ConstRealIndexer &&IN2,       \
+                   RealIndexer &&OUT, const int num, LambdaIndexer &&lambdas) const {    \
     return PortsOfCall::visit(                                                           \
-        [&IN1, &IN2, &OUT, &num, &lambdas](const auto &eos) {                            \
-          return eos.NAME(std::forward<ConstRealIndexer>(IN1),                           \
+        [&s, &IN1, &IN2, &OUT, &num, &lambdas](const auto &eos) {                        \
+          return eos.NAME(s, std::forward<ConstRealIndexer>(IN1),                        \
                           std::forward<ConstRealIndexer>(IN2),                           \
                           std::forward<RealIndexer>(OUT), num,                           \
                           std::forward<LambdaIndexer>(lambdas));                         \
         },                                                                               \
         eos_);                                                                           \
   }                                                                                      \
-  template <typename RealIndexer, typename ConstRealIndexer>                             \
-  inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
-                   Real *scratch, const int num) const {                                 \
+  template <typename Space, typename RealIndexer, typename ConstRealIndexer,             \
+            typename EnableIfSpace =                                                     \
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>               \
+  inline void NAME(const Space &s, ConstRealIndexer &&IN1, ConstRealIndexer &&IN2,       \
+                   RealIndexer &&OUT, Real *scratch, const int num) const {              \
     NullIndexer lambdas{};                                                               \
-    return NAME(std::forward<ConstRealIndexer>(IN1),                                     \
+    return NAME(s, std::forward<ConstRealIndexer>(IN1),                                  \
                 std::forward<ConstRealIndexer>(IN2), std::forward<RealIndexer>(OUT),     \
                 scratch, num, lambdas);                                                  \
   }                                                                                      \
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>     \
-  inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
-                   Real *scratch, const int num, LambdaIndexer &&lambdas) const {        \
+  template <typename Space, typename RealIndexer, typename ConstRealIndexer,             \
+            typename LambdaIndexer,                                                      \
+            typename EnableIfSpace =                                                     \
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>               \
+  inline void NAME(const Space &s, ConstRealIndexer &&IN1, ConstRealIndexer &&IN2,       \
+                   RealIndexer &&OUT, Real *scratch, const int num,                      \
+                   LambdaIndexer &&lambdas) const {                                      \
     return PortsOfCall::visit(                                                           \
-        [&IN1, &IN2, &OUT, &scratch, &num, &lambdas](const auto &eos) {                  \
-          return eos.NAME(std::forward<ConstRealIndexer>(IN1),                           \
+        [&s, &IN1, &IN2, &OUT, &scratch, &num, &lambdas](const auto &eos) {              \
+          return eos.NAME(s, std::forward<ConstRealIndexer>(IN1),                        \
                           std::forward<ConstRealIndexer>(IN2),                           \
                           std::forward<RealIndexer>(OUT), scratch, num,                  \
                           std::forward<LambdaIndexer>(lambdas));                         \
         },                                                                               \
         eos_);                                                                           \
+  }                                                                                      \
+  template <typename RealIndexer, typename ConstRealIndexer,                             \
+            typename EnableIfIndexed =                                                   \
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>     \
+  inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
+                   const int num) const {                                                \
+    return NAME(PortsOfCall::Exec::Device(), std::forward<ConstRealIndexer>(IN1),        \
+                std::forward<ConstRealIndexer>(IN2), std::forward<RealIndexer>(OUT),     \
+                num);                                                                    \
+  }                                                                                      \
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,     \
+            typename EnableIfIndexed =                                                   \
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>     \
+  inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
+                   const int num, LambdaIndexer &&lambdas) const {                       \
+    return NAME(PortsOfCall::Exec::Device(), std::forward<ConstRealIndexer>(IN1),        \
+                std::forward<ConstRealIndexer>(IN2), std::forward<RealIndexer>(OUT),     \
+                num, std::forward<LambdaIndexer>(lambdas));                              \
+  }                                                                                      \
+  template <typename RealIndexer, typename ConstRealIndexer,                             \
+            typename EnableIfIndexed =                                                   \
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>     \
+  inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
+                   Real *scratch, const int num) const {                                 \
+    return NAME(PortsOfCall::Exec::Device(), std::forward<ConstRealIndexer>(IN1),        \
+                std::forward<ConstRealIndexer>(IN2), std::forward<RealIndexer>(OUT),     \
+                scratch, num);                                                           \
+  }                                                                                      \
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,     \
+            typename EnableIfIndexed =                                                   \
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>     \
+  inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
+                   Real *scratch, const int num, LambdaIndexer &&lambdas) const {        \
+    return NAME(PortsOfCall::Exec::Device(), std::forward<ConstRealIndexer>(IN1),        \
+                std::forward<ConstRealIndexer>(IN2), std::forward<RealIndexer>(OUT),     \
+                scratch, num, std::forward<LambdaIndexer>(lambdas));                     \
   }
 // This one does both FromDensityTemperature and
 // FromDensityInternalEnergy at once. Not always useful, but
@@ -499,46 +546,99 @@ class Variant {
 
   /// This is sort of what the SG_VARIANT_VEC would concretize too, though
   /// it has fewer arguments.
-  template <typename RealIndexer, typename ConstRealIndexer>
-  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
-                                           const int num) const {
+  template <
+      typename Space, typename RealIndexer, typename ConstRealIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void MinInternalEnergyFromDensity(const Space &s, ConstRealIndexer &&rhos,
+                                           RealIndexer &&sies, const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return MinInternalEnergyFromDensity(std::forward<ConstRealIndexer>(rhos),
+    return MinInternalEnergyFromDensity(s, std::forward<ConstRealIndexer>(rhos),
                                         std::forward<RealIndexer>(sies), num, lambdas);
   }
 
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
-                                           const int num, LambdaIndexer &&lambdas) const {
+  template <
+      typename Space, typename RealIndexer, typename ConstRealIndexer,
+      typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void MinInternalEnergyFromDensity(const Space &s, ConstRealIndexer &&rhos,
+                                           RealIndexer &&sies, const int num,
+                                           LambdaIndexer &&lambdas) const {
     return PortsOfCall::visit(
-        [&rhos, &sies, &num, &lambdas](const auto &eos) {
-          return eos.MinInternalEnergyFromDensity(std::forward<ConstRealIndexer>(rhos),
+        [&s, &rhos, &sies, &num, &lambdas](const auto &eos) {
+          return eos.MinInternalEnergyFromDensity(s, std::forward<ConstRealIndexer>(rhos),
                                                   std::forward<RealIndexer>(sies), num,
                                                   std::forward<LambdaIndexer>(lambdas));
         },
         eos_);
   }
 
-  template <typename RealIndexer, typename ConstRealIndexer>
-  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
-                                           Real *scratch, const int num) const {
+  template <
+      typename Space, typename RealIndexer, typename ConstRealIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void MinInternalEnergyFromDensity(const Space &s, ConstRealIndexer &&rhos,
+                                           RealIndexer &&sies, Real *scratch,
+                                           const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return MinInternalEnergyFromDensity(std::forward<ConstRealIndexer>(rhos),
+    return MinInternalEnergyFromDensity(s, std::forward<ConstRealIndexer>(rhos),
                                         std::forward<RealIndexer>(sies), scratch, num,
                                         lambdas);
   }
 
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
-                                           Real *scratch, const int num,
-                                           LambdaIndexer &&lambdas) const {
+  template <
+      typename Space, typename RealIndexer, typename ConstRealIndexer,
+      typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void MinInternalEnergyFromDensity(const Space &s, ConstRealIndexer &&rhos,
+                                           RealIndexer &&sies, Real *scratch,
+                                           const int num, LambdaIndexer &&lambdas) const {
     return PortsOfCall::visit(
-        [&rhos, &sies, &scratch, &num, &lambdas](const auto &eos) {
+        [&s, &rhos, &sies, &scratch, &num, &lambdas](const auto &eos) {
           return eos.MinInternalEnergyFromDensity(
-              std::forward<ConstRealIndexer>(rhos), std::forward<RealIndexer>(sies),
+              s, std::forward<ConstRealIndexer>(rhos), std::forward<RealIndexer>(sies),
               scratch, num, std::forward<LambdaIndexer>(lambdas));
         },
         eos_);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer,
+            typename EnableIfIndexed =
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           const int num) const {
+    return MinInternalEnergyFromDensity(PortsOfCall::Exec::Device(),
+                                        std::forward<ConstRealIndexer>(rhos),
+                                        std::forward<RealIndexer>(sies), num);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename EnableIfIndexed =
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           const int num, LambdaIndexer &&lambdas) const {
+    return MinInternalEnergyFromDensity(
+        PortsOfCall::Exec::Device(), std::forward<ConstRealIndexer>(rhos),
+        std::forward<RealIndexer>(sies), num, std::forward<LambdaIndexer>(lambdas));
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer,
+            typename EnableIfIndexed =
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           Real *scratch, const int num) const {
+    return MinInternalEnergyFromDensity(PortsOfCall::Exec::Device(),
+                                        std::forward<ConstRealIndexer>(rhos),
+                                        std::forward<RealIndexer>(sies), scratch, num);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename EnableIfIndexed =
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           Real *scratch, const int num,
+                                           LambdaIndexer &&lambdas) const {
+    return MinInternalEnergyFromDensity(PortsOfCall::Exec::Device(),
+                                        std::forward<ConstRealIndexer>(rhos),
+                                        std::forward<RealIndexer>(sies), scratch, num,
+                                        std::forward<LambdaIndexer>(lambdas));
   }
   ///
 
@@ -549,32 +649,62 @@ class Variant {
   SG_VARIANT_VEC_FOR(GruneisenParam)
   SG_VARIANT_VEC_2IN_1OUT(InternalEnergyFromDensityPressure, rhos, Ps, sies)
 
-  template <typename RealIndexer>
-  inline void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-                      RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-                      const int num, const unsigned long output) const {
+  template <
+      typename Space, typename RealIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void FillEos(const Space &s, RealIndexer &&rhos, RealIndexer &&temps,
+                      RealIndexer &&energies, RealIndexer &&presses, RealIndexer &&cvs,
+                      RealIndexer &&bmods, const int num,
+                      const unsigned long output) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return FillEos(std::forward<RealIndexer>(rhos), std::forward<RealIndexer>(temps),
+    return FillEos(s, std::forward<RealIndexer>(rhos), std::forward<RealIndexer>(temps),
                    std::forward<RealIndexer>(energies),
                    std::forward<RealIndexer>(presses), std::forward<RealIndexer>(cvs),
                    std::forward<RealIndexer>(bmods), num, output, lambdas);
   }
 
-  template <typename RealIndexer, typename LambdaIndexer>
-  inline void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-                      RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-                      const int num, const unsigned long output,
+  template <
+      typename Space, typename RealIndexer, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void FillEos(const Space &s, RealIndexer &&rhos, RealIndexer &&temps,
+                      RealIndexer &&energies, RealIndexer &&presses, RealIndexer &&cvs,
+                      RealIndexer &&bmods, const int num, const unsigned long output,
                       LambdaIndexer &&lambdas) const {
     return PortsOfCall::visit(
-        [&rhos, &temps, &energies, &presses, &cvs, &bmods, &num, &output,
+        [&s, &rhos, &temps, &energies, &presses, &cvs, &bmods, &num, &output,
          &lambdas](const auto &eos) {
           return eos.FillEos(
-              std::forward<RealIndexer>(rhos), std::forward<RealIndexer>(temps),
+              s, std::forward<RealIndexer>(rhos), std::forward<RealIndexer>(temps),
               std::forward<RealIndexer>(energies), std::forward<RealIndexer>(presses),
               std::forward<RealIndexer>(cvs), std::forward<RealIndexer>(bmods), num,
               output, std::forward<LambdaIndexer>(lambdas));
         },
         eos_);
+  }
+
+  template <typename RealIndexer, typename EnableIfIndexed = std::enable_if_t<
+                                      variadic_utils::has_int_index_v<RealIndexer>>>
+  inline void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
+                      RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
+                      const int num, const unsigned long output) const {
+    return FillEos(PortsOfCall::Exec::Device(), std::forward<RealIndexer>(rhos),
+                   std::forward<RealIndexer>(temps), std::forward<RealIndexer>(energies),
+                   std::forward<RealIndexer>(presses), std::forward<RealIndexer>(cvs),
+                   std::forward<RealIndexer>(bmods), num, output);
+  }
+
+  template <typename RealIndexer, typename LambdaIndexer,
+            typename EnableIfIndexed =
+                std::enable_if_t<variadic_utils::has_int_index_v<RealIndexer>>>
+  inline void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
+                      RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
+                      const int num, const unsigned long output,
+                      LambdaIndexer &&lambdas) const {
+    return FillEos(PortsOfCall::Exec::Device(), std::forward<RealIndexer>(rhos),
+                   std::forward<RealIndexer>(temps), std::forward<RealIndexer>(energies),
+                   std::forward<RealIndexer>(presses), std::forward<RealIndexer>(cvs),
+                   std::forward<RealIndexer>(bmods), num, output,
+                   std::forward<LambdaIndexer>(lambdas));
   }
 
   // Serialization

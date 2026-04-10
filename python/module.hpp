@@ -22,6 +22,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 
+#include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
 
 #include <singularity-eos/base/variadic_utils.hpp>
@@ -104,10 +105,11 @@ void func(const T & self, py::array_t<Real> a, py::array_t<Real> b,             
   auto av = a.unchecked<1>();                                                     \
   auto bv = b.unchecked<1>();                                                     \
   auto outv = PyArrayHelper(out.mutable_unchecked<1>());                          \
+  PortsOfCall::Exec::Host host;                                                   \
   if(lambdas_info.shape[1] > 0) {                                                 \
-    self.func(av, bv, outv, a.size(), LambdaHelper(lambdas));                     \
+    self.func(host, av, bv, outv, a.size(), LambdaHelper(lambdas));               \
   } else {                                                                        \
-    self.func(av, bv, outv, a.size(), NoLambdaHelper());                          \
+    self.func(host, av, bv, outv, a.size(), NoLambdaHelper());                    \
   }                                                                               \
 }                                                                                 \
                                                                                   \
@@ -122,15 +124,16 @@ void func##WithScratch(const T & self, py::array_t<Real> a, py::array_t<Real> b,
   auto bv = PyArrayHelper(b.mutable_unchecked<1>());                              \
   auto outv = PyArrayHelper(out.mutable_unchecked<1>());                          \
   auto scrv = PyArrayHelper(scratch.mutable_unchecked<1>());                      \
+  PortsOfCall::Exec::Host host;                                                   \
   PORTABLE_REQUIRE(av.IsContiguous(), "arrays w/ scratch must be contiguous");    \
   PORTABLE_REQUIRE(bv.IsContiguous(), "arrays w/ scratch must be contiguous");    \
   PORTABLE_REQUIRE(outv.IsContiguous(), "arrays w/ scratch must be contiguous");  \
   PORTABLE_REQUIRE(scrv.IsContiguous(), "arrays w/ scratch must be contiguous");  \
   if(lambdas_info.shape[1] > 0) {                                                 \
-    self.func(av.data(), bv.data(), outv.data(), scrv.data(), a.size(),           \
+    self.func(host, av.data(), bv.data(), outv.data(), scrv.data(), a.size(),     \
               LambdaHelper(lambdas));                                             \
   } else {                                                                        \
-    self.func(av.data(), bv.data(), outv.data(), scrv.data(), a.size(),           \
+    self.func(host, av.data(), bv.data(), outv.data(), scrv.data(), a.size(),     \
               NoLambdaHelper());                                                  \
   }                                                                               \
 }                                                                                 \
@@ -141,7 +144,8 @@ void func##NoLambda(const T & self, py::array_t<Real> a, py::array_t<Real> b,   
   auto av = a.unchecked<1>();                                                     \
   auto bv = b.unchecked<1>();                                                     \
   auto outv = PyArrayHelper(out.mutable_unchecked<1>());                          \
-  self.func(av, bv, outv, a.size(), NoLambdaHelper());                            \
+  PortsOfCall::Exec::Host host;                                                   \
+  self.func(host, av, bv, outv, a.size(), NoLambdaHelper());                      \
 }                                                                                 \
                                                                                   \
 template<typename T>                                                              \
@@ -151,11 +155,12 @@ void func##NoLambdaWithScratch(const T & self, py::array_t<Real> a, py::array_t<
   auto bv = PyArrayHelper(b.mutable_unchecked<1>());                              \
   auto outv = PyArrayHelper(out.mutable_unchecked<1>());                          \
   auto scrv = PyArrayHelper(scratch.mutable_unchecked<1>());                      \
+  PortsOfCall::Exec::Host host;                                                   \
   PORTABLE_REQUIRE(av.IsContiguous(), "arrays w/ scratch must be contiguous");    \
   PORTABLE_REQUIRE(bv.IsContiguous(), "arrays w/ scratch must be contiguous");    \
   PORTABLE_REQUIRE(outv.IsContiguous(), "arrays w/ scratch must be contiguous");  \
   PORTABLE_REQUIRE(scrv.IsContiguous(), "arrays w/ scratch must be contiguous");  \
-  self.func(av.data(), bv.data(), outv.data(), scrv.data(), a.size(),             \
+  self.func(host, av.data(), bv.data(), outv.data(), scrv.data(), a.size(),       \
             NoLambdaHelper());                                                    \
 }
 
@@ -260,11 +265,13 @@ struct VectorFunctions {
       auto bmodsv = PyArrayHelper(bmods.mutable_unchecked<1>());
 
       if(lambdas_info.shape[1] > 0) {
-        self.FillEos(rhosv, temperaturesv,
+        self.FillEos(PortsOfCall::Exec::Host(),
+                     rhosv, temperaturesv,
                      siesv, pressuresv, cvsv,
                      bmodsv, rhos.size(), output, LambdaHelper(lambdas));
       } else {
-        self.FillEos(rhosv, temperaturesv,
+        self.FillEos(PortsOfCall::Exec::Host(),
+                     rhosv, temperaturesv,
                      siesv, pressuresv, cvsv,
                      bmodsv, rhos.size(), output, NoLambdaHelper());
       }
@@ -282,7 +289,8 @@ struct VectorFunctions {
       auto pressuresv = PyArrayHelper(pressures.mutable_unchecked<1>());
       auto cvsv = PyArrayHelper(cvs.mutable_unchecked<1>());
       auto bmodsv = PyArrayHelper(bmods.mutable_unchecked<1>());
-      self.FillEos(rhosv, temperaturesv,
+      self.FillEos(PortsOfCall::Exec::Host(),
+                   rhosv, temperaturesv,
                     siesv, pressuresv, cvsv,
                    bmodsv, rhos.size(), output, NoLambdaHelper());
     }, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("pressures"), py::arg("cvs"), py::arg("bmods"), py::arg("output"));
@@ -334,12 +342,14 @@ struct VectorFunctions<T,true> {
       auto scrv = PyArrayHelper(scratch.mutable_unchecked<1>());
 
       if(lambdas_info.shape[1] > 0) {
-        self.FillEos(rhosv.data(), temperaturesv.data(),
+        self.FillEos(PortsOfCall::Exec::Host(),
+                     rhosv.data(), temperaturesv.data(),
                      siesv.data(), pressuresv.data(), cvsv.data(),
                      bmodsv.data(), scrv.data(), rhos.size(), output,
                      LambdaHelper(lambdas));
       } else {
-        self.FillEos(rhosv.data(), temperaturesv.data(),
+        self.FillEos(PortsOfCall::Exec::Host(),
+                     rhosv.data(), temperaturesv.data(),
                      siesv.data(), pressuresv.data(), cvsv.data(),
                      bmodsv.data(), scrv.data(), rhos.size(), output,
                      NoLambdaHelper());
@@ -361,7 +371,8 @@ struct VectorFunctions<T,true> {
       auto bmodsv = PyArrayHelper(bmods.mutable_unchecked<1>());
       auto scrv = PyArrayHelper(scratch.mutable_unchecked<1>());
 
-      self.FillEos(rhosv.data(), temperaturesv.data(),
+      self.FillEos(PortsOfCall::Exec::Host(),
+                   rhosv.data(), temperaturesv.data(),
                    siesv.data(), pressuresv.data(), cvsv.data(),
                    bmodsv.data(), scrv.data(), rhos.size(),
                    output, NoLambdaHelper());

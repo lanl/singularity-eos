@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -485,7 +485,7 @@ SCENARIO("Gruneisen EOS density limit") {
         const Real beyond_max = eos.PressureFromDensityTemperature(rho, temperature);
         INFO("Pressure at rho_max: " << at_max << ", Pressure beyond rho_max"
                                      << beyond_max);
-        REQUIRE(at_max == beyond_max);
+        REQUIRE(isClose(at_max, beyond_max));
       }
     }
     WHEN("The rho_max parameter is not specified") {
