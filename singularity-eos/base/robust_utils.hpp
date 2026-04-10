@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -18,6 +18,7 @@
 #include <cmath>
 #include <limits>
 #include <ports-of-call/portability.hpp>
+#include <type_traits>
 
 namespace singularity {
 namespace robust {
@@ -54,7 +55,11 @@ Real make_bounded(const Real val, const Real vmin, const Real vmax) {
 
 template <typename T>
 PORTABLE_FORCEINLINE_FUNCTION int sgn(const T &val) {
-  return (T(0) <= val) - (val < T(0));
+  if constexpr (std::is_unsigned_v<T>) {
+    return 1;
+  } else {
+    return (T(0) <= val) - (val < T(0));
+  }
 }
 
 template <typename A, typename B>
