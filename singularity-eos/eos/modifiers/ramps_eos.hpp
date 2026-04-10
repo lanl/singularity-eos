@@ -311,11 +311,18 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
         typeid(BilinearRampEOS<T>).name(), __func__);
     static auto const cname = name.c_str();
     auto const copy = *this;
-    portableFor(
-        cname, s, 0, num, PORTABLE_LAMBDA(const int i) {
-          const Real p_ramp = copy.get_ramp_pressure(rhos[i]);
-          pressures[i] = std::max(pressures[i], p_ramp);
-        });
+    if constexpr (std::is_same_v<Space, PortsOfCall::Exec::Host>) {
+      portableFor(cname, s, 0, num, [=](const int i) {
+        const Real p_ramp = copy.get_ramp_pressure(rhos[i]);
+        pressures[i] = std::max(pressures[i], p_ramp);
+      });
+    } else {
+      portableFor(
+          cname, s, 0, num, PORTABLE_LAMBDA(const int i) {
+            const Real p_ramp = copy.get_ramp_pressure(rhos[i]);
+            pressures[i] = std::max(pressures[i], p_ramp);
+          });
+    }
   }
 
   template <
@@ -331,11 +338,18 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
         typeid(BilinearRampEOS<T>).name(), __func__);
     static auto const cname = name.c_str();
     auto const copy = *this;
-    portableFor(
-        cname, s, 0, num, PORTABLE_LAMBDA(const int i) {
-          const Real p_ramp = copy.get_ramp_pressure(rhos[i]);
-          pressures[i] = std::max(pressures[i], p_ramp);
-        });
+    if constexpr (std::is_same_v<Space, PortsOfCall::Exec::Host>) {
+      portableFor(cname, s, 0, num, [=](const int i) {
+        const Real p_ramp = copy.get_ramp_pressure(rhos[i]);
+        pressures[i] = std::max(pressures[i], p_ramp);
+      });
+    } else {
+      portableFor(
+          cname, s, 0, num, PORTABLE_LAMBDA(const int i) {
+            const Real p_ramp = copy.get_ramp_pressure(rhos[i]);
+            pressures[i] = std::max(pressures[i], p_ramp);
+          });
+    }
   }
 
   template <
@@ -393,13 +407,22 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
         typeid(BilinearRampEOS<T>).name(), __func__);
     static auto const cname = name.c_str();
     auto const copy = *this;
-    portableFor(
-        cname, s, 0, num, PORTABLE_LAMBDA(const int i) {
-          const Real p_ramp = copy.get_ramp_pressure(rhos[i]);
-          if (pressures[i] < p_ramp) {
-            bmods[i] = rhos[i] * copy.get_ramp_dpdrho(rhos[i]);
-          }
-        });
+    if constexpr (std::is_same_v<Space, PortsOfCall::Exec::Host>) {
+      portableFor(cname, s, 0, num, [=](const int i) {
+        const Real p_ramp = copy.get_ramp_pressure(rhos[i]);
+        if (pressures[i] < p_ramp) {
+          bmods[i] = rhos[i] * copy.get_ramp_dpdrho(rhos[i]);
+        }
+      });
+    } else {
+      portableFor(
+          cname, s, 0, num, PORTABLE_LAMBDA(const int i) {
+            const Real p_ramp = copy.get_ramp_pressure(rhos[i]);
+            if (pressures[i] < p_ramp) {
+              bmods[i] = rhos[i] * copy.get_ramp_dpdrho(rhos[i]);
+            }
+          });
+    }
   }
 
   template <
@@ -419,13 +442,22 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
         typeid(BilinearRampEOS<T>).name(), __func__);
     static auto const cname = name.c_str();
     auto const copy = *this;
-    portableFor(
-        cname, s, 0, num, PORTABLE_LAMBDA(const int i) {
-          const Real p_ramp = copy.get_ramp_pressure(rhos[i]);
-          if (pressures[i] < p_ramp) {
-            bmods[i] = rhos[i] * copy.get_ramp_dpdrho(rhos[i]);
-          }
-        });
+    if constexpr (std::is_same_v<Space, PortsOfCall::Exec::Host>) {
+      portableFor(cname, s, 0, num, [=](const int i) {
+        const Real p_ramp = copy.get_ramp_pressure(rhos[i]);
+        if (pressures[i] < p_ramp) {
+          bmods[i] = rhos[i] * copy.get_ramp_dpdrho(rhos[i]);
+        }
+      });
+    } else {
+      portableFor(
+          cname, s, 0, num, PORTABLE_LAMBDA(const int i) {
+            const Real p_ramp = copy.get_ramp_pressure(rhos[i]);
+            if (pressures[i] < p_ramp) {
+              bmods[i] = rhos[i] * copy.get_ramp_dpdrho(rhos[i]);
+            }
+          });
+    }
   }
 
   template <

@@ -176,10 +176,15 @@ char *StrCat(char *destination, const char *source) {
     static auto const name = SG_MEMBER_FUNC_NAME();                                      \
     static auto const cname = name.c_str();                                              \
     const CRTP &copy = *(static_cast<CRTP const *>(this));                               \
-    portableFor(                                                                         \
-        cname, s, 0, num, PORTABLE_LAMBDA(const int i) {                                 \
-          OUT[i] = copy.NAME(IN1[i], IN2[i], lambdas[i]);                                \
-        });                                                                              \
+    if constexpr (std::is_same_v<Space, PortsOfCall::Exec::Host>) {                      \
+      portableFor(cname, s, 0, num,                                                      \
+                  [=](const int i) { OUT[i] = copy.NAME(IN1[i], IN2[i], lambdas[i]); }); \
+    } else {                                                                             \
+      portableFor(                                                                       \
+          cname, s, 0, num, PORTABLE_LAMBDA(const int i) {                               \
+            OUT[i] = copy.NAME(IN1[i], IN2[i], lambdas[i]);                              \
+          });                                                                            \
+    }                                                                                    \
   }                                                                                      \
   template <typename Space, typename RealIndexer, typename ConstRealIndexer,             \
             typename LambdaIndexer,                                                      \
@@ -435,10 +440,16 @@ class EosBase {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
     const CRTP &copy = *(static_cast<CRTP const *>(this));
-    portableFor(
-        cname, s, 0, num, PORTABLE_LAMBDA(const int i) {
-          sies[i] = copy.MinInternalEnergyFromDensity(rhos[i], lambdas[i]);
-        });
+    if constexpr (std::is_same_v<Space, PortsOfCall::Exec::Host>) {
+      portableFor(cname, s, 0, num, [=](const int i) {
+        sies[i] = copy.MinInternalEnergyFromDensity(rhos[i], lambdas[i]);
+      });
+    } else {
+      portableFor(
+          cname, s, 0, num, PORTABLE_LAMBDA(const int i) {
+            sies[i] = copy.MinInternalEnergyFromDensity(rhos[i], lambdas[i]);
+          });
+    }
   }
   template <
       typename Space, typename RealIndexer, typename ConstRealIndexer,
@@ -510,11 +521,18 @@ class EosBase {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
     const CRTP &copy = *(static_cast<CRTP const *>(this));
-    portableFor(
-        cname, s, 0, num, PORTABLE_LAMBDA(const int i) {
-          copy.FillEos(rhos[i], temps[i], energies[i], presses[i], cvs[i], bmods[i],
-                       output, lambdas[i]);
-        });
+    if constexpr (std::is_same_v<Space, PortsOfCall::Exec::Host>) {
+      portableFor(cname, s, 0, num, [=](const int i) {
+        copy.FillEos(rhos[i], temps[i], energies[i], presses[i], cvs[i], bmods[i], output,
+                     lambdas[i]);
+      });
+    } else {
+      portableFor(
+          cname, s, 0, num, PORTABLE_LAMBDA(const int i) {
+            copy.FillEos(rhos[i], temps[i], energies[i], presses[i], cvs[i], bmods[i],
+                         output, lambdas[i]);
+          });
+    }
   }
   template <typename RealIndexer, typename LambdaIndexer,
             typename EnableIfIndexed =

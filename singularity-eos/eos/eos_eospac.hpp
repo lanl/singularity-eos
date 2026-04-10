@@ -586,33 +586,31 @@ class EOSPAC : public EosBase<EOSPAC> {
       // BMOD = rho*dx[0]*CV/(CV-T[0]/(rho*rho)*dy[0]*dy[0]/dx[0]);
     }
     if (output & thermalqs::specific_heat) {
-      portableFor(
-          cname, 0, num, PORTABLE_LAMBDA(const int i) {
-            cvs[i] = std::max(DEDT[i], 0.0); // Here we do something to the data!
-          });
+      portableFor(cname, s, 0, num, [=](const int i) {
+        cvs[i] = std::max(DEDT[i], 0.0); // Here we do something to the data!
+      });
     }
     if (output & thermalqs::bulk_modulus) {
-      portableFor(
-          cname, 0, num, PORTABLE_LAMBDA(const int i) {
-            const Real rho = R[i];
-            Real BMOD = 0.0;
-            if (DEDT[i] > 0.0 && rho > 0.0) {
-              const Real DPDE = DPDT[i] / DEDT[i];
-              BMOD = rho * DPDR[i] + DPDE * (P[i] / rho - rho * DEDR[i]);
-            } else if (rho > 0.0) { // Case: DEDT <= 0
-              // We need a different DPDE call apparently????
-              // In xRAGE, they call out to P(rho,e) in this case to get the
-              // derivative directly from the half-inverted table.
-              // But upon further review,
-              // I think it will end up evaluating to BMOD_T in any case because cv will
-              // be zero! See eos_eospac.f90 line 1261 BMOD =
-              // BMOD_T+DPDE*DPDE*std::max(DEDT,0.0)*T[0]/rho;
-              // BMOD_T = std::max(rho * DPDR[i], 0.0);
-              // BMOD = BMOD_T; //+DPDE*DPDE*std::max(DEDT,0.0)*T[0]/rho;
-              BMOD = std::max(rho * DPDR[i], 0.0);
-            }
-            bmods[i] = std::max(BMOD, 0.0);
-          });
+      portableFor(cname, s, 0, num, [=](const int i) {
+        const Real rho = R[i];
+        Real BMOD = 0.0;
+        if (DEDT[i] > 0.0 && rho > 0.0) {
+          const Real DPDE = DPDT[i] / DEDT[i];
+          BMOD = rho * DPDR[i] + DPDE * (P[i] / rho - rho * DEDR[i]);
+        } else if (rho > 0.0) { // Case: DEDT <= 0
+          // We need a different DPDE call apparently????
+          // In xRAGE, they call out to P(rho,e) in this case to get the
+          // derivative directly from the half-inverted table.
+          // But upon further review,
+          // I think it will end up evaluating to BMOD_T in any case because cv will
+          // be zero! See eos_eospac.f90 line 1261 BMOD =
+          // BMOD_T+DPDE*DPDE*std::max(DEDT,0.0)*T[0]/rho;
+          // BMOD_T = std::max(rho * DPDR[i], 0.0);
+          // BMOD = BMOD_T; //+DPDE*DPDE*std::max(DEDT,0.0)*T[0]/rho;
+          BMOD = std::max(rho * DPDR[i], 0.0);
+        }
+        bmods[i] = std::max(BMOD, 0.0);
+      });
     }
   }
   template <typename LambdaIndexer>
@@ -775,12 +773,10 @@ class EOSPAC : public EosBase<EOSPAC> {
     const Real y = transform.y.is_set() ? (1.0 / transform.y.get()) : 1.0;
     const Real f = transform.f.is_set() ? transform.f.get() : 1.0;
 
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          cvs[i] =
-              f * y *
-              cvFromSesame(std::max(DEDT[i], 0.0)); // Here we do something to the data!
-        });
+    portableFor(cname, s, 0, num, [=](const int i) {
+      cvs[i] = f * y *
+               cvFromSesame(std::max(DEDT[i], 0.0)); // Here we do something to the data!
+    });
   }
   template <typename LambdaIndexer>
   inline void
@@ -851,11 +847,10 @@ class EOSPAC : public EosBase<EOSPAC> {
 
     const Real f = transform.f.is_set() ? transform.f.get() : 1.0;
 
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          cvs[i] = f * cvFromSesame(
-                           std::max(DEDT[i], 0.0)); // Here we do something to the data!
-        });
+    portableFor(cname, s, 0, num, [=](const int i) {
+      cvs[i] =
+          f * cvFromSesame(std::max(DEDT[i], 0.0)); // Here we do something to the data!
+    });
   }
   template <typename LambdaIndexer>
   inline void
@@ -917,27 +912,26 @@ class EOSPAC : public EosBase<EOSPAC> {
     const Real x = transform.x.is_set() ? transform.x.get() : 1.0;
     const Real f = transform.f.is_set() ? transform.f.get() : 1.0;
 
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          const Real rho = R[i];
-          Real BMOD = 0.0;
-          if (DEDT[i] > 0.0 && rho > 0.0) {
-            const Real DPDE = DPDT[i] / DEDT[i];
-            BMOD = rho * DPDR[i] + DPDE * (P[i] / (rho * x) - rho * DEDR[i]);
-          } else if (rho > 0.0) { // Case: DEDT <= 0
-            // We need a different DPDE call apparently????
-            // In xRAGE, they call out to P(rho,e) in this case to get the
-            // derivative directly from the half-inverted table.
-            // But upon further review,
-            // I think it will end up evaluating to BMOD_T in any case because cv will
-            // be zero! See eos_eospac.f90 line 1261 BMOD =
-            // BMOD_T+DPDE*DPDE*std::max(DEDT,0.0)*T[0]/rho;
-            // BMOD_T = std::max(rho * DPDR[i], 0.0);
-            // BMOD = BMOD_T; //+DPDE*DPDE*std::max(DEDT,0.0)*T[0]/rho;
-            BMOD = std::max(rho * DPDR[i], 0.0);
-          }
-          bmods[i] = f * bulkModulusFromSesame(std::max(BMOD, 0.0));
-        });
+    portableFor(cname, s, 0, num, [=](const int i) {
+      const Real rho = R[i];
+      Real BMOD = 0.0;
+      if (DEDT[i] > 0.0 && rho > 0.0) {
+        const Real DPDE = DPDT[i] / DEDT[i];
+        BMOD = rho * DPDR[i] + DPDE * (P[i] / (rho * x) - rho * DEDR[i]);
+      } else if (rho > 0.0) { // Case: DEDT <= 0
+        // We need a different DPDE call apparently????
+        // In xRAGE, they call out to P(rho,e) in this case to get the
+        // derivative directly from the half-inverted table.
+        // But upon further review,
+        // I think it will end up evaluating to BMOD_T in any case because cv will
+        // be zero! See eos_eospac.f90 line 1261 BMOD =
+        // BMOD_T+DPDE*DPDE*std::max(DEDT,0.0)*T[0]/rho;
+        // BMOD_T = std::max(rho * DPDR[i], 0.0);
+        // BMOD = BMOD_T; //+DPDE*DPDE*std::max(DEDT,0.0)*T[0]/rho;
+        BMOD = std::max(rho * DPDR[i], 0.0);
+      }
+      bmods[i] = f * bulkModulusFromSesame(std::max(BMOD, 0.0));
+    });
   }
   template <typename LambdaIndexer>
   inline void
@@ -1016,27 +1010,26 @@ class EOSPAC : public EosBase<EOSPAC> {
     const Real x = transform.x.is_set() ? transform.x.get() : 1.0;
     const Real f = transform.f.is_set() ? transform.f.get() : 1.0;
 
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          const Real rho = R[i];
-          Real BMOD = 0.0;
-          if (DEDT[i] > 0.0 && rho > 0.0) {
-            const Real DPDE = DPDT[i] / DEDT[i];
-            BMOD = rho * DPDR[i] + DPDE * (P[i] / (rho * x) - rho * DEDR[i]);
-          } else if (rho > 0.0) { // Case: DEDT <= 0
-            // We need a different DPDE call apparently????
-            // In xRAGE, they call out to P(rho,e) in this case to get the
-            // derivative directly from the half-inverted table.
-            // But upon further review,
-            // I think it will end up evaluating to BMOD_T in any case because cv will
-            // be zero! See eos_eospac.f90 line 1261 BMOD =
-            // BMOD_T+DPDE*DPDE*std::max(DEDT,0.0)*T[0]/rho;
-            // BMOD_T = std::max(rho * DPDR[i], 0.0);
-            // BMOD = BMOD_T; //+DPDE*DPDE*std::max(DEDT,0.0)*T[0]/rho;
-            BMOD = std::max(rho * DPDR[i], 0.0);
-          }
-          bmods[i] = f * bulkModulusFromSesame(std::max(BMOD, 0.0));
-        });
+    portableFor(cname, s, 0, num, [=](const int i) {
+      const Real rho = R[i];
+      Real BMOD = 0.0;
+      if (DEDT[i] > 0.0 && rho > 0.0) {
+        const Real DPDE = DPDT[i] / DEDT[i];
+        BMOD = rho * DPDR[i] + DPDE * (P[i] / (rho * x) - rho * DEDR[i]);
+      } else if (rho > 0.0) { // Case: DEDT <= 0
+        // We need a different DPDE call apparently????
+        // In xRAGE, they call out to P(rho,e) in this case to get the
+        // derivative directly from the half-inverted table.
+        // But upon further review,
+        // I think it will end up evaluating to BMOD_T in any case because cv will
+        // be zero! See eos_eospac.f90 line 1261 BMOD =
+        // BMOD_T+DPDE*DPDE*std::max(DEDT,0.0)*T[0]/rho;
+        // BMOD_T = std::max(rho * DPDR[i], 0.0);
+        // BMOD = BMOD_T; //+DPDE*DPDE*std::max(DEDT,0.0)*T[0]/rho;
+        BMOD = std::max(rho * DPDR[i], 0.0);
+      }
+      bmods[i] = f * bulkModulusFromSesame(std::max(BMOD, 0.0));
+    });
   }
   template <typename LambdaIndexer>
   inline void
@@ -1089,11 +1082,10 @@ class EOSPAC : public EosBase<EOSPAC> {
     const Real x = transform.x.is_set() ? transform.x.get() : 1.0;
     const Real f = transform.f.is_set() ? transform.f.get() : 1.0;
 
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          const Real DPDE = DPDT[i] / DEDT[i];
-          gm1s[i] = f * robust::ratio(pressureFromSesame(sieToSesame(DPDE)), x * R[i]);
-        });
+    portableFor(cname, s, 0, num, [=](const int i) {
+      const Real DPDE = DPDT[i] / DEDT[i];
+      gm1s[i] = f * robust::ratio(pressureFromSesame(sieToSesame(DPDE)), x * R[i]);
+    });
   }
   template <typename LambdaIndexer>
   inline void
@@ -1165,11 +1157,10 @@ class EOSPAC : public EosBase<EOSPAC> {
     const Real x = transform.x.is_set() ? transform.x.get() : 1.0;
     const Real f = transform.f.is_set() ? transform.f.get() : 1.0;
 
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          const Real DPDE = DPDT[i] / DEDT[i];
-          gm1s[i] = f * robust::ratio(pressureFromSesame(sieToSesame(DPDE)), x * R[i]);
-        });
+    portableFor(cname, s, 0, num, [=](const int i) {
+      const Real DPDE = DPDT[i] / DEDT[i];
+      gm1s[i] = f * robust::ratio(pressureFromSesame(sieToSesame(DPDE)), x * R[i]);
+    });
   }
   template <typename LambdaIndexer>
   inline void
