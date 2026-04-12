@@ -175,9 +175,14 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
         singularity::mfuncname::member_func_name(typeid(ShiftedEOS<T>).name(), __func__);
     static auto const cname = name.c_str();
     const auto shift_val = shift_;
-    portableFor(
-        cname, s, 0, num,
-        PORTABLE_LAMBDA(const int i) { shifted[i] = sies[i] - shift_val; });
+    if constexpr (std::is_same_v<Space, PortsOfCall::Exec::Host>) {
+      portableFor(cname, s, 0, num,
+                  [=](const int i) { shifted[i] = sies[i] - shift_val; });
+    } else {
+      portableFor(
+          cname, s, 0, num,
+          PORTABLE_LAMBDA(const int i) { shifted[i] = sies[i] - shift_val; });
+    }
   }
 
   template <typename Space, typename EnableIfSpace =
@@ -187,8 +192,12 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
         singularity::mfuncname::member_func_name(typeid(ShiftedEOS<T>).name(), __func__);
     static auto const cname = name.c_str();
     const auto shift_val = shift_;
-    portableFor(
-        cname, s, 0, num, PORTABLE_LAMBDA(const int i) { sies[i] += shift_val; });
+    if constexpr (std::is_same_v<Space, PortsOfCall::Exec::Host>) {
+      portableFor(cname, s, 0, num, [=](const int i) { sies[i] += shift_val; });
+    } else {
+      portableFor(
+          cname, s, 0, num, PORTABLE_LAMBDA(const int i) { sies[i] += shift_val; });
+    }
   }
 
   template <
