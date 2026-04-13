@@ -164,6 +164,42 @@ struct has_bmod_rho_sie<
     EOS, void_t<decltype(std::declval<EOS>().BulkModulusFromDensityInternalEnergy(
              std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
 
+// Detect GruneisenParamFromDensityTemperature
+template <typename EOS, typename = void>
+struct has_gamma_rho_T : std::false_type {};
+
+template<typename EOS>
+struct has_gamma_rho_T<
+    EOS, void_t<decltype(std::declval<EOS>().GruneisenParamFromDensityTemperature(
+      std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
+
+// Detect GruneisenParamFromDensityInternalEnergy
+template <typename EOS, typename = void>
+struct has_gamma_rho_sie : std::false_type {};
+
+template<typename EOS>
+struct has_gamma_rho_sie<
+    EOS, void_t<decltype(std::declval<EOS>().GruneisenParamFromDensityInternalEnergy(
+      std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
+
+// Detect SpecificHeatFromDensityTemperature
+template <typename EOS, typename = void>
+struct has_cv_rho_T : std::false_type {};
+
+template<typename EOS>
+struct has_cv_rho_T<
+    EOS, void_t<decltype(std::declval<EOS>().SpecificHeatFromDensityTemperature(
+      std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
+
+// Detect SpecificHeatFromDensityInternalEnergy
+template <typename EOS, typename = void>
+struct has_cv_rho_sie : std::false_type {};
+
+template<typename EOS>
+struct has_cv_rho_sie<
+    EOS, void_t<decltype(std::declval<EOS>().SpecificHeatFromDensityInternalEnergy(
+      std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
+
 // Detect Abar() method
 template <typename EOS, typename = void>
 struct has_abar : std::false_type {};
@@ -195,6 +231,18 @@ template <typename EOS>
 inline constexpr bool has_bmod_rho_sie_v = has_bmod_rho_sie<EOS>::value;
 
 template <typename EOS>
+inline constexpr bool has_gamma_rho_T_v = has_gamma_rho_T<EOS>::value;
+
+template <typename EOS>
+inline constexpr bool has_gamma_rho_sie_v = has_gamma_rho_sie<EOS>::value;
+
+template <typename EOS>
+inline constexpr bool has_cv_rho_T_v = has_cv_rho_T<EOS>::value;
+
+template <typename EOS>
+inline constexpr bool has_cv_rho_sie_v = has_cv_rho_sie<EOS>::value;
+
+template <typename EOS>
 inline constexpr bool has_abar_v = has_abar<EOS>::value;
 
 template <typename EOS>
@@ -214,6 +262,26 @@ concept has_bmod_rho_T = requires(EOS eos, Real rho, Real T) {
 template <typename EOS>
 concept has_bmod_rho_sie = requires(EOS eos, Real rho, Real sie) {
   { eos.BulkModulusFromDensityInternalEnergy(rho, sie) } -> std::same_as<Real>;
+};
+
+template <typename EOS>
+concept has_gamma_rho_T = requires(EOS eos, Real rho, Real T) {
+  { eos.GruneisenParamFromDensityTemperature(rho, T) } -> std::same_as<Real>;
+};
+
+template <typename EOS>
+concept has_gamma_rho_sie = requires(EOS eos, Real rho, Real sie) {
+  { eos.GruneisenParamFromDensityInternalEnergy(rho, sie) } -> std::same_as<Real>;
+};
+
+template <typename EOS>
+concept has_cv_rho_T = requires(EOS eos, Real rho, Real T) {
+  { eos.SpecificHeatFromDensityTemperature(rho, T) } -> std::same_as<Real>;
+};
+
+template <typename EOS>
+concept has_cv_rho_sie = requires(EOS eos, Real rho, Real sie) {
+  { eos.SpecificHeatFromDensityInternalEnergy(rho, sie) } -> std::same_as<Real>;
 };
 
 template <typename EOS>
