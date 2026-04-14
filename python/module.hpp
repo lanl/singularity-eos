@@ -45,17 +45,23 @@ Real two_params_no_lambda(const T& self, const Real a, const Real b) {
 }
 
 class LambdaHelper {
-  py::array_t<Real> & lambdas;
+  Real *data_;
+  const std::size_t stride_;
 public:
-  LambdaHelper(py::array_t<Real> & lambdas) : lambdas(lambdas) {}
+  LambdaHelper(py::array_t<Real> & lambdas)
+    : data_(lambdas.mutable_data(0,0))
+    , stride_(lambdas.mutable_data(1,0) - lambdas.mutable_data(0,0))
+  {}
+    
   PORTABLE_INLINE_FUNCTION
   Real * operator[](const int i) const {
-    return lambdas.mutable_data(i,0);
+    return data_[i*stride_];
   }
 };
 
 class NoLambdaHelper {
 public:
+  PORTABLE_INLINE_FUNCTION
   Real * operator[](const int i) const {
     return nullptr;
   }
@@ -93,6 +99,7 @@ private:
   Real *data_;
   const std::size_t stride_;
 };
+
 
 // so far didn't find a good way of working with template member function pointers
 // to generalize this without the preprocessor.
