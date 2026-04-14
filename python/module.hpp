@@ -75,6 +75,7 @@ public:
     : data_(t.mutable_data(0))
     , stride_(t.mutable_data(1) - t.mutable_data(0))
   {}
+  PORTABLE_INLINE_FUNCTION
   Real &operator[](const std::size_t i) const {
     return data_[i*stride_];
   }
@@ -102,8 +103,8 @@ void func(const T & self, py::array_t<Real> a, py::array_t<Real> b,             
   if (lambdas_info.ndim != 2)                                                     \
       throw std::runtime_error("lambdas dimension must be 2!");                   \
                                                                                   \
-  auto av = a.unchecked<1>();                                                     \
-  auto bv = b.unchecked<1>();                                                     \
+  auto av = PyArrayHelper(a.mutable_unchecked<1>());                              \
+  auto bv = PyArrayHelper(b.mutable_unchecked<1>());                              \
   auto outv = PyArrayHelper(out.mutable_unchecked<1>());                          \
   PortsOfCall::Exec::Host host;                                                   \
   if(lambdas_info.shape[1] > 0) {                                                 \
@@ -141,8 +142,8 @@ void func##WithScratch(const T & self, py::array_t<Real> a, py::array_t<Real> b,
 template<typename T>                                                              \
 void func##NoLambda(const T & self, py::array_t<Real> a, py::array_t<Real> b,     \
           py::array_t<Real> out){                                                 \
-  auto av = a.unchecked<1>();                                                     \
-  auto bv = b.unchecked<1>();                                                     \
+  auto av = PyArrayHelper(a.mutable_unchecked<1>());                              \
+  auto bv = PyArrayHelper(b.mutable_unchecked<1>());                              \
   auto outv = PyArrayHelper(out.mutable_unchecked<1>());                          \
   PortsOfCall::Exec::Host host;                                                   \
   self.func(host, av, bv, outv, a.size(), NoLambdaHelper());                      \
