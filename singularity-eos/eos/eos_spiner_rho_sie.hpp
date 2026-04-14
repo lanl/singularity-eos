@@ -146,13 +146,40 @@ namespace eos_builder {
 template <typename...>
 using void_t = void;
 
-// Detect BulkModulusFromDensityTemperature
+//Detect PressureFromDensityTemperature
 template <typename EOS, typename = void>
-struct has_bmod_rho_T : std::false_type {};
+struct has_P_rho_T : std::false_type {};
 
 template <typename EOS>
-struct has_bmod_rho_T<
-    EOS, void_t<decltype(std::declval<EOS>().BulkModulusFromDensityTemperature(
+struct has_P_rho_T<
+    EOS, void_t<decltype(std::declval<EOS>().PressureFromDensityTemperature(
+             std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
+
+//Detect PressureFromDensityInternalEnergy
+template <typename EOS, typename = void>
+struct has_P_rho_sie : std::false_type {};
+
+template <typename EOS>
+struct has_P_rho_sie<
+    EOS, void_t<decltype(std::declval<EOS>().PressureFromDensityInternalEnergy(
+             std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
+
+//Detect TemperatureFromDensityInternalEnergy
+template <typename EOS, typename = void>
+struct has_T_rho_sie : std::false_type {};
+
+template <typename EOS>
+struct has_T_rho_sie<
+    EOS, void_t<decltype(std::declval<EOS>().TemperatureFromDensityInternalEnergy(
+             std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
+
+// Detect InternalEnergyFromDensityTemperature
+template <typename EOS, typename = void>
+struct has_sie_rho_T : std::false_type {};
+
+template <typename EOS>
+struct has_sie_rho_T<
+    EOS, void_t<decltype(std::declval<EOS>().InternalEnergyFromDensityTemperature(
              std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
 
 // Detect BulkModulusFromDensityInternalEnergy
@@ -214,16 +241,20 @@ struct has_zbar : std::false_type {};
 template <typename EOS>
 struct has_zbar<EOS, void_t<decltype(std::declval<EOS>().Zbar())>> : std::true_type {};
 
-// Detect PressureFromDensityInternalEnergy
-template <typename EOS, typename = void>
-struct has_P_rho_sie : std::false_type {};
-
-template <typename EOS>
-struct has_P_rho_sie<
-    EOS, void_t<decltype(std::declval<EOS>().PressureFromDensityInternalEnergy(
-             std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
 
 // Convenience constexpr bools
+template <typename EOS>
+inline constexpr bool has_P_rho_T_v = has_P_rho_T<EOS>::value;
+
+template <typename EOS>
+inline constexpr bool has_P_rho_sie_v = has_P_rho_sie<EOS>::value;
+
+template <typename EOS>
+inline constexpr bool has_T_rho_sie_v = has_T_rho_sie<EOS>::value;
+
+template <typename EOS>
+inline constexpr bool has_sie_rho_T_v = has_sie_rho_T<EOS>::value;
+
 template <typename EOS>
 inline constexpr bool has_bmod_rho_T_v = has_bmod_rho_T<EOS>::value;
 
@@ -248,11 +279,28 @@ inline constexpr bool has_abar_v = has_abar<EOS>::value;
 template <typename EOS>
 inline constexpr bool has_zbar_v = has_zbar<EOS>::value;
 
-template <typename EOS>
-inline constexpr bool has_P_rho_sie_v = has_P_rho_sie<EOS>::value;
 
 #else
 // C++20 implementation using concepts (for future migration)
+template <typename EOS>
+concept has_P_rho_T = requires(EOS eos, Real rho, Real T) {
+  { eos.PressureFromDensityTemperature(rho, T) } -> std::same_as<Real>;
+};
+
+template <typename EOS>
+concept has_P_rho_sie = requires(EOS eos, Real rho, Real sie) {
+  { eos.PressureFromDensityInternalEnergy(rho, sie) } -> std::same_as<Real>;
+};
+
+template <typename EOS>
+concept has_T_rho_sie = requires(EOS eos, Real rho, Real sie) {
+  { eos.TemperatureFromDensityInternalEnergy(rho, sie) } -> std::same_as<Real>;
+};
+
+template <typename EOS>
+concept has_sie_rho_T = requires(EOS eos, Real rho, Real T) {
+  { eos.InternalEnergyFromDensityTemperature(rho, T) } -> std::same_as<Real>;
+};
 
 template <typename EOS>
 concept has_bmod_rho_T = requires(EOS eos, Real rho, Real T) {
@@ -294,12 +342,21 @@ concept has_zbar = requires(EOS eos) {
   { eos.Zbar() } -> std::same_as<Real>;
 };
 
-template <typename EOS>
-concept has_P_rho_sie = requires(EOS eos, Real rho, Real sie) {
-  { eos.PressureFromDensityInternalEnergy(rho, sie) } -> std::same_as<Real>;
-};
+
 
 // For compatibility with C++17 code, provide _v helpers
+template <typename EOS>
+inline constexpr bool has_P_rho_T_v = has_P_rho_T<EOS>;
+
+template <typename EOS>
+inline constexpr bool has_P_rho_sie_v = has_P_rho_sie<EOS>;
+
+template <typename EOS>
+inline constexpr bool has_T_rho_sie_v = has_T_rho_sie<EOS>;
+
+template <typename EOS>
+inline constexpr bool has_sie_rho_T_v = has_sie_rho_T<EOS>;
+
 template <typename EOS>
 inline constexpr bool has_bmod_rho_T_v = has_bmod_rho_T<EOS>;
 
@@ -307,13 +364,22 @@ template <typename EOS>
 inline constexpr bool has_bmod_rho_sie_v = has_bmod_rho_sie<EOS>;
 
 template <typename EOS>
+inline constexpr bool has_cv_rho_T_v = has_cv_rho_T<EOS>;
+
+template <typename EOS>
+inline constexpr bool has_cv_rho_sie_v = has_cv_rho_sie<EOS>;
+
+template <typename EOS>
+inline constexpr bool has_gamma_rho_T_v = has_gamma_rho_T<EOS>;
+
+template <typename EOS>
+inline constexpr bool has_gamma_rho_sie_v = has_gamma_rho_sie<EOS>;
+
+template <typename EOS>
 inline constexpr bool has_abar_v = has_abar<EOS>;
 
 template <typename EOS>
 inline constexpr bool has_zbar_v = has_zbar<EOS>;
-
-template <typename EOS>
-inline constexpr bool has_P_rho_sie_v = has_P_rho_sie<EOS>;
 
 #endif
 
