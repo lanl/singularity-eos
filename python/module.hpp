@@ -55,7 +55,7 @@ public:
     
   PORTABLE_INLINE_FUNCTION
   Real * operator[](const int i) const {
-    return data_[i*stride_];
+    return &data_[i*stride_];
   }
 };
 
