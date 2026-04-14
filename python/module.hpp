@@ -34,12 +34,12 @@ using singularity::variadic_utils::np;
 
 // Helper function to convert lambda numpy array to double* buffer
 // With std::optional we would add support for a default value of lambda=None
-template<typename T, PORTABLE_FUNCTION Real(T::*Func)(const Real, const Real, Real*&&) const>
+template<typename T, Real(T::*Func)(const Real, const Real, Real*&&) const>
 Real two_params(const T& self, const Real a, const Real b, py::array_t<Real> lambda) {
   return (self.*Func)(a, b, lambda.mutable_data());
 }
 
-template<typename T, PORTABLE_FUNCTION Real(T::*Func)(const Real, const Real, Real*&&) const>
+template<typename T, Real(T::*Func)(const Real, const Real, Real*&&) const>
 Real two_params_no_lambda(const T& self, const Real a, const Real b) {
   return (self.*Func)(a, b, np<Real>());
 }
@@ -48,6 +48,7 @@ class LambdaHelper {
   py::array_t<Real> & lambdas;
 public:
   LambdaHelper(py::array_t<Real> & lambdas) : lambdas(lambdas) {}
+  PORTABLE_INLINE_FUNCTION
   Real * operator[](const int i) const {
     return lambdas.mutable_data(i,0);
   }
