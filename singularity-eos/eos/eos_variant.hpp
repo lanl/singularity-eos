@@ -768,7 +768,7 @@ class Variant {
   }
   std::size_t DeSerialize(char *src,
                           const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
-    memcpy(this, src, sizeof(*this));
+    memcpy(static_cast<void *>(this), src, sizeof(*this));
     std::size_t offst = sizeof(*this);
     std::size_t dyn_size = DynamicMemorySizeInBytes();
     if (dyn_size > 0) {
