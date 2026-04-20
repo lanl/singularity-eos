@@ -12,6 +12,7 @@
 ### Changed (changing behavior/API/variables/...)
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR636]](https://github.com/lanl/singularity-eos/pull/636) Wrap numpy arrays in a simple wrapper to make GPU compilers happy.
 - [[PR633]](https://github.com/lanl/singularity-eos/pull/633) Make robust::sgn handle unsigned properly
 - [[PR629]](https://github.com/lanl/singularity-eos/pull/629) Use macros and eos_base and eos_variant to reduce boiler plate
 - [[PR626]](https://github.com/lanl/singularity-eos/pull/626) Fix C++20 warnings related to lambdas
