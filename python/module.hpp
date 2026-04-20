@@ -34,27 +34,34 @@ using singularity::variadic_utils::np;
 
 // Helper function to convert lambda numpy array to double* buffer
 // With std::optional we would add support for a default value of lambda=None
-template<typename T, PORTABLE_FUNCTION Real(T::*Func)(const Real, const Real, Real*&&) const>
+template<typename T, Real(T::*Func)(const Real, const Real, Real*&&) const>
 Real two_params(const T& self, const Real a, const Real b, py::array_t<Real> lambda) {
   return (self.*Func)(a, b, lambda.mutable_data());
 }
 
-template<typename T, PORTABLE_FUNCTION Real(T::*Func)(const Real, const Real, Real*&&) const>
+template<typename T, Real(T::*Func)(const Real, const Real, Real*&&) const>
 Real two_params_no_lambda(const T& self, const Real a, const Real b) {
   return (self.*Func)(a, b, np<Real>());
 }
 
 class LambdaHelper {
-  py::array_t<Real> & lambdas;
+  Real *data_;
+  const std::size_t stride_;
 public:
-  LambdaHelper(py::array_t<Real> & lambdas) : lambdas(lambdas) {}
+  LambdaHelper(py::array_t<Real> & lambdas)
+    : data_(lambdas.mutable_data(0,0))
+    , stride_(lambdas.mutable_data(1,0) - lambdas.mutable_data(0,0))
+  {}
+    
+  PORTABLE_INLINE_FUNCTION
   Real * operator[](const int i) const {
-    return lambdas.mutable_data(i,0);
+    return &data_[i*stride_];
   }
 };
 
 class NoLambdaHelper {
 public:
+  PORTABLE_INLINE_FUNCTION
   Real * operator[](const int i) const {
     return nullptr;
   }
@@ -75,6 +82,7 @@ public:
     : data_(t.mutable_data(0))
     , stride_(t.mutable_data(1) - t.mutable_data(0))
   {}
+  PORTABLE_INLINE_FUNCTION
   Real &operator[](const std::size_t i) const {
     return data_[i*stride_];
   }
@@ -92,6 +100,7 @@ private:
   const std::size_t stride_;
 };
 
+
 // so far didn't find a good way of working with template member function pointers
 // to generalize this without the preprocessor.
 #define EOS_VEC_FUNC_TMPL(func, a, b, out)                                        \
@@ -102,8 +111,8 @@ void func(const T & self, py::array_t<Real> a, py::array_t<Real> b,             
   if (lambdas_info.ndim != 2)                                                     \
       throw std::runtime_error("lambdas dimension must be 2!");                   \
                                                                                   \
-  auto av = a.unchecked<1>();                                                     \
-  auto bv = b.unchecked<1>();                                                     \
+  auto av = PyArrayHelper(a.mutable_unchecked<1>());                              \
+  auto bv = PyArrayHelper(b.mutable_unchecked<1>());                              \
   auto outv = PyArrayHelper(out.mutable_unchecked<1>());                          \
   PortsOfCall::Exec::Host host;                                                   \
   if(lambdas_info.shape[1] > 0) {                                                 \
@@ -141,8 +150,8 @@ void func##WithScratch(const T & self, py::array_t<Real> a, py::array_t<Real> b,
 template<typename T>                                                              \
 void func##NoLambda(const T & self, py::array_t<Real> a, py::array_t<Real> b,     \
           py::array_t<Real> out){                                                 \
-  auto av = a.unchecked<1>();                                                     \
-  auto bv = b.unchecked<1>();                                                     \
+  auto av = PyArrayHelper(a.mutable_unchecked<1>());                              \
+  auto bv = PyArrayHelper(b.mutable_unchecked<1>());                              \
   auto outv = PyArrayHelper(out.mutable_unchecked<1>());                          \
   PortsOfCall::Exec::Host host;                                                   \
   self.func(host, av, bv, outv, a.size(), NoLambdaHelper());                      \
