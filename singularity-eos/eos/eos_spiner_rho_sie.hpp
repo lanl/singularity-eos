@@ -139,6 +139,9 @@ struct SpinerTableGridParams {
 // Isolated in separate namespace for easy C++20 migration to concepts
 namespace eos_builder {
 
+template <EOS>
+inline constexpr bool dependent_false_v = false;
+
 // C++17 implementation using detection idiom
 #if __cplusplus < 202002L
 
@@ -1554,44 +1557,111 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
       Real lT = lTBounds.grid.x(i);
       Real T = from_log(lT, lTOffset_);
 
-      // Evaluate source EOS
-      Real sie = source_eos.InternalEnergyFromDensityTemperature(rho, T);
-      Real P = source_eos.PressureFromDensityTemperature(rho, T);
+      // Fill the sie field on the rho-T grid
+      if constexpr(eos_builder::has_sie_rho_T_v<EOS>) {
+        Real sie = source_eos.InternalEnergyFromDensityTemperature(rho, T);
+        sie_(j, i) = sie;
+      } else if constexpr(eos_builder::has_T_rho_sie_v<EOS>) {
+        // Need to invert T(rho, sie) to find sie given (rho, T)                                                                  
+        // Solve: source_eos.TemperatureFromDensityInternalEnergy(rho, sie_trial) = T                                             
+                                                                                                                              
+        const auto T_from_sie = [&source_eos, rho](const Real sie_trial) -> Real {                                                
+          return source_eos.TemperatureFromDensityInternalEnergy(rho, sie_trial);                                                 
+        };                                                                                                                        
+                                                                          
+        // Use sie grid bounds for search range                                                                                   
+        Real sie_lower = sieMin;                                              
+        Real sie_upper = sieMax;                                                                                                  
+        Real sie_guess = 0.5 * (sie_lower + sie_upper);  // midpoint as initial guess
+        Real sie_solution;                                                                                                        
+   
+        RootFinding1D::Status status = SP_ROOT_FINDER(                                                                            
+          T_from_sie, T, sie_guess, sie_lower, sie_upper,                     
+          robust::EPS(), robust::EPS(), sie_solution, nullptr);                                                                   
+                                                                                                                              
+        PORTABLE_ALWAYS_REQUIRE(status == RootFinding1D::Status::SUCCESS,
+          "Failed to invert TemperatureFromDensityInternalEnergy during table construction");                                                                       
+                                                                          
+        sie_(j, i) = sie_solution;                                                                                                      
+      } else { static_assert(eos_builder::dependent_false_v<EOS>,
+          "Source eos must provide either: \n"
+          "InternalEnergyFromDensityTemperature or TemperatureFromDensityInternalEnergy.\n");
 
-      sie_(j, i) = sie;
-      dependsRhoT_.P(j, i) = P;
-
-      // Bulk modulus will be computed by calcBMod_() after derivatives are populated
-      dependsRhoT_.bMod(j, i) = robust::EPS();
-
-      // Derivatives - use finite differences for now
-      // dPdRho at constant T
-      {
-        Real h = rho * 1e-6;
-        Real P_plus = source_eos.PressureFromDensityTemperature(rho + h, T);
-        Real P_minus = source_eos.PressureFromDensityTemperature(rho - h, T);
-        dependsRhoT_.dPdRho(j, i) = (P_plus - P_minus) / (2.0 * h);
       }
 
-      // dPdE at constant rho (via dPdT and dEdT)
-      {
+
+      // Fill the pressure field on the rho-T grid
+      if constexpr (eos_builder::has_P_rho_T_v<EOS>) { 
+        Real P = source_eos.PressureFromDensityTemperature(rho, T);
+        dependsRhoT_.P(j, i) = P;
+      } else if(eos_builder::has_P_rho_sie_v<EOS>) {
+        Real sie = sie_(j, i);
+        Real P = source_eos.PressureFromDensityInternalEnergy(rho, sie);
+        dependsRhoT_.P(j, i) = P;
+      } else {
+        static_assert(eos_builder::dependent_false_v<EOS>,
+          "Source eos must provide either: \n"
+          "PressureFromDensityTemperature or PressureFromDensityInternalEnergy.\n");
+      }
+      // Fill the dPdE field on the rho-T grid
+      if constexpr(eos_builder::has_gamma_rho_T_v<EOS>){
+        Real gamma = source_eos.GruneisenParamFromDensityTemperature(rho, T);
+        dependsRhoT_.dPdE(j, i) = rho*gamma;
+      } else if constexpr(eos_builder::has_gamma_rho_sie_v<EOS>){
+        Real sie = sie_(j, i);
+        Real gamma = source_eos.GruneisenParamFromDensityInternalEnergy(rho, sie);
+        dependsRhoT_.dPdE(j, i) = rho*gamma;
+      } else if constexpr(eos_builder::has_P_rho_sie_v<EOS>){
+        Real sie = sie_(j, i);
+        Real h = sie * 1e-6;
+        Real P_plus = source_eos.PressureFromDensityInternalEnergy(rho, sie + h);
+        Real P_minus = source_eos.PressureFromDensityInternalEnergy(rho, sie - h);
+        dependsRhoT_.dPdE(j, i) = (P_plus - P_minus) / (2.0 * h); 
+      } else if constexpr(eos_builder::has_T_rho_sie_v<EOS>){
+        Real sie = sie_(j, i);
+        Real sie_plus = sie * (1.0 + 1e-6);
+        Real sie_minus = sie * (1.0 - 1e-6);
+        Real T_plus = source_eos.TemperatureFromDensityInternalEnergy(rho, sie_plus);
+        Real T_minus = source_eos.TemperatureFromDensityInternalEnergy(rho, sie_minus);
+        Real P_plus = source_eos.PressureFromDensityTemperature(rho, T_plus);
+        Real P_minus = source_eos.PressureFromDensityTemperature(rho, T_minus);
+        dependsRhoT_.dPdE(j, i) = (P_plus - P_minus) / (sie_plus - sie_minus);
+
+      } else {
         Real h = T * 1e-6;
         Real P_plus = source_eos.PressureFromDensityTemperature(rho, T + h);
         Real P_minus = source_eos.PressureFromDensityTemperature(rho, T - h);
-        Real dPdT = (P_plus - P_minus) / (2.0 * h);
-
+        Real dPdT = (P_plus - P_minus) / (2*h);
         Real E_plus = source_eos.InternalEnergyFromDensityTemperature(rho, T + h);
         Real E_minus = source_eos.InternalEnergyFromDensityTemperature(rho, T - h);
-        Real dEdT = (E_plus - E_minus) / (2.0 * h);
-
-        if (std::abs(dEdT) > robust::EPS()) {
-          dependsRhoT_.dPdE(j, i) = dPdT / dEdT;
-        } else {
-          dependsRhoT_.dPdE(j, i) = 0.0;
-        }
+        Real dEdT = (E_plus - E_minus) / (2*h);
+        dependsRhoT_.dPdE(j, i) = dPdT / dEdT;
       }
 
-      // dEdRho at constant T
+      
+      // Fill the dTdE field on the rho-T grid
+      if constexpr(eos_builder::has_cv_rho_T_v<EOS>){
+        Real cv = source_eos.SpecificHeatFromDensityTemperature(rho,T);
+        //Should I use robust::ratio here?
+        dependsRhoT_.dTdE(j, i) = 1.0 / cv;
+      } else if constexpr(eos_builder::has_cv_rho_sie_v<EOS>){
+        Real sie = sie_(j, i);
+        Real cv = source_eos.SpecificHeatFromDensityInternalEnergy(rho, sie);
+        dependsRhoT_.dTdE(j, i) = 1.0 / cv;
+      } else if constexpr(eos_builder::has_T_rho_sie_v<EOS>){
+        Real sie = sie_(j, i);
+        Real h = std::max(std::abs(sie) * 1e-6, 1e-12);
+        Real T_plus = source_eos.TemperatureFromDensityInternalEnergy(rho, sie + h);
+        Real T_minus = source_eos.TemperatureFromDensityInternalEnergy(rho, sie - h);
+        dependsRhoT_.dTdE(j, i) = (T_plus - T_minus) / (2*h);
+      } else {
+        Real h = T * 1e-6;
+        Real E_plus = source_eos.InternalEnergyFromDensityTemperature(rho, T + h);
+        Real E_minus = source_eos.InternalEnergyFromDensityTemperature(rho, T - h);
+        dependsRhoT_.dTdE(j, i) = 2*h / (E_plus - E_minus);
+      }
+
+      // Fill dEdRho at constant T
       {
         Real h = rho * 1e-6;
         Real E_plus = source_eos.InternalEnergyFromDensityTemperature(rho + h, T);
@@ -1599,27 +1669,30 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
         dependsRhoT_.dEdRho(j, i) = (E_plus - E_minus) / (2.0 * h);
       }
 
-      // dTdE at constant rho (inverse of dEdT)
+      // Fill dPdRho at constant E (not constant T!)
+      // First compute dPdRho_T via finite difference, then convert to dPdRho_E
       {
-        Real h = T * 1e-6;
-        Real E_plus = source_eos.InternalEnergyFromDensityTemperature(rho, T + h);
-        Real E_minus = source_eos.InternalEnergyFromDensityTemperature(rho, T - h);
-        Real dEdT = (E_plus - E_minus) / (2.0 * h);
+        Real h = rho * 1e-6;
+        Real P_plus = source_eos.PressureFromDensityTemperature(rho + h, T);
+        Real P_minus = source_eos.PressureFromDensityTemperature(rho - h, T);
+        Real dPdRho_T = (P_plus - P_minus) / (2.0 * h);
 
-        if (std::abs(dEdT) > robust::EPS()) {
-          dependsRhoT_.dTdE(j, i) = 1.0 / dEdT;
-        } else {
-          dependsRhoT_.dTdE(j, i) = 0.0;
-        }
+        // Convert to dPdRho_E using chain rule:
+        // (dP/drho)_E = (dP/drho)_T - (dP/dE)_rho * (dE/drho)_T
+        Real dPdRho_E = dPdRho_T - dependsRhoT_.dPdE(j, i) * dependsRhoT_.dEdRho(j, i);
+        dependsRhoT_.dPdRho(j, i) = dPdRho_E;
       }
 
-      // dTdRho at constant E (more complex - requires solving)
-      // For now, use approximation: dTdRho_E = -dEdRho / dEdT
+      // Fill dTdRho at constant E
+      // Use chain rule: dTdRho_E = -dEdRho_T * dTdE
       {
         Real dEdRho = dependsRhoT_.dEdRho(j, i);
         Real dTdE = dependsRhoT_.dTdE(j, i);
         dependsRhoT_.dTdRho(j, i) = -dEdRho * dTdE;
       }
+
+      // Bulk modulus will be computed by calcBMod_() later
+      dependsRhoT_.bMod(j, i) = robust::EPS();
     }
   }
 
