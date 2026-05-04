@@ -23,6 +23,8 @@ if(SINGULARITY_USE_SPINER_WITH_HDF5)
   target_link_libraries(map_pt_space PRIVATE singularity-eos::singularity-eos)
   add_executable(pte_2mat pte_2mat.cpp)
   target_link_libraries(pte_2mat PRIVATE singularity-eos::singularity-eos)
+  add_executable(custom_eos_to_spiner custom_eos_to_spiner.cpp)
+  target_link_libraries(custom_eos_to_spiner PRIVATE singularity-eos::singularity-eos)
 endif()
 
 if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_SPINER_WITH_HDF5)
