@@ -31,15 +31,15 @@ using namespace singularity;
 // This represents a simple EOS that a simulation code might implement.
 // It only needs to provide a minimal interface to be tabulated.
 class CustomHostEOS {
-private:
+ private:
   // Physical parameters for a simple Mie-Gruneisen-like EOS
-  Real rho0_;    // reference density
-  Real C0_;      // bulk sound speed
-  Real s_;       // Hugoniot slope parameter
-  Real Gamma0_;  // Gruneisen parameter
-  Real Cv_;      // specific heat
+  Real rho0_;   // reference density
+  Real C0_;     // bulk sound speed
+  Real s_;      // Hugoniot slope parameter
+  Real Gamma0_; // Gruneisen parameter
+  Real Cv_;     // specific heat
 
-public:
+ public:
   CustomHostEOS(Real rho0, Real C0, Real s, Real Gamma0, Real Cv)
       : rho0_(rho0), C0_(C0), s_(s), Gamma0_(Gamma0), Cv_(Cv) {}
 
@@ -99,11 +99,11 @@ int main(int argc, char *argv[]) {
   std::cout << "================================\n\n";
 
   // Create custom EOS with copper-like parameters
-  Real rho0 = 8.93;    // g/cm^3
-  Real C0 = 3.94;      // km/s = 3.94e5 cm/s
-  Real s = 1.489;      // dimensionless
-  Real Gamma0 = 2.0;   // dimensionless
-  Real Cv = 3.85e10;   // erg/g/K
+  Real rho0 = 8.93;  // g/cm^3
+  Real C0 = 3.94;    // km/s = 3.94e5 cm/s
+  Real s = 1.489;    // dimensionless
+  Real Gamma0 = 2.0; // dimensionless
+  Real Cv = 3.85e10; // erg/g/K
 
   CustomHostEOS custom_eos(rho0, C0, s, Gamma0, Cv);
 
@@ -118,16 +118,16 @@ int main(int argc, char *argv[]) {
   SpinerTableGridParams params;
 
   // Define thermodynamic range
-  params.rhoMin = 1.0;      // g/cm^3
-  params.rhoMax = 20.0;     // g/cm^3
-  params.TMin = 300.0;      // K
-  params.TMax = 50000.0;    // K
+  params.rhoMin = 1.0;   // g/cm^3
+  params.rhoMax = 20.0;  // g/cm^3
+  params.TMin = 300.0;   // K
+  params.TMax = 50000.0; // K
 
   // Compute energy bounds
-  params.sieMin = custom_eos.InternalEnergyFromDensityTemperature(params.rhoMin,
-                                                                   params.TMin);
-  params.sieMax = custom_eos.InternalEnergyFromDensityTemperature(params.rhoMax,
-                                                                   params.TMax);
+  params.sieMin =
+      custom_eos.InternalEnergyFromDensityTemperature(params.rhoMin, params.TMin);
+  params.sieMax =
+      custom_eos.InternalEnergyFromDensityTemperature(params.rhoMax, params.TMax);
 
   // Grid resolution (coarser for example speed)
   params.numRhoPerDecade = 50;
@@ -166,8 +166,8 @@ int main(int argc, char *argv[]) {
   std::cout << "==================================================\n\n";
 
   // Test points
-  Real test_rho = 10.0;   // g/cm^3
-  Real test_T = 10000.0;  // K
+  Real test_rho = 10.0;  // g/cm^3
+  Real test_T = 10000.0; // K
 
   // Compute from original custom EOS
   Real P_custom = custom_eos.PressureFromDensityTemperature(test_rho, test_T);

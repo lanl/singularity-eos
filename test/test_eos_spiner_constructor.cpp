@@ -22,9 +22,7 @@
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
-
 // This file was generated in part with the assistance of generative AI
-
 
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE
@@ -46,10 +44,10 @@ using singularity::SpinerTableGridParams;
 // MinimalEOS1: Provides basic methods but NO gamma, cv, or bulk modulus
 // Forces: all derivatives via finite differences, no optimizations
 class MinimalEOS1 {
-private:
-  IdealGas ideal_;  // Use IdealGas internally for physics
+ private:
+  IdealGas ideal_; // Use IdealGas internally for physics
 
-public:
+ public:
   MinimalEOS1(Real gm1, Real Cv) : ideal_(gm1, Cv) {}
 
   // Provide core thermodynamic methods (required by constructor)
@@ -84,10 +82,10 @@ public:
 // MinimalEOS2: Provides E(rho,T) and P(rho,T) but NOT P(rho,sie)
 // Forces: chain rule conversions for dependsRhoSie_ derivatives
 class MinimalEOS2 {
-private:
+ private:
   IdealGas ideal_;
 
-public:
+ public:
   MinimalEOS2(Real gm1, Real Cv) : ideal_(gm1, Cv) {}
 
   PORTABLE_INLINE_FUNCTION
@@ -112,8 +110,7 @@ public:
   Real MeanAtomicNumber() const { return ideal_.MeanAtomicNumber(); }
 };
 
-SCENARIO("SpinerEOS construction from IdealGas",
-         "[SpinerEOS][Constructor][IdealGas]") {
+SCENARIO("SpinerEOS construction from IdealGas", "[SpinerEOS][Constructor][IdealGas]") {
   GIVEN("An IdealGas EOS and grid parameters") {
     // Create IdealGas
     constexpr Real Cv = 2.0;
@@ -182,7 +179,7 @@ SCENARIO("SpinerEOS construction from IdealGas",
         Real bmod_spiner = spiner_eos.BulkModulusFromDensityTemperature(rho, T);
 
         INFO("IdealGas bmod: " << bmod_ideal << "  Spiner bmod: " << bmod_spiner);
-        CHECK(bmod_spiner > 0); // Should be positive
+        CHECK(bmod_spiner > 0);                       // Should be positive
         CHECK(isClose(bmod_spiner, bmod_ideal, 0.1)); // 10% tolerance (derivatives)
       }
 
@@ -301,8 +298,7 @@ SCENARIO("SpinerEOS accuracy test", "[SpinerEOS][Constructor][Accuracy]") {
 
 using singularity::EOSPAC;
 
-SCENARIO("SpinerEOS construction from EOSPAC",
-         "[SpinerEOS][Constructor][EOSPAC]") {
+SCENARIO("SpinerEOS construction from EOSPAC", "[SpinerEOS][Constructor][EOSPAC]") {
   GIVEN("An EOSPAC EOS for aluminum") {
     // Aluminum matid = 3720 (commonly available in EOSPAC)
     constexpr int matid = 3720;
@@ -310,16 +306,16 @@ SCENARIO("SpinerEOS construction from EOSPAC",
 
     // Set up grid parameters - re-grid EOSPAC onto custom grid
     SpinerTableGridParams params;
-    params.rhoMin = 0.1;    // g/cc
-    params.rhoMax = 100.0;  // g/cc
-    params.TMin = 1e2;      // K
-    params.TMax = 1e6;      // K
+    params.rhoMin = 0.1;   // g/cc
+    params.rhoMax = 100.0; // g/cc
+    params.TMin = 1e2;     // K
+    params.TMax = 1e6;     // K
 
     // Estimate sie bounds from EOSPAC
-    Real sie_at_min = eospac_eos.InternalEnergyFromDensityTemperature(
-        params.rhoMin, params.TMin);
-    Real sie_at_max = eospac_eos.InternalEnergyFromDensityTemperature(
-        params.rhoMax, params.TMax);
+    Real sie_at_min =
+        eospac_eos.InternalEnergyFromDensityTemperature(params.rhoMin, params.TMin);
+    Real sie_at_max =
+        eospac_eos.InternalEnergyFromDensityTemperature(params.rhoMax, params.TMax);
 
     params.sieMin = std::min(sie_at_min, sie_at_max) * 0.9;
     params.sieMax = std::max(sie_at_min, sie_at_max) * 1.1;
@@ -342,8 +338,8 @@ SCENARIO("SpinerEOS construction from EOSPAC",
 
       THEN("The SpinerEOS should interpolate consistently with EOSPAC") {
         // Test at several points
-        Real rho = 2.7;    // Normal density
-        Real T = 3000.0;   // 3000 K
+        Real rho = 2.7;  // Normal density
+        Real T = 3000.0; // 3000 K
 
         Real P_eospac = eospac_eos.PressureFromDensityTemperature(rho, T);
         Real P_spiner = spiner_eos.PressureFromDensityTemperature(rho, T);
@@ -355,7 +351,7 @@ SCENARIO("SpinerEOS construction from EOSPAC",
         INFO("EOSPAC sie: " << sie_eospac << "  Spiner sie: " << sie_spiner);
 
         // Tolerance higher than IdealGas due to table interpolation differences
-        CHECK(isClose(P_spiner, P_eospac, 0.05));    // 5% tolerance
+        CHECK(isClose(P_spiner, P_eospac, 0.05)); // 5% tolerance
         CHECK(isClose(sie_spiner, sie_eospac, 0.05));
       }
 
@@ -452,7 +448,8 @@ SCENARIO("SpinerEOS construction from minimal EOS with root finding",
         Real sie_ideal = ideal_eos.InternalEnergyFromDensityTemperature(rho, T);
 
         INFO("Root-finding path - Ideal P: " << P_ideal << " Spiner P: " << P_spiner);
-        INFO("Root-finding path - Ideal sie: " << sie_ideal << " Spiner sie: " << sie_spiner);
+        INFO("Root-finding path - Ideal sie: " << sie_ideal
+                                               << " Spiner sie: " << sie_spiner);
 
         CHECK(isClose(P_spiner, P_ideal, 0.02));
         CHECK(isClose(sie_spiner, sie_ideal, 0.02));
