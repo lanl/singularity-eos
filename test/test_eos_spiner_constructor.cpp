@@ -224,4 +224,118 @@ SCENARIO("SpinerEOS accuracy test", "[SpinerEOS][Constructor][Accuracy]") {
   }
 }
 
+#ifdef SINGULARITY_USE_EOSPAC
+
+using singularity::EOSPAC;
+
+SCENARIO("SpinerEOS construction from EOSPAC",
+         "[SpinerEOS][Constructor][EOSPAC]") {
+  GIVEN("An EOSPAC EOS for aluminum") {
+    // Aluminum matid = 3720 (commonly available in EOSPAC)
+    constexpr int matid = 3720;
+    EOSPAC eospac_eos(matid);
+
+    // Set up grid parameters - re-grid EOSPAC onto custom grid
+    SpinerTableGridParams params;
+    params.rhoMin = 0.1;    // g/cc
+    params.rhoMax = 100.0;  // g/cc
+    params.TMin = 1e2;      // K
+    params.TMax = 1e6;      // K
+
+    // Estimate sie bounds from EOSPAC
+    Real sie_at_min = eospac_eos.InternalEnergyFromDensityTemperature(
+        params.rhoMin, params.TMin);
+    Real sie_at_max = eospac_eos.InternalEnergyFromDensityTemperature(
+        params.rhoMax, params.TMax);
+
+    params.sieMin = std::min(sie_at_min, sie_at_max) * 0.9;
+    params.sieMax = std::max(sie_at_min, sie_at_max) * 1.1;
+
+    // Coarser grid for faster testing
+    params.numRhoPerDecade = 50;
+    params.numTPerDecade = 50;
+    params.numSiePerDecade = 50;
+
+    // Use piecewise grids (more realistic)
+    params.piecewiseRho = true;
+    params.piecewiseT = true;
+    params.piecewiseSie = true;
+
+    params.matid = 3720;
+    params.rhoNormal = 2.7; // Normal density of aluminum
+
+    WHEN("We construct a SpinerEOS from EOSPAC") {
+      SpinerEOSDependsRhoSie spiner_eos(eospac_eos, params);
+
+      THEN("The SpinerEOS should interpolate consistently with EOSPAC") {
+        // Test at several points
+        Real rho = 2.7;    // Normal density
+        Real T = 3000.0;   // 3000 K
+
+        Real P_eospac = eospac_eos.PressureFromDensityTemperature(rho, T);
+        Real P_spiner = spiner_eos.PressureFromDensityTemperature(rho, T);
+
+        Real sie_eospac = eospac_eos.InternalEnergyFromDensityTemperature(rho, T);
+        Real sie_spiner = spiner_eos.InternalEnergyFromDensityTemperature(rho, T);
+
+        INFO("EOSPAC P: " << P_eospac << "  Spiner P: " << P_spiner);
+        INFO("EOSPAC sie: " << sie_eospac << "  Spiner sie: " << sie_spiner);
+
+        // Tolerance higher than IdealGas due to table interpolation differences
+        CHECK(isClose(P_spiner, P_eospac, 0.05));    // 5% tolerance
+        CHECK(isClose(sie_spiner, sie_eospac, 0.05));
+      }
+
+      AND_THEN("Temperature inversion should work") {
+        Real rho = 5.0;
+        Real T_orig = 5000.0;
+
+        // Get sie from EOSPAC
+        Real sie = eospac_eos.InternalEnergyFromDensityTemperature(rho, T_orig);
+
+        // Invert using SpinerEOS
+        Real T_spiner = spiner_eos.TemperatureFromDensityInternalEnergy(rho, sie);
+        Real T_eospac = eospac_eos.TemperatureFromDensityInternalEnergy(rho, sie);
+
+        INFO("Original T: " << T_orig);
+        INFO("EOSPAC T: " << T_eospac << "  Spiner T: " << T_spiner);
+
+        CHECK(isClose(T_spiner, T_eospac, 0.05));
+      }
+
+      AND_THEN("Bulk modulus should be reasonable") {
+        Real rho = 2.7;
+        Real T = 3000.0;
+
+        Real bmod_eospac = eospac_eos.BulkModulusFromDensityTemperature(rho, T);
+        Real bmod_spiner = spiner_eos.BulkModulusFromDensityTemperature(rho, T);
+
+        INFO("EOSPAC bmod: " << bmod_eospac << "  Spiner bmod: " << bmod_spiner);
+        CHECK(bmod_spiner > 0);
+        // Bulk modulus can differ more due to derivative approximations
+        CHECK(isClose(bmod_spiner, bmod_eospac, 0.2)); // 20% tolerance
+      }
+
+      AND_THEN("Material properties should be preserved") {
+        CHECK(spiner_eos.matid() == params.matid);
+
+        // EOSPAC should provide mean atomic mass and number
+        Real abar_eospac = eospac_eos.MeanAtomicMass();
+        Real abar_spiner = spiner_eos.MeanAtomicMass();
+
+        Real zbar_eospac = eospac_eos.MeanAtomicNumber();
+        Real zbar_spiner = spiner_eos.MeanAtomicNumber();
+
+        INFO("EOSPAC Abar: " << abar_eospac << " Spiner Abar: " << abar_spiner);
+        INFO("EOSPAC Zbar: " << zbar_eospac << " Spiner Zbar: " << zbar_spiner);
+
+        CHECK(isClose(abar_spiner, abar_eospac, 1e-6));
+        CHECK(isClose(zbar_spiner, zbar_eospac, 1e-6));
+      }
+    }
+  }
+}
+
+#endif // SINGULARITY_USE_EOSPAC
+
 #endif // SINGULARITY_USE_SPINER_WITH_HDF5
