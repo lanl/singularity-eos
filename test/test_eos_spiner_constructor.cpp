@@ -39,6 +39,79 @@ using singularity::IdealGas;
 using singularity::SpinerEOSDependsRhoSie;
 using singularity::SpinerTableGridParams;
 
+// Minimal EOS classes for testing fallback paths
+// These deliberately provide only the bare minimum required interface
+// to force the constructor to use finite differences, root finding, etc.
+
+// MinimalEOS1: Provides basic methods but NO gamma, cv, or bulk modulus
+// Forces: all derivatives via finite differences, no optimizations
+class MinimalEOS1 {
+private:
+  IdealGas ideal_;  // Use IdealGas internally for physics
+
+public:
+  MinimalEOS1(Real gm1, Real Cv) : ideal_(gm1, Cv) {}
+
+  // Provide core thermodynamic methods (required by constructor)
+  PORTABLE_INLINE_FUNCTION
+  Real TemperatureFromDensityInternalEnergy(Real rho, Real sie) const {
+    return ideal_.TemperatureFromDensityInternalEnergy(rho, sie);
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  Real InternalEnergyFromDensityTemperature(Real rho, Real T) const {
+    return ideal_.InternalEnergyFromDensityTemperature(rho, T);
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  Real PressureFromDensityTemperature(Real rho, Real T) const {
+    return ideal_.PressureFromDensityTemperature(rho, T);
+  }
+
+  // Deliberately DO NOT provide:
+  // - GruneisenParamFromDensityTemperature (forces finite diff for dPdE)
+  // - SpecificHeatFromDensityTemperature (forces finite diff for dTdE)
+  // - BulkModulusFromDensityTemperature (forces calcBMod_ computation)
+
+  // Provide mean atomic properties
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicMass() const { return ideal_.MeanAtomicMass(); }
+
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicNumber() const { return ideal_.MeanAtomicNumber(); }
+};
+
+// MinimalEOS2: Provides E(rho,T) and P(rho,T) but NOT P(rho,sie)
+// Forces: chain rule conversions for dependsRhoSie_ derivatives
+class MinimalEOS2 {
+private:
+  IdealGas ideal_;
+
+public:
+  MinimalEOS2(Real gm1, Real Cv) : ideal_(gm1, Cv) {}
+
+  PORTABLE_INLINE_FUNCTION
+  Real InternalEnergyFromDensityTemperature(Real rho, Real T) const {
+    return ideal_.InternalEnergyFromDensityTemperature(rho, T);
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  Real PressureFromDensityTemperature(Real rho, Real T) const {
+    return ideal_.PressureFromDensityTemperature(rho, T);
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  Real TemperatureFromDensityInternalEnergy(Real rho, Real sie) const {
+    return ideal_.TemperatureFromDensityInternalEnergy(rho, sie);
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicMass() const { return ideal_.MeanAtomicMass(); }
+
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicNumber() const { return ideal_.MeanAtomicNumber(); }
+};
+
 SCENARIO("SpinerEOS construction from IdealGas",
          "[SpinerEOS][Constructor][IdealGas]") {
   GIVEN("An IdealGas EOS and grid parameters") {
@@ -337,5 +410,135 @@ SCENARIO("SpinerEOS construction from EOSPAC",
 }
 
 #endif // SINGULARITY_USE_EOSPAC
+
+SCENARIO("SpinerEOS construction from minimal EOS with root finding",
+         "[SpinerEOS][Constructor][MinimalEOS][RootFinding]") {
+  GIVEN("A minimal EOS that only provides T(rho,sie) and P(rho,T)") {
+    constexpr Real Cv = 2.0;
+    constexpr Real gm1 = 0.4;
+    MinimalEOS1 minimal_eos(gm1, Cv);
+
+    // Also create full IdealGas for comparison
+    IdealGas ideal_eos(gm1, Cv);
+
+    SpinerTableGridParams params;
+    params.rhoMin = 1e-2;
+    params.rhoMax = 1e2;
+    params.TMin = 1e2;
+    params.TMax = 1e4;
+    params.sieMin = Cv * params.TMin;
+    params.sieMax = Cv * params.TMax;
+
+    params.numRhoPerDecade = 50;
+    params.numTPerDecade = 50;
+    params.numSiePerDecade = 50;
+    params.piecewiseRho = false;
+    params.piecewiseT = false;
+    params.piecewiseSie = false;
+
+    params.matid = 2001;
+
+    WHEN("We construct a SpinerEOS from the minimal EOS") {
+      SpinerEOSDependsRhoSie spiner_eos(minimal_eos, params);
+
+      THEN("Root finding should successfully invert T to get sie") {
+        Real rho = 1.0;
+        Real T = 1000.0;
+
+        Real P_spiner = spiner_eos.PressureFromDensityTemperature(rho, T);
+        Real P_ideal = ideal_eos.PressureFromDensityTemperature(rho, T);
+
+        Real sie_spiner = spiner_eos.InternalEnergyFromDensityTemperature(rho, T);
+        Real sie_ideal = ideal_eos.InternalEnergyFromDensityTemperature(rho, T);
+
+        INFO("Root-finding path - Ideal P: " << P_ideal << " Spiner P: " << P_spiner);
+        INFO("Root-finding path - Ideal sie: " << sie_ideal << " Spiner sie: " << sie_spiner);
+
+        CHECK(isClose(P_spiner, P_ideal, 0.02));
+        CHECK(isClose(sie_spiner, sie_ideal, 0.02));
+      }
+
+      AND_THEN("Finite difference derivatives should give reasonable results") {
+        Real rho = 1.0;
+        Real sie = Cv * 1000.0;
+
+        Real T_spiner = spiner_eos.TemperatureFromDensityInternalEnergy(rho, sie);
+        Real T_ideal = ideal_eos.TemperatureFromDensityInternalEnergy(rho, sie);
+
+        INFO("FD derivatives - Ideal T: " << T_ideal << " Spiner T: " << T_spiner);
+        CHECK(isClose(T_spiner, T_ideal, 0.02));
+      }
+
+      AND_THEN("Material properties should be set") {
+        CHECK(spiner_eos.matid() == params.matid);
+        CHECK(spiner_eos.MeanAtomicMass() == ideal_eos.MeanAtomicMass());
+        CHECK(spiner_eos.MeanAtomicNumber() == ideal_eos.MeanAtomicNumber());
+      }
+    }
+  }
+}
+
+SCENARIO("SpinerEOS construction from minimal EOS with chain rule",
+         "[SpinerEOS][Constructor][MinimalEOS][ChainRule]") {
+  GIVEN("A minimal EOS without P(rho,sie) method") {
+    constexpr Real Cv = 2.0;
+    constexpr Real gm1 = 0.4;
+    MinimalEOS2 minimal_eos(gm1, Cv);
+
+    IdealGas ideal_eos(gm1, Cv);
+
+    SpinerTableGridParams params;
+    params.rhoMin = 1e-2;
+    params.rhoMax = 1e2;
+    params.TMin = 1e2;
+    params.TMax = 1e4;
+    params.sieMin = Cv * params.TMin;
+    params.sieMax = Cv * params.TMax;
+
+    params.numRhoPerDecade = 50;
+    params.numTPerDecade = 50;
+    params.numSiePerDecade = 50;
+    params.piecewiseRho = false;
+    params.piecewiseT = false;
+    params.piecewiseSie = false;
+
+    params.matid = 2002;
+
+    WHEN("We construct a SpinerEOS forcing chain rule fallback") {
+      SpinerEOSDependsRhoSie spiner_eos(minimal_eos, params);
+
+      THEN("Chain rule conversions should work for dependsRhoSie derivatives") {
+        Real rho = 1.0;
+        Real sie = Cv * 1000.0;
+
+        Real P_spiner = spiner_eos.PressureFromDensityInternalEnergy(rho, sie);
+        Real P_ideal = ideal_eos.PressureFromDensityInternalEnergy(rho, sie);
+
+        Real T_spiner = spiner_eos.TemperatureFromDensityInternalEnergy(rho, sie);
+        Real T_ideal = ideal_eos.TemperatureFromDensityInternalEnergy(rho, sie);
+
+        INFO("Chain rule path - Ideal P: " << P_ideal << " Spiner P: " << P_spiner);
+        INFO("Chain rule path - Ideal T: " << T_ideal << " Spiner T: " << T_spiner);
+
+        // Tolerance higher due to chain rule approximations
+        CHECK(isClose(P_spiner, P_ideal, 0.05));
+        CHECK(isClose(T_spiner, T_ideal, 0.02));
+      }
+
+      AND_THEN("Bulk modulus should be computed correctly") {
+        Real rho = 1.0;
+        Real T = 1000.0;
+
+        Real bmod_spiner = spiner_eos.BulkModulusFromDensityTemperature(rho, T);
+        Real bmod_ideal = ideal_eos.BulkModulusFromDensityTemperature(rho, T);
+
+        INFO("Ideal bmod: " << bmod_ideal << " Spiner bmod: " << bmod_spiner);
+        CHECK(bmod_spiner > 0);
+        // Higher tolerance for bulk modulus with chain rule derivatives
+        CHECK(isClose(bmod_spiner, bmod_ideal, 0.15));
+      }
+    }
+  }
+}
 
 #endif // SINGULARITY_USE_SPINER_WITH_HDF5

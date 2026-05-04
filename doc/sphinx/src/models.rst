@@ -1834,13 +1834,23 @@ Example usage:
 
 .. note::
 
-  If the source EOS provides ``BulkModulusFromDensityTemperature`` or
-  ``BulkModulusFromDensityInternalEnergy`` methods, they will be used
-  directly. Otherwise, bulk modulus is computed from finite differences
-  of pressure. The same applies to thermodynamic derivatives. Similarly,
-  if the source EOS provides ``Abar()`` and ``Zbar()`` methods and these
-  properties are not specified in ``params``, they will be extracted
-  from the source EOS.
+  The constructor automatically detects and uses optional EOS methods
+  when available to improve accuracy:
+
+  - ``GruneisenParamFromDensityTemperature`` or
+    ``GruneisenParamFromDensityInternalEnergy`` for computing dP/dE
+  - ``SpecificHeatFromDensityTemperature`` or
+    ``SpecificHeatFromDensityInternalEnergy`` for computing dT/dE
+  - ``PressureFromDensityInternalEnergy`` for direct pressure lookups
+    (otherwise uses chain rule conversions)
+
+  If these methods are not provided, derivatives are computed via centered
+  finite differences. Bulk modulus is always computed consistently from
+  derivatives using the internal ``calcBMod_()`` method.
+
+  Material properties (``MeanAtomicMass()`` and ``MeanAtomicNumber()``)
+  are automatically extracted from the source EOS if available and not
+  specified in ``params``.
 
 Additionally Spiner EOS models support mass fraction lookups of the form
 
