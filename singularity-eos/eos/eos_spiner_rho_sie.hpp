@@ -139,7 +139,7 @@ struct SpinerTableGridParams {
 // Isolated in separate namespace for easy C++20 migration to concepts
 namespace eos_builder {
 
-template <EOS>
+template <typename EOS>
 inline constexpr bool dependent_false_v = false;
 
 // C++17 implementation using detection idiom
@@ -183,6 +183,15 @@ struct has_sie_rho_T : std::false_type {};
 template <typename EOS>
 struct has_sie_rho_T<
     EOS, void_t<decltype(std::declval<EOS>().InternalEnergyFromDensityTemperature(
+             std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
+
+// Detect BulkModulusFromDensityTemperature
+template <typename EOS, typename = void>
+struct has_bmod_rho_T : std::false_type {};
+
+template <typename EOS>
+struct has_bmod_rho_T<
+    EOS, void_t<decltype(std::declval<EOS>().BulkModulusFromDensityTemperature(
              std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
 
 // Detect BulkModulusFromDensityInternalEnergy
@@ -230,19 +239,19 @@ struct has_cv_rho_sie<
     EOS, void_t<decltype(std::declval<EOS>().SpecificHeatFromDensityInternalEnergy(
       std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
 
-// Detect Abar() method
+// Detect MeanAtomicMass() method
 template <typename EOS, typename = void>
 struct has_abar : std::false_type {};
 
 template <typename EOS>
-struct has_abar<EOS, void_t<decltype(std::declval<EOS>().Abar())>> : std::true_type {};
+struct has_abar<EOS, void_t<decltype(std::declval<EOS>().MeanAtomicMass())>> : std::true_type {};
 
-// Detect Zbar() method
+// Detect MeanAtomicNumber() method
 template <typename EOS, typename = void>
 struct has_zbar : std::false_type {};
 
 template <typename EOS>
-struct has_zbar<EOS, void_t<decltype(std::declval<EOS>().Zbar())>> : std::true_type {};
+struct has_zbar<EOS, void_t<decltype(std::declval<EOS>().MeanAtomicNumber())>> : std::true_type {};
 
 
 // Convenience constexpr bools
@@ -337,12 +346,12 @@ concept has_cv_rho_sie = requires(EOS eos, Real rho, Real sie) {
 
 template <typename EOS>
 concept has_abar = requires(EOS eos) {
-  { eos.Abar() } -> std::same_as<Real>;
+  { eos.MeanAtomicMass() } -> std::same_as<Real>;
 };
 
 template <typename EOS>
 concept has_zbar = requires(EOS eos) {
-  { eos.Zbar() } -> std::same_as<Real>;
+  { eos.MeanAtomicNumber() } -> std::same_as<Real>;
 };
 
 
@@ -1844,13 +1853,13 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
 
   // Material properties
   if constexpr (eos_builder::has_abar_v<EOS>) {
-    AZbar_.Abar = std::isnan(params.Abar) ? source_eos.Abar() : params.Abar;
+    AZbar_.Abar = std::isnan(params.Abar) ? source_eos.MeanAtomicMass() : params.Abar;
   } else {
     AZbar_.Abar = std::isnan(params.Abar) ? 1.0 : params.Abar;
   }
 
   if constexpr (eos_builder::has_zbar_v<EOS>) {
-    AZbar_.Zbar = std::isnan(params.Zbar) ? source_eos.Zbar() : params.Zbar;
+    AZbar_.Zbar = std::isnan(params.Zbar) ? source_eos.MeanAtomicNumber() : params.Zbar;
   } else {
     AZbar_.Zbar = std::isnan(params.Zbar) ? 1.0 : params.Zbar;
   }
