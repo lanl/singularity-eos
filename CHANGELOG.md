@@ -8,6 +8,7 @@
 - [[PR630]](https://github.com/lanl/singularity-eos/pull/630) Thread execution spaces through vector API.
 
 ### Fixed (Repair bugs, etc)
+- [[PR637]](https://github.com/lanl/singularity-eos/pull/637) Fix is_normal
 
 ### Changed (changing behavior/API/variables/...)
 
