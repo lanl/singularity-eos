@@ -12,12 +12,13 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+// This file was generated in part with the assistance of generative AI
+
 // This example demonstrates how to tabulate a custom EOS implementation
 // into SpinerEOS format using the generic constructor. This is useful
 // when you have your own EOS physics model and want to:
 // - Improve performance through table interpolation
 // - Enable GPU portability (tables are GPU-friendly)
-// - Integrate with codes that expect tabulated EOS
 
 #include <cmath>
 #include <iostream>
