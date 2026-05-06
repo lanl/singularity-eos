@@ -67,12 +67,10 @@ template <typename valT, typename condT, typename nameT>
 PORTABLE_FORCEINLINE_FUNCTION bool violates_condition(valT &&value, condT &&condition,
                                                       nameT &&var_name) {
   const bool good = condition(std::forward<valT>(value));
-#ifndef NDEBUG
   if (!good) {
     printf("### ERROR: Bad singularity-eos value\n  Var:   %s\n  Value: %.15e\n",
            var_name, value);
   }
-#endif // NDEBUG
   return !good;
 }
 
