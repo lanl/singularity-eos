@@ -46,7 +46,7 @@ using RegularGrid1D = Spiner::RegularGrid1D<Real>;
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 using RView = Kokkos::View<Real *>;
-using RMirror = typename RView::HostMirror;
+using RMirror = typename RView::host_mirror_type;
 #endif
 
 constexpr Real RHO_MIN = 1e-2; // g/cm^3
