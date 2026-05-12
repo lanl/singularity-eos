@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -463,11 +463,14 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::BulkModulusFromDensityInternalEner
                  3 * robust::ratio(y, pow<4>(1 - y)) +
                  4 * robust::ratio(pow<2>(y), pow<5>(1 - y)))
           : -phat * 4 * _B * _rho0 * std::exp(b4y);
-  const Real gammav = (rho >= _rho0) ? _Z * _rho0 : 0.0;
+  const Real gammav = (rho >= _rho0) ? -_Z * _rho0 : 0.0;
+  const Real es = Es(rho);
   const Real numerator =
-      -(psv + (sie - Es(rho)) * std::max(rho, 0.) * (gammav - gamma * std::max(rho, 0.)) -
+      -(psv + (sie - es) * std::max(rho, 0.) * (gammav - gamma * std::max(rho, 0.)) -
         gamma * std::max(rho, 0.) * esv);
-  return robust::ratio(numerator, std::max(rho, 0.));
+  const Real ke = robust::ratio(numerator, std::max(rho, 0.));
+  const Real p = -esv + rho * gamma * (sie - es);
+  return ke + gamma * p;
 }
 
 template <typename Indexer_t>
@@ -535,7 +538,7 @@ PORTABLE_INLINE_FUNCTION Real DavisProducts::BulkModulusFromDensityInternalEnerg
   }
   const Real vvc = robust::ratio(1.0, rho * _vc);
   const Real Fx =
-      -4 * _a *
+      -4 * _a * _n *
       robust::ratio(std::pow(vvc, 2 * _n - 1), pow<2>(1 + std::pow(vvc, 2 * _n)));
   const Real tmp =
       robust::ratio(std::pow(0.5 * (std::pow(vvc, _n) + std::pow(vvc, -_n)), _aon),
@@ -551,9 +554,12 @@ PORTABLE_INLINE_FUNCTION Real DavisProducts::BulkModulusFromDensityInternalEnerg
   // const Real esv = _pc*_vc/(_k-1+_a)*(tmp+vvc*tmp_x)/_vc;
   const Real esv = robust::ratio(_pc, _k - 1 + _a) * (tmp + vvc * tmp_x);
   const Real gamma = Gamma(rho);
-  const Real gammav = (1 - _b) * Fx * _vc;
-  return -robust::ratio(
-      psv + (sie - Es(rho)) * rho * (gammav - gamma * rho) - gamma * rho * esv, rho);
+  const Real es = Es(rho);
+  const Real gammav = (1 - _b) * Fx / _vc;
+  const Real ke = -robust::ratio(
+      psv + (sie - es) * rho * (gammav - gamma * rho) - gamma * rho * esv, rho);
+  const Real p = Ps(rho) + rho * gamma * (sie - es);
+  return ke + gamma * p;
 }
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void DavisProducts::DensityEnergyFromPressureTemperature(
