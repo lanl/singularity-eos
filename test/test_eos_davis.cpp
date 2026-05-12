@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -110,27 +110,26 @@ SCENARIO("Davis reactants EOS basic calls", "[DavisReactants]") {
       THEN("The Bulk modulus is isentropic") {
         int nwrong = 0;
         portableReduce(
-          "Compare Derivative to finite difference", 0, N,
-          PORTABLE_LAMBDA(const int i, int &nw) {
-            const Real rho = rho0;
-            const Real sie = e0 + (-N/2 + i) * 4.115e-8;
-            const Real Gamma = eos.GruneisenParamFromDensityInternalEnergy(rho, sie);
-            const Real bmod = eos.BulkModulusFromDensityInternalEnergy(rho, sie);
-            const Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
-            const Real dpdr = (bmod - P*Gamma)/rho; //correct answer
-            const Real rplus = rho0*(1.0 + 1e-6);
-            const Real rminus = rho0*(1.0 - 1e-6);
-            const Real Pplus = eos.PressureFromDensityInternalEnergy(rplus, sie);
-            const Real Pminus = eos.PressureFromDensityInternalEnergy(rminus, sie);
-            const Real dpdr_fd = (Pplus - Pminus)/(rho*2e-6);
-            nw += !(isClose(dpdr/dpdr_fd, 1.0, 1e-4));
-          },
-          nwrong);
+            "Compare Derivative to finite difference", 0, N,
+            PORTABLE_LAMBDA(const int i, int &nw) {
+              const Real rho = rho0;
+              const Real sie = e0 + (-N / 2 + i) * 4.115e-8;
+              const Real Gamma = eos.GruneisenParamFromDensityInternalEnergy(rho, sie);
+              const Real bmod = eos.BulkModulusFromDensityInternalEnergy(rho, sie);
+              const Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
+              const Real dpdr = (bmod - P * Gamma) / rho; // correct answer
+              const Real rplus = rho0 * (1.0 + 1e-6);
+              const Real rminus = rho0 * (1.0 - 1e-6);
+              const Real Pplus = eos.PressureFromDensityInternalEnergy(rplus, sie);
+              const Real Pminus = eos.PressureFromDensityInternalEnergy(rminus, sie);
+              const Real dpdr_fd = (Pplus - Pminus) / (rho * 2e-6);
+              nw += !(isClose(dpdr / dpdr_fd, 1.0, 1e-4));
+            },
+            nwrong);
         REQUIRE(nwrong == 0);
       }
     }
-  
-  
+
     eos_host.Finalize();
     eos.Finalize();
   }
@@ -175,22 +174,22 @@ SCENARIO("Davis products EOS basic calls", "[DavisProducts]") {
       THEN("The Bulk modulus is isentropic") {
         int nwrong = 0;
         portableReduce(
-          "Compare Derivative to finite difference", 0, N,
-          PORTABLE_LAMBDA(const int i, int &nw) {
-            const Real rho = rho0;
-            const Real sie = e0 + (-N/2 + i) * 4.115e-8;
-            const Real Gamma = eos.GruneisenParamFromDensityInternalEnergy(rho, sie);
-            const Real bmod = eos.BulkModulusFromDensityInternalEnergy(rho, sie);
-            const Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
-            const Real dpdr = (bmod - P*Gamma)/rho; //correct answer
-            const Real rplus = rho0*(1.0 + 1e-6);
-            const Real rminus = rho0*(1.0 - 1e-6);
-            const Real Pplus = eos.PressureFromDensityInternalEnergy(rplus, sie);
-            const Real Pminus = eos.PressureFromDensityInternalEnergy(rminus, sie);
-            const Real dpdr_fd = (Pplus - Pminus)/(rho*2e-6);
-            nw += !(isClose(dpdr/dpdr_fd, 1.0, 1e-4));
-          },
-          nwrong);
+            "Compare Derivative to finite difference", 0, N,
+            PORTABLE_LAMBDA(const int i, int &nw) {
+              const Real rho = rho0;
+              const Real sie = e0 + (-N / 2 + i) * 4.115e-8;
+              const Real Gamma = eos.GruneisenParamFromDensityInternalEnergy(rho, sie);
+              const Real bmod = eos.BulkModulusFromDensityInternalEnergy(rho, sie);
+              const Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
+              const Real dpdr = (bmod - P * Gamma) / rho; // correct answer
+              const Real rplus = rho0 * (1.0 + 1e-6);
+              const Real rminus = rho0 * (1.0 - 1e-6);
+              const Real Pplus = eos.PressureFromDensityInternalEnergy(rplus, sie);
+              const Real Pminus = eos.PressureFromDensityInternalEnergy(rminus, sie);
+              const Real dpdr_fd = (Pplus - Pminus) / (rho * 2e-6);
+              nw += !(isClose(dpdr / dpdr_fd, 1.0, 1e-4));
+            },
+            nwrong);
         REQUIRE(nwrong == 0);
       }
     }
