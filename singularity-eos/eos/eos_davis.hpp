@@ -469,7 +469,7 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::BulkModulusFromDensityInternalEner
       -(psv + (sie - es) * std::max(rho, 0.) * (gammav - gamma * std::max(rho, 0.)) -
         gamma * std::max(rho, 0.) * esv);
   const Real ke = robust::ratio(numerator, std::max(rho, 0.));
-  const Real p = -esv + rho*gamma * (sie - es);
+  const Real p = -esv + rho * gamma * (sie - es);
   return ke + gamma * p;
 }
 
@@ -556,7 +556,7 @@ PORTABLE_INLINE_FUNCTION Real DavisProducts::BulkModulusFromDensityInternalEnerg
   const Real gamma = Gamma(rho);
   const Real es = Es(rho);
   const Real gammav = (1 - _b) * Fx / _vc;
-  const Real ke =  -robust::ratio(
+  const Real ke = -robust::ratio(
       psv + (sie - es) * rho * (gammav - gamma * rho) - gamma * rho * esv, rho);
   const Real p = Ps(rho) + rho * gamma * (sie - es);
   return ke + gamma * p;
