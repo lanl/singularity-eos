@@ -6,6 +6,7 @@
 - [[PR623]](https://github.com/lanl/singularity-eos/pull/623) Expanded the sesame2spiner syntax to support multiple material definitions in one input file.
 - [[PR618]](https://github.com/lanl/singularity-eos/pull/618) Add PTDerivativesFromPreferred for computing derivatives of a mixture  in a cell
 - [[PR630]](https://github.com/lanl/singularity-eos/pull/630) Thread execution spaces through vector API.
+- [[PR638]](https://github.com/lanl/singularity-eos/pull/638) Fix Bugs in Davis Reactants and Products.  Bulk modulus is now isentropic.
 
 ### Fixed (Repair bugs, etc)
 
