@@ -9,6 +9,7 @@
 - [[PR638]](https://github.com/lanl/singularity-eos/pull/638) Fix Bugs in Davis Reactants and Products.  Bulk modulus is now isentropic.
 
 ### Fixed (Repair bugs, etc)
+- [[PR637]](https://github.com/lanl/singularity-eos/pull/637) Fix is_normal
 
 ### Changed (changing behavior/API/variables/...)
 

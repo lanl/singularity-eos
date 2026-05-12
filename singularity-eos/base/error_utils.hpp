@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -12,27 +12,33 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+// This file created in part with the assistance of generative AI
+
 #ifndef SINGULARITY_EOS_BASE_ERROR_UTILS_HPP_
 #define SINGULARITY_EOS_BASE_ERROR_UTILS_HPP_
 
 #include <cmath>
+#include <limits>
 #include <type_traits>
 
 #include <ports-of-call/portability.hpp>
+#include <ports-of-call/robust_utils.hpp>
 
 namespace singularity {
 namespace error_utils {
 
 using PortsOfCall::printf;
 
-constexpr double _NORMAL_FACTOR = 1.0e10;
+// Only accept values that are safely away from overflow by this factor. In
+// other words, a nonzero value must be normal and have magnitude no larger
+// than max()/NORMAL_FACTOR.
+constexpr double NORMAL_FACTOR = 1.0e10;
 
 struct is_normal_or_zero {
   template <typename valT>
   constexpr bool PORTABLE_FORCEINLINE_FUNCTION operator()(valT value) const {
-    static_assert(std::is_floating_point<valT>::value);
-    return (value == valT{0}) ||
-           (std::isnormal(_NORMAL_FACTOR * value) && std::isnormal(value));
+    return PortsOfCall::Robust::is_normal_or_zero(value,
+                                                  static_cast<valT>(NORMAL_FACTOR));
   }
 };
 
@@ -52,16 +58,18 @@ struct is_non_negative {
   }
 };
 
-// Checks whether a value obeys some sort of provided condition. If not, returns true and
-// prints the provided error message, variable name, and value (but does not abort!)
+// Checks whether a value obeys some sort of provided condition. If not, returns true
+// and prints the provided error message, variable name, and value (but does not abort!)
 template <typename valT, typename condT, typename nameT>
 PORTABLE_FORCEINLINE_FUNCTION bool violates_condition(valT &&value, condT &&condition,
                                                       nameT &&var_name) {
   const bool good = condition(std::forward<valT>(value));
+#ifndef NDEBUG
   if (!good) {
     printf("### ERROR: Bad singularity-eos value\n  Var:   %s\n  Value: %.15e\n",
            var_name, value);
   }
+#endif // NDEBUG
   return !good;
 }
 
@@ -78,7 +86,7 @@ PORTABLE_FORCEINLINE_FUNCTION bool non_positive_value(valT &&value, nameT &&var_
 }
 template <typename valT, typename nameT>
 PORTABLE_FORCEINLINE_FUNCTION bool negative_value(valT &&value, nameT &&var_name) {
-  return violates_condition(std::forward<valT>(value), is_strictly_positive{},
+  return violates_condition(std::forward<valT>(value), is_non_negative{},
                             std::forward<nameT>(var_name));
 }
 

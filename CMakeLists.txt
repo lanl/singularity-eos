@@ -225,12 +225,12 @@ if(SINGULARITY_BUILD_PYTHON)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
-# require at least C++17, but allow newer versions to become a client requirement if
+# require at least C++20, but allow newer versions to become a client requirement if
 # explicitly set at build time (needed for building with newer Kokkos)
 if(CMAKE_CXX_STANDARD)
   target_compile_features(singularity-eos_Interface INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
 else()
-  target_compile_features(singularity-eos_Interface INTERFACE cxx_std_17)
+  target_compile_features(singularity-eos_Interface INTERFACE cxx_std_20)
 endif()
 
 # checks if this is our build, or we've been imported via `add_subdirectory` NB:
