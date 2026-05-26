@@ -87,7 +87,8 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
       // as the conversion factors of the base units.
       : UnitSystem(std::forward<T>(t), eos_units_init::thermal_units_init_tag,
                    (length_unit * length_unit * length_unit) / mass_unit,
-                   (time_unit * time_unit) / (length_unit * length_unit), 1.0 / temp_unit) {}
+                   (time_unit * time_unit) / (length_unit * length_unit),
+                   1.0 / temp_unit) {}
   UnitSystem(T &&t, const Real rho_unit, const Real sie_unit, const Real temp_unit)
       : UnitSystem(std::forward<T>(t), eos_units_init::thermal_units_init_tag, rho_unit,
                    sie_unit, temp_unit) {}
