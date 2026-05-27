@@ -381,3 +381,52 @@ SCENARIO("Modifiers propagate introspection bounds correctly", "[Modifiers]") {
     }
   }
 }
+SCENARIO("UnitSystem  modifier converts units correctly",
+         "[Modifiers][Units][IdealGas]") {
+  GIVEN("An IdealGas EOS in non-cgs units") {
+    constexpr Real mu = 2.3;
+    constexpr Real gm1 = 0.4;
+    constexpr Real amu = 1.6605e-24;       // g
+    constexpr Real kb = 1.3807e-16;        // cm^2 g / s^2 / K
+    constexpr Real kbmu = kb / (mu * amu); // cm^2 / s^2 /K
+    constexpr Real cv = kbmu / gm1;
+
+    // conversions from code to cgs
+    constexpr Real length = 1.495978707e14;     // 10 AU
+    constexpr Real mass = 1.988416e33;          // Msun
+    constexpr Real time = 1.5871820329271033e8; // year/(2*pi)*((10 AU)**3/msun)**0.5
+    constexpr Real temperature = 2.4753531e4;   // Such that  T = vkep**2/(kb*mu*mp)
+
+    constexpr Real kbmu_code =
+        kbmu * (time / length) * (time / length) * temperature; // L^2/[t^2 T]
+    constexpr Real cv_code = kbmu_code / gm1;
+
+    auto eos =
+        UnitSystem<IdealGas>(IdealGas(gm1, cv), eos_units_init::LengthTimeUnitsInit(),
+                             1. / time, 1. / mass, 1. / length, 1. / temperature);
+
+    // P = rho kbmu T
+    // e = cv * T
+    // cs^2 = gamma*P/rho
+    constexpr Real rho_code = 1.0;
+    constexpr Real temp_code = 1.0;
+    constexpr Real pres_code = rho_code * temp_code * kbmu_code;
+    constexpr Real e_code = cv_code * temp_code;
+
+    THEN("Pressure is correct") {
+
+      REQUIRE(isClose(eos.PressureFromDensityTemperature(rho_code, temp_code), pres_code,
+                      1.e-12));
+    }
+    THEN("Specific Heat is correct") {
+
+      REQUIRE(isClose(eos.SpecificHeatFromDensityTemperature(rho_code, temp_code),
+                      cv_code, 1.e-12));
+    }
+    THEN("SIE is correct") {
+
+      REQUIRE(isClose(eos.InternalEnergyFromDensityTemperature(rho_code, temp_code),
+                      e_code, 1e-12));
+    }
+  }
+}
