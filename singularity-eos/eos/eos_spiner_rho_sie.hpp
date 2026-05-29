@@ -48,6 +48,7 @@
 #include <singularity-eos/eos/eos_base.hpp>
 #include <singularity-eos/eos/eos_spiner_common.hpp>
 #include <singularity-eos/eos/eos_spiner_sie_transforms.hpp>
+#include <singularity-eos/base/eos_concepts.hpp>
 
 // spiner
 #include <spiner/databox.hpp>
@@ -133,265 +134,6 @@ struct SpinerTableGridParams {
   Real rhoFineMax = -1.0;
 };
 
-// Method detection helpers for optional EOS methods
-// Isolated in separate namespace for easy C++20 migration to concepts
-namespace eos_builder {
-
-template <typename EOS>
-inline constexpr bool dependent_false_v = false;
-
-// C++17 implementation using detection idiom
-#if __cplusplus < 202002L
-
-// Detection helper
-template <typename...>
-using void_t = void;
-
-// Detect PressureFromDensityTemperature
-template <typename EOS, typename = void>
-struct has_P_rho_T : std::false_type {};
-
-template <typename EOS>
-struct has_P_rho_T<EOS,
-                   void_t<decltype(std::declval<EOS>().PressureFromDensityTemperature(
-                       std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
-
-// Detect PressureFromDensityInternalEnergy
-template <typename EOS, typename = void>
-struct has_P_rho_sie : std::false_type {};
-
-template <typename EOS>
-struct has_P_rho_sie<
-    EOS, void_t<decltype(std::declval<EOS>().PressureFromDensityInternalEnergy(
-             std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
-
-// Detect TemperatureFromDensityInternalEnergy
-template <typename EOS, typename = void>
-struct has_T_rho_sie : std::false_type {};
-
-template <typename EOS>
-struct has_T_rho_sie<
-    EOS, void_t<decltype(std::declval<EOS>().TemperatureFromDensityInternalEnergy(
-             std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
-
-// Detect InternalEnergyFromDensityTemperature
-template <typename EOS, typename = void>
-struct has_sie_rho_T : std::false_type {};
-
-template <typename EOS>
-struct has_sie_rho_T<
-    EOS, void_t<decltype(std::declval<EOS>().InternalEnergyFromDensityTemperature(
-             std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
-
-// Detect BulkModulusFromDensityTemperature
-template <typename EOS, typename = void>
-struct has_bmod_rho_T : std::false_type {};
-
-template <typename EOS>
-struct has_bmod_rho_T<
-    EOS, void_t<decltype(std::declval<EOS>().BulkModulusFromDensityTemperature(
-             std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
-
-// Detect BulkModulusFromDensityInternalEnergy
-template <typename EOS, typename = void>
-struct has_bmod_rho_sie : std::false_type {};
-
-template <typename EOS>
-struct has_bmod_rho_sie<
-    EOS, void_t<decltype(std::declval<EOS>().BulkModulusFromDensityInternalEnergy(
-             std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
-
-// Detect GruneisenParamFromDensityTemperature
-template <typename EOS, typename = void>
-struct has_gamma_rho_T : std::false_type {};
-
-template <typename EOS>
-struct has_gamma_rho_T<
-    EOS, void_t<decltype(std::declval<EOS>().GruneisenParamFromDensityTemperature(
-             std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
-
-// Detect GruneisenParamFromDensityInternalEnergy
-template <typename EOS, typename = void>
-struct has_gamma_rho_sie : std::false_type {};
-
-template <typename EOS>
-struct has_gamma_rho_sie<
-    EOS, void_t<decltype(std::declval<EOS>().GruneisenParamFromDensityInternalEnergy(
-             std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
-
-// Detect SpecificHeatFromDensityTemperature
-template <typename EOS, typename = void>
-struct has_cv_rho_T : std::false_type {};
-
-template <typename EOS>
-struct has_cv_rho_T<
-    EOS, void_t<decltype(std::declval<EOS>().SpecificHeatFromDensityTemperature(
-             std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
-
-// Detect SpecificHeatFromDensityInternalEnergy
-template <typename EOS, typename = void>
-struct has_cv_rho_sie : std::false_type {};
-
-template <typename EOS>
-struct has_cv_rho_sie<
-    EOS, void_t<decltype(std::declval<EOS>().SpecificHeatFromDensityInternalEnergy(
-             std::declval<Real>(), std::declval<Real>()))>> : std::true_type {};
-
-// Detect MeanAtomicMass() method
-template <typename EOS, typename = void>
-struct has_abar : std::false_type {};
-
-template <typename EOS>
-struct has_abar<EOS, void_t<decltype(std::declval<EOS>().MeanAtomicMass())>>
-    : std::true_type {};
-
-// Detect MeanAtomicNumber() method
-template <typename EOS, typename = void>
-struct has_zbar : std::false_type {};
-
-template <typename EOS>
-struct has_zbar<EOS, void_t<decltype(std::declval<EOS>().MeanAtomicNumber())>>
-    : std::true_type {};
-
-// Convenience constexpr bools
-template <typename EOS>
-inline constexpr bool has_P_rho_T_v = has_P_rho_T<EOS>::value;
-
-template <typename EOS>
-inline constexpr bool has_P_rho_sie_v = has_P_rho_sie<EOS>::value;
-
-template <typename EOS>
-inline constexpr bool has_T_rho_sie_v = has_T_rho_sie<EOS>::value;
-
-template <typename EOS>
-inline constexpr bool has_sie_rho_T_v = has_sie_rho_T<EOS>::value;
-
-template <typename EOS>
-inline constexpr bool has_bmod_rho_T_v = has_bmod_rho_T<EOS>::value;
-
-template <typename EOS>
-inline constexpr bool has_bmod_rho_sie_v = has_bmod_rho_sie<EOS>::value;
-
-template <typename EOS>
-inline constexpr bool has_gamma_rho_T_v = has_gamma_rho_T<EOS>::value;
-
-template <typename EOS>
-inline constexpr bool has_gamma_rho_sie_v = has_gamma_rho_sie<EOS>::value;
-
-template <typename EOS>
-inline constexpr bool has_cv_rho_T_v = has_cv_rho_T<EOS>::value;
-
-template <typename EOS>
-inline constexpr bool has_cv_rho_sie_v = has_cv_rho_sie<EOS>::value;
-
-template <typename EOS>
-inline constexpr bool has_abar_v = has_abar<EOS>::value;
-
-template <typename EOS>
-inline constexpr bool has_zbar_v = has_zbar<EOS>::value;
-
-#else
-// C++20 implementation using concepts (for future migration)
-template <typename EOS>
-concept has_P_rho_T = requires(EOS eos, Real rho, Real T) {
-  { eos.PressureFromDensityTemperature(rho, T) } -> std::same_as<Real>;
-};
-
-template <typename EOS>
-concept has_P_rho_sie = requires(EOS eos, Real rho, Real sie) {
-  { eos.PressureFromDensityInternalEnergy(rho, sie) } -> std::same_as<Real>;
-};
-
-template <typename EOS>
-concept has_T_rho_sie = requires(EOS eos, Real rho, Real sie) {
-  { eos.TemperatureFromDensityInternalEnergy(rho, sie) } -> std::same_as<Real>;
-};
-
-template <typename EOS>
-concept has_sie_rho_T = requires(EOS eos, Real rho, Real T) {
-  { eos.InternalEnergyFromDensityTemperature(rho, T) } -> std::same_as<Real>;
-};
-
-template <typename EOS>
-concept has_bmod_rho_T = requires(EOS eos, Real rho, Real T) {
-  { eos.BulkModulusFromDensityTemperature(rho, T) } -> std::same_as<Real>;
-};
-
-template <typename EOS>
-concept has_bmod_rho_sie = requires(EOS eos, Real rho, Real sie) {
-  { eos.BulkModulusFromDensityInternalEnergy(rho, sie) } -> std::same_as<Real>;
-};
-
-template <typename EOS>
-concept has_gamma_rho_T = requires(EOS eos, Real rho, Real T) {
-  { eos.GruneisenParamFromDensityTemperature(rho, T) } -> std::same_as<Real>;
-};
-
-template <typename EOS>
-concept has_gamma_rho_sie = requires(EOS eos, Real rho, Real sie) {
-  { eos.GruneisenParamFromDensityInternalEnergy(rho, sie) } -> std::same_as<Real>;
-};
-
-template <typename EOS>
-concept has_cv_rho_T = requires(EOS eos, Real rho, Real T) {
-  { eos.SpecificHeatFromDensityTemperature(rho, T) } -> std::same_as<Real>;
-};
-
-template <typename EOS>
-concept has_cv_rho_sie = requires(EOS eos, Real rho, Real sie) {
-  { eos.SpecificHeatFromDensityInternalEnergy(rho, sie) } -> std::same_as<Real>;
-};
-
-template <typename EOS>
-concept has_abar = requires(EOS eos) {
-  { eos.MeanAtomicMass() } -> std::same_as<Real>;
-};
-
-template <typename EOS>
-concept has_zbar = requires(EOS eos) {
-  { eos.MeanAtomicNumber() } -> std::same_as<Real>;
-};
-
-// For compatibility with C++17 code, provide _v helpers
-template <typename EOS>
-inline constexpr bool has_P_rho_T_v = has_P_rho_T<EOS>;
-
-template <typename EOS>
-inline constexpr bool has_P_rho_sie_v = has_P_rho_sie<EOS>;
-
-template <typename EOS>
-inline constexpr bool has_T_rho_sie_v = has_T_rho_sie<EOS>;
-
-template <typename EOS>
-inline constexpr bool has_sie_rho_T_v = has_sie_rho_T<EOS>;
-
-template <typename EOS>
-inline constexpr bool has_bmod_rho_T_v = has_bmod_rho_T<EOS>;
-
-template <typename EOS>
-inline constexpr bool has_bmod_rho_sie_v = has_bmod_rho_sie<EOS>;
-
-template <typename EOS>
-inline constexpr bool has_cv_rho_T_v = has_cv_rho_T<EOS>;
-
-template <typename EOS>
-inline constexpr bool has_cv_rho_sie_v = has_cv_rho_sie<EOS>;
-
-template <typename EOS>
-inline constexpr bool has_gamma_rho_T_v = has_gamma_rho_T<EOS>;
-
-template <typename EOS>
-inline constexpr bool has_gamma_rho_sie_v = has_gamma_rho_sie<EOS>;
-
-template <typename EOS>
-inline constexpr bool has_abar_v = has_abar<EOS>;
-
-template <typename EOS>
-inline constexpr bool has_zbar_v = has_zbar<EOS>;
-
-#endif
-
-} // namespace eos_builder
 
 template <template <class> class TransformerT = transformations::NullTransform>
 class SpinerEOSDependsRhoSieTransformable
@@ -1563,10 +1305,10 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
       Real T = from_log(lT, lTOffset_);
 
       // Fill the sie field on the rho-T grid
-      if constexpr (eos_builder::has_sie_rho_T_v<EOS>) {
+      if constexpr (eos_concepts::has_sie_rho_T_v<EOS>) {
         Real sie = source_eos.InternalEnergyFromDensityTemperature(rho, T);
         sie_(j, i) = sie;
-      } else if constexpr (eos_builder::has_T_rho_sie_v<EOS>) {
+      } else if constexpr (eos_concepts::has_T_rho_sie_v<EOS>) {
         // Need to invert T(rho, sie) to find sie given (rho, T)
         // Solve: source_eos.TemperatureFromDensityInternalEnergy(rho, sie_trial) = T
 
@@ -1590,41 +1332,41 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
 
         sie_(j, i) = sie_solution;
       } else {
-        static_assert(eos_builder::dependent_false_v<EOS>,
+        static_assert(eos_concepts::dependent_false_v<EOS>,
                       "Source eos must provide either: \n"
                       "InternalEnergyFromDensityTemperature or "
                       "TemperatureFromDensityInternalEnergy.\n");
       }
 
       // Fill the pressure field on the rho-T grid
-      if constexpr (eos_builder::has_P_rho_T_v<EOS>) {
+      if constexpr (eos_concepts::has_P_rho_T_v<EOS>) {
         Real P = source_eos.PressureFromDensityTemperature(rho, T);
         dependsRhoT_.P(j, i) = P;
-      } else if (eos_builder::has_P_rho_sie_v<EOS>) {
+      } else if (eos_concepts::has_P_rho_sie_v<EOS>) {
         Real sie = sie_(j, i);
         Real P = source_eos.PressureFromDensityInternalEnergy(rho, sie);
         dependsRhoT_.P(j, i) = P;
       } else {
         static_assert(
-            eos_builder::dependent_false_v<EOS>,
+            eos_concepts::dependent_false_v<EOS>,
             "Source eos must provide either: \n"
             "PressureFromDensityTemperature or PressureFromDensityInternalEnergy.\n");
       }
       // Fill the dPdE field on the rho-T grid
-      if constexpr (eos_builder::has_gamma_rho_T_v<EOS>) {
+      if constexpr (eos_concepts::has_gamma_rho_T_v<EOS>) {
         Real gamma = source_eos.GruneisenParamFromDensityTemperature(rho, T);
         dependsRhoT_.dPdE(j, i) = rho * gamma;
-      } else if constexpr (eos_builder::has_gamma_rho_sie_v<EOS>) {
+      } else if constexpr (eos_concepts::has_gamma_rho_sie_v<EOS>) {
         Real sie = sie_(j, i);
         Real gamma = source_eos.GruneisenParamFromDensityInternalEnergy(rho, sie);
         dependsRhoT_.dPdE(j, i) = rho * gamma;
-      } else if constexpr (eos_builder::has_P_rho_sie_v<EOS>) {
+      } else if constexpr (eos_concepts::has_P_rho_sie_v<EOS>) {
         Real sie = sie_(j, i);
         Real h = sie * 1e-6;
         Real P_plus = source_eos.PressureFromDensityInternalEnergy(rho, sie + h);
         Real P_minus = source_eos.PressureFromDensityInternalEnergy(rho, sie - h);
         dependsRhoT_.dPdE(j, i) = (P_plus - P_minus) / (2.0 * h);
-      } else if constexpr (eos_builder::has_T_rho_sie_v<EOS>) {
+      } else if constexpr (eos_concepts::has_T_rho_sie_v<EOS>) {
         Real sie = sie_(j, i);
         Real sie_plus = sie * (1.0 + 1e-6);
         Real sie_minus = sie * (1.0 - 1e-6);
@@ -1646,15 +1388,15 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
       }
 
       // Fill the dTdE field on the rho-T grid
-      if constexpr (eos_builder::has_cv_rho_T_v<EOS>) {
+      if constexpr (eos_concepts::has_cv_rho_T_v<EOS>) {
         Real cv = source_eos.SpecificHeatFromDensityTemperature(rho, T);
         // Should I use robust::ratio here?
         dependsRhoT_.dTdE(j, i) = 1.0 / cv;
-      } else if constexpr (eos_builder::has_cv_rho_sie_v<EOS>) {
+      } else if constexpr (eos_concepts::has_cv_rho_sie_v<EOS>) {
         Real sie = sie_(j, i);
         Real cv = source_eos.SpecificHeatFromDensityInternalEnergy(rho, sie);
         dependsRhoT_.dTdE(j, i) = 1.0 / cv;
-      } else if constexpr (eos_builder::has_T_rho_sie_v<EOS>) {
+      } else if constexpr (eos_concepts::has_T_rho_sie_v<EOS>) {
         Real sie = sie_(j, i);
         Real h = std::max(std::abs(sie) * 1e-6, 1e-12);
         Real T_plus = source_eos.TemperatureFromDensityInternalEnergy(rho, sie + h);
@@ -1720,7 +1462,7 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
 
       // Compute pressure and derivatives at constant sie
       // Use PressureFromDensityInternalEnergy if available for correct derivatives
-      if constexpr (eos_builder::has_P_rho_sie_v<EOS>) {
+      if constexpr (eos_concepts::has_P_rho_sie_v<EOS>) {
         P = source_eos.PressureFromDensityInternalEnergy(rho, sie);
         dependsRhoSie_.P(j, i) = P;
 
@@ -1849,13 +1591,13 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
                      lRhoOffset_);
 
   // Material properties
-  if constexpr (eos_builder::has_abar_v<EOS>) {
+  if constexpr (eos_concepts::has_abar_v<EOS>) {
     AZbar_.Abar = std::isnan(params.Abar) ? source_eos.MeanAtomicMass() : params.Abar;
   } else {
     AZbar_.Abar = std::isnan(params.Abar) ? 1.0 : params.Abar;
   }
 
-  if constexpr (eos_builder::has_zbar_v<EOS>) {
+  if constexpr (eos_concepts::has_zbar_v<EOS>) {
     AZbar_.Zbar = std::isnan(params.Zbar) ? source_eos.MeanAtomicNumber() : params.Zbar;
   } else {
     AZbar_.Zbar = std::isnan(params.Zbar) ? 1.0 : params.Zbar;
