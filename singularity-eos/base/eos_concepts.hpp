@@ -27,6 +27,29 @@ inline constexpr bool dependent_false_v = false;
 template <typename...>
 using void_t = void;
 
+// Detect MinimumDensity
+template <typename EOS, typename = void>
+struct has_MinimumDensity : std::false_type {};
+
+template <typename EOS>
+struct has_MinimumDensity<EOS, 
+                          void_t<decltype(std::declval<EOS>().MinimumDensity()))>> : std::true_type {};
+
+// Detect MaximumDensity
+template <typename EOS, typename = void>
+struct has_MaximumDensity : std::false_type {};
+
+template <typename EOS>
+struct has_MaximumDensity<EOS, 
+                          void_t<decltype(std::declval<EOS>().MaximumDensity()))>> : std::true_type {};             
+// Detect MinimumTemperature
+template <typename EOS, typename = void>
+struct has_MinimumTemperature : std::false_type {};
+
+template <typename EOS>
+struct has_MinimumTemperature<EOS, 
+                          void_t<decltype(std::declval<EOS>().MinimumTemperature()))>> : std::true_type {};   
+
 // Detect PressureFromDensityTemperature
 template <typename EOS, typename = void>
 struct has_P_rho_T : std::false_type {};
@@ -134,6 +157,16 @@ struct has_zbar<EOS, void_t<decltype(std::declval<EOS>().MeanAtomicNumber())>>
     : std::true_type {};
 
 // Convenience constexpr bools
+
+template <typename EOS>
+inline constexpr bool has_MinimumDensity_v = has_MinimumDensity<EOS>.value;
+
+template <typename EOS>
+inline constexpr bool has_MaximumDensity_v = has_MaximumDensity<EOS>.value;
+
+template <typename EOS>
+inline constexpr bool has_MinimumTemperature_v = has_MinimumTemperature<EOS>.value;
+
 template <typename EOS>
 inline constexpr bool has_P_rho_T_v = has_P_rho_T<EOS>::value;
 
@@ -172,6 +205,22 @@ inline constexpr bool has_zbar_v = has_zbar<EOS>::value;
 
 #else
 // C++20 implementation using concepts (for future migration)
+
+template <typename EOS>
+concept has_MinimumDensity = requires(EOS eos) {
+  { eos.MinimumDensity } -> std::same_as<Real>;
+};
+
+template <typename EOS>
+concept has_MaximumDensity = requires(EOS eos) {
+  { eos.MaximumDensity } -> std::same_as<Real>;
+};
+
+template <typename EOS>
+concept has_MinimumTemperature = requires(EOS eos) {
+  { eos.MinimumTemperature } -> std::same_as<Real>;
+};
+
 template <typename EOS>
 concept has_P_rho_T = requires(EOS eos, Real rho, Real T) {
   { eos.PressureFromDensityTemperature(rho, T) } -> std::same_as<Real>;
@@ -233,6 +282,15 @@ concept has_zbar = requires(EOS eos) {
 };
 
 // For compatibility with C++17 code, provide _v helpers
+template <typename EOS>
+inline constexpr bool has_MinimumDensity_v = has_MinimumDensity<EOS>;
+
+template <typename EOS>
+inline constexpr bool has_MinimumTemperature_v = has_MinimumTemperature<EOS>;
+
+template <typename EOS>
+inline constexpr bool has_MaximumDensity_v = has_MaximumDensity<EOS>;
+
 template <typename EOS>
 inline constexpr bool has_P_rho_T_v = has_P_rho_T<EOS>;
 
