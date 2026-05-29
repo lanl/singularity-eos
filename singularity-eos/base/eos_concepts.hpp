@@ -15,6 +15,8 @@
 #ifndef _SINGULARITY_EOS_BASE_EOS_CONCEPTS_HPP_
 #define _SINGULARITY_EOS_BASE_EOS_CONCEPTS_HPP_
 
+// This file was generated in part with the assistance of generative AI
+
 namespace eos_concepts {
 
 template <typename EOS>
