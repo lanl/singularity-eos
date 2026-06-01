@@ -1391,23 +1391,14 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
         dependsRhoT_.dPdE(j, i) = robust::ratio(P_plus - P_minus,  sie_plus - sie_minus);
 
       } else {
-        // Real h = T * 1e-6;
-        // Real P_plus = source_eos.PressureFromDensityTemperature(rho, T + h);
-        // Real P_minus = source_eos.PressureFromDensityTemperature(rho, T - h);
-        // Real dPdT = robust::ratio(P_plus - P_minus, 2 * h);
         auto PofT = [&source_eos, rho](Real T){
           return source_eos.PressureFromDensityTemperature(rho, T);
         };
-        Real dPdT = finite_diff::centralDifference(EofT, T);
-
-        // Real E_plus = source_eos.InternalEnergyFromDensityTemperature(rho, T + h);
-        // Real E_minus = source_eos.InternalEnergyFromDensityTemperature(rho, T - h);
-        // Real dEdT = robust::ratio(E_plus - E_minus, 2 * h);
+        Real dPdT = finite_diff::centralDifference(PofT, T);
         auto EofT = [&source_eos, rho](Real T){
           return source_eos.InternalEnergyFromDensityTEmperature(rho, T);
         };
-        Real dEdT = finite_diff::centralDifference(EofT, T)
-
+        Real dEdT = finite_diff::centralDifference(EofT, T);
         dependsRhoT_.dPdE(j, i) = robust::ratio(dPdT, dEdT);
       }
 
@@ -1421,10 +1412,6 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
         dependsRhoT_.dTdE(j, i) = robust::ratio(1.0, cv);
       } else if constexpr (eos_concepts::has_T_rho_sie_v<EOS>) {
         Real sie = sie_(j, i);
-        // Real h = std::max(std::abs(sie) * 1e-6, 1e-12);
-        // Real T_plus = source_eos.TemperatureFromDensityInternalEnergy(rho, sie + h);
-        // Real T_minus = source_eos.TemperatureFromDensityInternalEnergy(rho, sie - h);
-        // dependsRhoT_.dTdE(j, i) = robust::ratio(T_plus - T_minus, 2 * h);
         auto TofE = [&source_eos, rho](Real sie){
           return source_eos.TemperatureFromDensityInternalEnergy(rho, sie);
         };
@@ -1434,36 +1421,25 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
         auto EofT = [&source_eos, rho](Real T){
           return source_eos.InternalEnergyFromDensityTemperature(rho, T);
         };
-        // Real h = T * 1e-6;
-        // Real E_plus = source_eos.InternalEnergyFromDensityTemperature(rho, T + h);
-        // Real E_minus = source_eos.InternalEnergyFromDensityTemperature(rho, T - h);
         dependsRhoT_.dTdE(j, i) = finite_diff::centralDifference(EofT,T);
       }
 
       // Fill dEdRho at constant T
       {
-        // Real h = rho * 1e-6;
-        // Real E_plus = source_eos.InternalEnergyFromDensityTemperature(rho + h, T);
-        // Real E_minus = source_eos.InternalEnergyFromDensityTemperature(rho - h, T);
-        // dependsRhoT_.dEdRho(j, i) = robust::ratio(E_plus - E_minus, 2.0 * h);
         auto EofR = [&source_eos, T](Real rho){
           return source_eos.InternalEnergyFromDensityTemperature(rho, T);
         };
-        dependsRhoT_.dEdRho(j, i) = finite_diff::centralDifference(EofR,T);
+        dependsRhoT_.dEdRho(j, i) = finite_diff::centralDifference(EofR,rho);
 
       }
 
       // Fill dPdRho at constant E (not constant T!)
       // First compute dPdRho_T via finite difference, then convert to dPdRho_E
       {
-        // Real h = rho * 1e-6;
-        // Real P_plus = source_eos.PressureFromDensityTemperature(rho + h, T);
-        // Real P_minus = source_eos.PressureFromDensityTemperature(rho - h, T);
-        // Real dPdRho_T = robust::ratio(P_plus - P_minus, 2.0 * h);
-        auto PofR - [&source_eos, T](Real rho){
+        auto PofR = [&source_eos, T](Real rho){
           return source_eos.PressureFromDensityTemperature(rho,T);
-        }
-        Real dPdRho_T = finite_diff::centralDifference(PofR,T);
+        };
+        Real dPdRho_T = finite_diff::centralDifference(PofR,rho);
 
         // Convert to dPdRho_E using chain rule:
         // (dP/drho)_E = (dP/drho)_T - (dP/dE)_rho * (dE/drho)_T
@@ -1510,10 +1486,6 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
 
         // dPdRho at constant sie
         {
-          // Real h = rho * 1e-6;
-          // Real P_plus = source_eos.PressureFromDensityInternalEnergy(rho + h, sie);
-          // Real P_minus = source_eos.PressureFromDensityInternalEnergy(rho - h, sie);
-          // dependsRhoSie_.dPdRho(j, i) = robust::ratio(P_plus - P_minus, 2.0 * h);
           auto PofR = [&source_eos, sie](Real rho){
             return source_eos.PressureFromDensityInternalEnergy(rho, sie);
           };
@@ -1522,14 +1494,9 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
 
         // dPdE at constant rho
         {
-          // Real h = sie * 1e-6;
-          // if (std::abs(h) < 1e-12) h = 1e-12;
-          // Real P_plus = source_eos.PressureFromDensityInternalEnergy(rho, sie + h);
-          // Real P_minus = source_eos.PressureFromDensityInternalEnergy(rho, sie - h);
-          // dependsRhoSie_.dPdE(j, i) = robust::ratio(P_plus - P_minus, 2.0 * h);
           auto PofE = [&source_eos, rho](Real sie){
             return source_eos.PressureFromDensityInternalEnergy(rho,sie);
-          }
+          };
           dependsRhoSie_.dPdE(j, i) = finite_diff::centralDifference(PofE,sie);
 
         }
@@ -1544,39 +1511,21 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
 
         // Compute approximate derivatives at (rho, T) and convert
         // This is less accurate but allows more general EOS
-        // Real h_rho = rho * 1e-6;
-        // Real P_plus = source_eos.PressureFromDensityTemperature(rho + h_rho, T);
-        // Real P_minus = source_eos.PressureFromDensityTemperature(rho - h_rho, T);
-        // Real dPdRho_T = robust::ratio(P_plus - P_minus, 2.0 * h_rho);
-        auto PofR = [&source_eos,T](Real, rho){
+        auto PofR = [&source_eos,T](Real rho){
           return source_eos.PressureFromDensityTemperature(rho,T);
         };
         Real dPdRho_T = finite_diff::centralDifference(PofR,rho);
 
-
-
-        // Real h_T = T * 1e-6;
-        // P_plus = source_eos.PressureFromDensityTemperature(rho, T + h_T);
-        // P_minus = source_eos.PressureFromDensityTemperature(rho, T - h_T);
-        // Real dPdT_rho = (P_plus - P_minus) / (2.0 * h_T);
         auto PofT = [&source_eos, rho](Real T){
           return source_eos.PressureFromDensityTemperature(rho,T);
         };
         Real dPdT_rho = finite_diff::centralDifference(PofT,T);
 
-
-
-        // Real E_plus = source_eos.InternalEnergyFromDensityTemperature(rho + h_rho, T);
-        // Real E_minus = source_eos.InternalEnergyFromDensityTemperature(rho - h_rho, T);
-        // Real dEdRho_T = (E_plus - E_minus) / (2.0 * h_rho);
         auto EofR = [&source_eos,T](Real rho){
           return source_eos.InternalEnergyFromDensityTemperature(rho,T);
         };
         Real dEdRho_T = finite_diff::centralDifference(EofR,rho);
 
-        // E_plus = source_eos.InternalEnergyFromDensityTemperature(rho, T + h_T);
-        // E_minus = source_eos.InternalEnergyFromDensityTemperature(rho, T - h_T);
-        // Real dEdT_rho = (E_plus - E_minus) / (2.0 * h_T);
         auto EofT = [&source_eos, rho](Real T){
           return source_eos.InternalEnergyFromDensityTemperature(rho, T);
         };
@@ -1598,10 +1547,6 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
 
       // dTdRho at constant sie
       {
-        // Real h = rho * 1e-6;
-        // Real T_plus = source_eos.TemperatureFromDensityInternalEnergy(rho + h, sie);
-        // Real T_minus = source_eos.TemperatureFromDensityInternalEnergy(rho - h, sie);
-        // dependsRhoSie_.dTdRho(j, i) = (T_plus - T_minus) / (2.0 * h);
         auto TofR = [&source_eos, sie](Real rho){
           return source_eos.TemperatureFromDensityInternalEnergy(rho,sie);
         };
@@ -1611,11 +1556,6 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
 
       // dTdE at constant rho
       {
-        // Real h = sie * 1e-6;
-        // if (std::abs(h) < 1e-12) h = 1e-12;
-        // Real T_plus = source_eos.TemperatureFromDensityInternalEnergy(rho, sie + h);
-        // Real T_minus = source_eos.TemperatureFromDensityInternalEnergy(rho, sie - h);
-        // dependsRhoSie_.dTdE(j, i) = (T_plus - T_minus) / (2.0 * h);
         auto TofE = [&source_eos,rho](Real sie){
           return source_eos.TemperatureFromDensityInternalEnergy(rho,sie);
         };
@@ -1629,7 +1569,7 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
         Real dTdRho = dependsRhoSie_.dTdRho(j, i);
         Real dTdE = dependsRhoSie_.dTdE(j, i);
         if (std::abs(dTdE) > robust::EPS()) {
-          dependsRhoSie_.dEdRho(j, i) = -robust::ratio(dTdRho, dTdE);
+          dependsRhoSie_.dEdRho(j, i) = -dTdRho / dTdE;
         } else {
           dependsRhoSie_.dEdRho(j, i) = 0.0;
         }
@@ -1647,10 +1587,6 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
     PCold_(j) = source_eos.PressureFromDensityTemperature(rho, Tmin);
 
     // dPdRho cold
-    // Real h = rho * 1e-6;
-    // Real P_plus = source_eos.PressureFromDensityTemperature(rho + h, Tmin);
-    // Real P_minus = source_eos.PressureFromDensityTemperature(rho - h, Tmin);
-    // dPdRhoCold_(j) = (P_plus - P_minus) / (2.0 * h);
     auto PofR = [&source_eos, Tmin](Real rho){
       return source_eos.PressureFromDensityTemperature(rho, Tmin);
     };

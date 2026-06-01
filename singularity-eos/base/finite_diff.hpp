@@ -18,7 +18,9 @@
 
 #include <singularity-eos/base/robust_utils.hpp>
 
-namespace finite_diff{
+namespace singularity {
+
+namespace finite_diff {
 
 
 template <typename Func>
@@ -52,4 +54,5 @@ Real backwardDifference(Func &&f, Real x) {
 
 
 } //end namespace finite_diff
+} //end namespace singularity
 #endif // SINGULARITY_EOS_BASE_FINITE_DIFF_HPP_
