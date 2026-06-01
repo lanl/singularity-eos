@@ -35,7 +35,7 @@ struct has_MinimumDensity : std::false_type {};
 
 template <typename EOS>
 struct has_MinimumDensity<EOS, 
-                          void_t<decltype(std::declval<EOS>().MinimumDensity()))>> : std::true_type {};
+                          void_t<decltype(std::declval<EOS>().MinimumDensity())>> : std::true_type {};
 
 // Detect MaximumDensity
 template <typename EOS, typename = void>
@@ -43,14 +43,15 @@ struct has_MaximumDensity : std::false_type {};
 
 template <typename EOS>
 struct has_MaximumDensity<EOS, 
-                          void_t<decltype(std::declval<EOS>().MaximumDensity()))>> : std::true_type {};             
-// Detect MinimumTemperature
+                          void_t<decltype(std::declval<EOS>().MaximumDensity())>> : std::true_type {};             
+
+                          // Detect MinimumTemperature
 template <typename EOS, typename = void>
 struct has_MinimumTemperature : std::false_type {};
 
 template <typename EOS>
 struct has_MinimumTemperature<EOS, 
-                          void_t<decltype(std::declval<EOS>().MinimumTemperature()))>> : std::true_type {};   
+                          void_t<decltype(std::declval<EOS>().MinimumTemperature())>> : std::true_type {};   
 
 // Detect PressureFromDensityTemperature
 template <typename EOS, typename = void>
@@ -161,13 +162,13 @@ struct has_zbar<EOS, void_t<decltype(std::declval<EOS>().MeanAtomicNumber())>>
 // Convenience constexpr bools
 
 template <typename EOS>
-inline constexpr bool has_MinimumDensity_v = has_MinimumDensity<EOS>.value;
+inline constexpr bool has_MinimumDensity_v = has_MinimumDensity<EOS>::value;
 
 template <typename EOS>
-inline constexpr bool has_MaximumDensity_v = has_MaximumDensity<EOS>.value;
+inline constexpr bool has_MaximumDensity_v = has_MaximumDensity<EOS>::value;
 
 template <typename EOS>
-inline constexpr bool has_MinimumTemperature_v = has_MinimumTemperature<EOS>.value;
+inline constexpr bool has_MinimumTemperature_v = has_MinimumTemperature<EOS>::value;
 
 template <typename EOS>
 inline constexpr bool has_P_rho_T_v = has_P_rho_T<EOS>::value;
