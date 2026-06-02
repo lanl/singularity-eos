@@ -1297,6 +1297,31 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
   // Placeholder: We don't have mass fractions for generic EOS yet
   has_mf = false;
 
+  // check for bounds on temperature and density.  Set them sensibly if the source_eos
+  //  Doesn't have them.
+  Real minimumRho;
+  if constexpr (eos_concepts::has_MinimumDensity_v<EOS>){
+    minimumRho = source_eos.MinimumDensity();
+  }
+  else {
+    minimumRho = 0.0;
+  }
+  Real minimumT;
+  if constexpr (eos_concepts::has_MinimumTemperature_v<EOS>){
+    minimumT = source_eos.MinimumTemperature();
+  }
+  else {
+    minimumT = 0.0;
+  }
+  Real maximumRho;
+  if constexpr (eos_concepts::has_MaximumDensity_v<EOS>){
+    maximumRho = source_eos.MaximumDensity();
+  }
+  else {
+    maximumRho = 1.e99; //OK, what is a reasonable value?
+  }  
+
+
   // Populate tables - dependsRhoT (sie, P, etc. as function of rho, T)
   for (int j = 0; j < numRho_; j++) {
     Real lRho = lRhoBounds.grid.x(j);
