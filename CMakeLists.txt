@@ -589,6 +589,9 @@ target_compile_options(
          # `-Wclass-memaccess now default with -Wall but we explicitly
          # manage this ourselves in our serialization routines.
          $<$<AND:$<CXX_COMPILER_ID:GNU>,$<COMPILE_LANGUAGE:CXX>>:-Wno-class-memaccess>
+         # Intel compilers enable -ffast-math even in Debug builds. This disables finite-math-only in 
+         # Debug builds to allow NaN/Inf checks without pages of warnings
+         $<$<AND:$<CONFIG:Debug>,$<OR:$<CXX_COMPILER_ID:IntelLLVM>,$<CXX_COMPILER_ID:Intel>>>:-fno-finite-math-only>
 )
 if (SINGULARITY_STRICT_WARNINGS)
   target_compile_options(singularity-eos_Interface INTERFACE
