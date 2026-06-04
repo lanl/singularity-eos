@@ -1582,7 +1582,7 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
           return source_eos.TemperatureFromDensityInternalEnergy(rho,sie);
         };
         // dependsRhoSie_.dTdRho(j, i) = finite_diff::centralDifference(TofR, rho);
-        dependsRhoSie_.dTdRho(j, i) = finite_diff::finiteDifference(TofR, rho, miniumumRho,maximumRho);
+        dependsRhoSie_.dTdRho(j, i) = finite_diff::finiteDifference(TofR, rho, minimumRho,maximumRho);
 
       }
 
