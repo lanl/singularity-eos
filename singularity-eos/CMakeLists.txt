@@ -24,11 +24,20 @@ register_headers(
     eos/eos.hpp.in
 
     # Normal files
+    base/fast-math/logs.hpp
+    base/indexable_types.hpp
+    base/robust_utils.hpp
+    base/root-finding-1d/root_finding.hpp
     base/serialization_utils.hpp
     base/spiner_table_utils.hpp
+    base/variadic_utils.hpp
+    base/math_utils.hpp
     base/constants.hpp
     base/eos_error.hpp
+    base/error_utils.hpp
+    base/sp5/singularity_eos_sp5.hpp
     eos/default_variant.hpp
+    base/hermite.hpp
     eos/eos_variant.hpp
     eos/eos_stellar_collapse.hpp
     eos/eos_ideal.hpp
