@@ -96,4 +96,4 @@ PORTABLE_INLINE_FUNCTION Real h3(Real fi[16], Real w0t, Real w1t, Real w0mt, Rea
 } // namespace hermite
 } // namespace singularity
 
-#endif // SINGULARITY_UTILS_MATH_UTILS_HPP_
+#endif // SINGULARITY_UTILS_HERMITE_HPP_
