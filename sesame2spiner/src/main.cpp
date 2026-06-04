@@ -33,8 +33,8 @@
 #include <singularity-utils/sp5/singularity_eos_sp5.hpp>
 #include <spiner/sp5.hpp>
 
-#include "generate_files.hpp"
-#include "io_eospac.hpp"
+#include <sesame2spiner/generate_files.hpp>
+#include <sesame2spiner/io_eospac.hpp>
 #include "parse_cli.hpp"
 
 int main(int argc, char *argv[]) {

@@ -22,7 +22,8 @@
 #include <string>
 #include <vector>
 
-#include "io_eospac.hpp"
+#include <sesame2spiner/io_eospac.hpp>
+#include <sesame2spiner/parser.hpp>
 #include "parse_cli.hpp"
 
 void parseCLI(int argc, char *argv[], std::string &savename,

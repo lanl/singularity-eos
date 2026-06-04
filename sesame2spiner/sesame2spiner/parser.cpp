@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <iostream>
 #include <istream>
 #include <sstream>
 #include <stdexcept>
@@ -21,7 +22,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "parse_cli.hpp"
 #include "parser.hpp"
 
 Params::Params(const std::string &input_file) {

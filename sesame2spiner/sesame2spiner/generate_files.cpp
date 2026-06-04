@@ -39,7 +39,6 @@
 
 #include "generate_files.hpp"
 #include "io_eospac.hpp"
-#include "parse_cli.hpp"
 #include "parser.hpp"
 
 using namespace EospacWrapper;
@@ -184,7 +183,7 @@ herr_t saveAllMaterials(const std::string &savename,
   file = H5Fcreate(savename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
   // singularity version
-  H5LTset_attribute_string(file, "/", "singularity_version", SINGULARITY_VERSION);
+  H5LTset_attribute_string(file, "/", "singularity_version", SESAME2SPINER_VERSION);
   // log type. 0 for true, 1 for NQT1, 2 for NQT2, -1 for single precision true
   int log_type = singularity::FastMath::Settings::log_type;
   H5LTset_attribute_int(file, "/", SP5::logType, &log_type, 1);

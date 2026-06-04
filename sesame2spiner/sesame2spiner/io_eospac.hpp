@@ -17,6 +17,14 @@
 #ifndef _SESAME2SPINER_IO_EOSPAC_HPP_
 #define _SESAME2SPINER_IO_EOSPAC_HPP_
 
+#ifdef SINGULARITY_USE_SPINER
+#warning "SINGULARITY USE SPINER"
+#endif
+
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+#warning "SINGULARITY USE SPINER WITH HDF5"
+#endif
+
 #include <string>
 #include <vector>
 
@@ -27,9 +35,9 @@
 #endif
 
 #include <ports-of-call/portability.hpp>
+#include <singularity-utils/bounds.hpp>
 #include <singularity-utils/constants.hpp>
 #include <singularity-utils/fast-math/logs.hpp>
-#include <singularity-utils/spiner_table_utils.hpp>
 #include <spiner/databox.hpp>
 
 #include <eospac-wrapper/eospac_wrapper.hpp>
