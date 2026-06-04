@@ -1320,7 +1320,7 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
   else {
     maximumRho = 1.e99; //OK, what is a reasonable value?
   }  
-
+  Real maximumT = 1.e99; //OK
 
   // Populate tables - dependsRhoT (sie, P, etc. as function of rho, T)
   for (int j = 0; j < numRho_; j++) {
@@ -1395,6 +1395,7 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
         //Actually need to check bounds somehow (they're on temperature not sie)
         // and decide whether to use central, forward, or backward difference.
         dependsRhoT_.dPdE(j, i) = finite_diff::centralDifference(PofE, sie);
+
         
       } else if constexpr (eos_concepts::has_T_rho_sie_v<EOS>) {
         Real sie = sie_(j, i);
@@ -1408,11 +1409,13 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
         auto PofT = [&source_eos, rho](Real T){
           return source_eos.PressureFromDensityTemperature(rho, T);
         };
-        Real dPdT = finite_diff::centralDifference(PofT, T);
+        //Real dPdT = finite_diff::centralDifference(PofT, T);
+        Real dPdT = finite_diff::finiteDifference(PofT, T, minimumT, maximumT);
         auto EofT = [&source_eos, rho](Real T){
           return source_eos.InternalEnergyFromDensityTEmperature(rho, T);
         };
-        Real dEdT = finite_diff::centralDifference(EofT, T);
+        //Real dEdT = finite_diff::centralDifference(EofT, T);
+        Real dEdT = finite_diff::finiteDifference(EofT, T, minimumT, maximumT);
         dependsRhoT_.dPdE(j, i) = robust::ratio(dPdT, dEdT);
       }
 
@@ -1431,11 +1434,13 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
         };
         dependsRhoT_.dTdE(j, i) = finite_diff::centralDifference(TofE, sie);
 
+
       } else {
         auto EofT = [&source_eos, rho](Real T){
           return source_eos.InternalEnergyFromDensityTemperature(rho, T);
         };
-        dependsRhoT_.dTdE(j, i) = finite_diff::centralDifference(EofT,T);
+        //dependsRhoT_.dTdE(j, i) = finite_diff::centralDifference(EofT,T);
+        dependsRhoT_.dTdE(j, i) = finite_diff::finiteDifference(EofT,T,minimumT,maximumT);
       }
 
       // Fill dEdRho at constant T
@@ -1443,7 +1448,8 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
         auto EofR = [&source_eos, T](Real rho){
           return source_eos.InternalEnergyFromDensityTemperature(rho, T);
         };
-        dependsRhoT_.dEdRho(j, i) = finite_diff::centralDifference(EofR,rho);
+        //dependsRhoT_.dEdRho(j, i) = finite_diff::centralDifference(EofR,rho);
+        dependsRhoT_.dEdRho(j, i) = finite_diff::finiteDifference(EofR,rho,minimumRho,maximumRho);
 
       }
 
@@ -1453,7 +1459,12 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
         auto PofR = [&source_eos, T](Real rho){
           return source_eos.PressureFromDensityTemperature(rho,T);
         };
-        Real dPdRho_T = finite_diff::centralDifference(PofR,rho);
+
+        // Here I could look at rho compared to minimumRho and decide 
+        //  to pass a floored or ceiled rho and fwd, bckward, or central diff.
+        //  Think about how to design that.
+        //Real dPdRho_T = finite_diff::centralDifference(PofR,rho);
+        Real dPdRho_T = finite_diff::finiteDifference(PofR,rho,minimumRho,maximumRho);
 
         // Convert to dPdRho_E using chain rule:
         // (dP/drho)_E = (dP/drho)_T - (dP/dE)_rho * (dE/drho)_T
@@ -1503,7 +1514,8 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
           auto PofR = [&source_eos, sie](Real rho){
             return source_eos.PressureFromDensityInternalEnergy(rho, sie);
           };
-          dependsRhoSie_.dPdRho(j, i) = finite_diff::centralDifference(PofR,rho);
+          //dependsRhoSie_.dPdRho(j, i) = finite_diff::centralDifference(PofR,rho);
+          dependsRhoSie_.dPdRho(j, i) = finite_diff::finiteDifference(PofR,rho,minimumRho,maximumRho);
         }
 
         // dPdE at constant rho
@@ -1528,22 +1540,27 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
         auto PofR = [&source_eos,T](Real rho){
           return source_eos.PressureFromDensityTemperature(rho,T);
         };
-        Real dPdRho_T = finite_diff::centralDifference(PofR,rho);
+        // Real dPdRho_T = finite_diff::centralDifference(PofR,rho);
+        Real dPdRho_T = finite_diff::finiteDifference(PofR,rho,minimumRho,maximumRho);
 
         auto PofT = [&source_eos, rho](Real T){
           return source_eos.PressureFromDensityTemperature(rho,T);
         };
-        Real dPdT_rho = finite_diff::centralDifference(PofT,T);
+        //Real dPdT_rho = finite_diff::centralDifference(PofT,T);
+        Real dPdT_rho = finite_diff::finiteDifference(PofT,T,minimumT,maximumT);
+
 
         auto EofR = [&source_eos,T](Real rho){
           return source_eos.InternalEnergyFromDensityTemperature(rho,T);
         };
-        Real dEdRho_T = finite_diff::centralDifference(EofR,rho);
+        //Real dEdRho_T = finite_diff::centralDifference(EofR,rho);
+        Real dEdRho_T = finite_diff::finiteDifference(EofR,rho,minimumRho,maximumRho);
 
         auto EofT = [&source_eos, rho](Real T){
           return source_eos.InternalEnergyFromDensityTemperature(rho, T);
         };
-        Real dEdT_rho = finite_diff::centralDifference(EofT,T);
+        //Real dEdT_rho = finite_diff::centralDifference(EofT,T);
+        Real dEdT_rho = finite_diff::finiteDifference(EofT,T,minimumT,maximumT);
 
 
         // Chain rule conversions
@@ -1564,7 +1581,8 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
         auto TofR = [&source_eos, sie](Real rho){
           return source_eos.TemperatureFromDensityInternalEnergy(rho,sie);
         };
-        dependsRhoSie_.dTdRho(j, i) = finite_diff::centralDifference(TofR, rho);
+        // dependsRhoSie_.dTdRho(j, i) = finite_diff::centralDifference(TofR, rho);
+        dependsRhoSie_.dTdRho(j, i) = finite_diff::finiteDifference(TofR, rho, miniumumRho,maximumRho);
 
       }
 
@@ -1604,7 +1622,9 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
     auto PofR = [&source_eos, Tmin](Real rho){
       return source_eos.PressureFromDensityTemperature(rho, Tmin);
     };
-    dPdRhoCold_(j) = finite_diff::centralDifference(PofR,rho);
+    // dPdRhoCold_(j) = finite_diff::centralDifference(PofR,rho);
+    dPdRhoCold_(j) = finite_diff::finiteDifference(PofR,rho,minimumRho,maximumRho);
+
 
 
     // bMod cold
