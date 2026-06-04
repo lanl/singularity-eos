@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -21,6 +21,7 @@
 #include <unordered_map>
 #include <vector>
 
+namespace sesame2spiner {
 const std::string EXAMPLESTRING = R"(
 # air.dat
 # These are comments. 
@@ -91,4 +92,5 @@ class Params {
 void AddMaterials(std::vector<Params> &params, std::vector<int> &matids,
                   const std::string &input_file);
 
+} // namespace sesame2spiner
 #endif // SESAME2SPINER_PARSER_HPP_

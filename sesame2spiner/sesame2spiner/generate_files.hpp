@@ -1,7 +1,7 @@
 //======================================================================
 // sesame2spiner tool for converting eospac to spiner
 // Author: Jonah Miller (jonahm@lanl.gov)
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -29,6 +29,8 @@
 #include "parser.hpp"
 
 using namespace EospacWrapper;
+
+namespace sesame2spiner {
 
 constexpr int PPD_DEFAULT_RHO = 350;
 constexpr int PPD_DEFAULT_T = 100;
@@ -68,5 +70,6 @@ bool checkValInMatBounds(int matid, const std::string &name, Real val, Real vmin
                          Real vmax);
 
 int getNumPointsFromPPD(Real min, Real max, int ppd);
+} // namespace sesame2spiner
 
 #endif // _SESAME2SPINER_GENERATE_FILES_HPP_

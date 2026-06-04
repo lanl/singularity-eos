@@ -23,6 +23,7 @@
 
 const std::string DEFAULT_SAVENAME = "materials.sp5";
 
+using EospacWrapper::Verbosity;
 void parseCLI(int argc, char *argv[], std::string &savename,
               std::vector<std::string> &filenames, bool &printMetadata,
               Verbosity &eospacWarn, std::string &helpMessage);

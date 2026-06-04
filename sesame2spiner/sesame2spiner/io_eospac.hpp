@@ -1,7 +1,7 @@
 //======================================================================
 // sesame2spiner tool for converting eospac to spiner
 // Author: Jonah Miller (jonahm@lanl.gov)
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -16,14 +16,6 @@
 
 #ifndef _SESAME2SPINER_IO_EOSPAC_HPP_
 #define _SESAME2SPINER_IO_EOSPAC_HPP_
-
-#ifdef SINGULARITY_USE_SPINER
-#warning "SINGULARITY USE SPINER"
-#endif
-
-#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
-#warning "SINGULARITY USE SPINER WITH HDF5"
-#endif
 
 #include <string>
 #include <vector>
@@ -42,6 +34,7 @@
 
 #include <eospac-wrapper/eospac_wrapper.hpp>
 
+namespace sesame2spiner {
 using EospacWrapper::Verbosity;
 constexpr int NGRIDS = 3;
 using singularity::TableSplit;
@@ -101,5 +94,6 @@ T select(TableSplit split, T a, T b, T c) {
 }
 void modifyNames(TableSplit split, std::vector<std::string> &names);
 } // namespace impl
+} // namespace sesame2spiner
 
 #endif // _SESAME2SPINER_IO_EOSPAC_HPP_

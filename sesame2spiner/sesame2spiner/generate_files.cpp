@@ -1,7 +1,7 @@
 //======================================================================
 // sesame2spiner tool for converting eospac to spiner
 // Author: Jonah Miller (jonahm@lanl.gov)
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -22,10 +22,10 @@
 #include <unordered_set>
 #include <vector>
 
+#ifdef SPINER_USE_HDF
 #include <hdf5.h>
 #include <hdf5_hl.h>
-
-#ifndef SPINER_USE_HDF
+#else
 #error "HDF5 must be enabled"
 #endif // SPINER_USE_HDF
 
@@ -42,6 +42,8 @@
 #include "parser.hpp"
 
 using namespace EospacWrapper;
+
+namespace sesame2spiner {
 
 herr_t saveMaterial(hid_t loc, const SesameMetadata &metadata, const Bounds &lRhoBounds,
                     const Bounds &lTBounds, const Bounds &leBounds,
@@ -454,3 +456,4 @@ bool checkValInMatBounds(int matid, const std::string &name, Real val, Real vmin
   }
   return true;
 }
+} // namespace sesame2spiner

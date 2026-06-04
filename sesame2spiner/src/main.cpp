@@ -1,7 +1,7 @@
 //======================================================================
 // sesame2spiner tool for converting eospac to spiner
 // Author: Jonah Miller (jonahm@lanl.gov)
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -33,10 +33,11 @@
 #include <singularity-utils/sp5/singularity_eos_sp5.hpp>
 #include <spiner/sp5.hpp>
 
+#include "parse_cli.hpp"
 #include <sesame2spiner/generate_files.hpp>
 #include <sesame2spiner/io_eospac.hpp>
-#include "parse_cli.hpp"
 
+using EospacWrapper::Verbosity;
 int main(int argc, char *argv[]) {
   std::vector<std::string> filenames;
   std::string savename, helpMessage;
@@ -52,7 +53,8 @@ int main(int argc, char *argv[]) {
             << "-----------------------------------------\n"
             << std::endl;
 
-  status = saveAllMaterials(savename, filenames, printMetadata, eospacWarn);
+  status =
+      sesame2spiner::saveAllMaterials(savename, filenames, printMetadata, eospacWarn);
 
   std::cout << "Done." << std::endl;
 
