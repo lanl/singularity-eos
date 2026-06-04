@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2023. Triad National Security, LLC. All rights reserved.  This
+// © 2023–2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -12,11 +12,11 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef SINGULARITY_EOS_BASE_HERMITE_HPP_
-#define SINGULARITY_EOS_BASE_HERMITE_HPP_
+#ifndef SINGULARITY_UTILS_HERMITE_HPP_
+#define SINGULARITY_UTILS_HERMITE_HPP_
 
 #include <ports-of-call/portability.hpp>
-#include <singularity-eos/base/math_utils.hpp>
+#include <singularity-utils/math_utils.hpp>
 
 namespace singularity {
 namespace hermite {
@@ -96,4 +96,4 @@ PORTABLE_INLINE_FUNCTION Real h3(Real fi[16], Real w0t, Real w1t, Real w0mt, Rea
 } // namespace hermite
 } // namespace singularity
 
-#endif // SINGULARITY_EOS_BASE_MATH_UTILS_HPP_
+#endif // SINGULARITY_UTILS_MATH_UTILS_HPP_

@@ -42,13 +42,13 @@
 
 // singularity-eos
 #include <singularity-eos/base/constants.hpp>
-#include <singularity-eos/base/hermite.hpp>
-#include <singularity-eos/base/indexable_types.hpp>
-#include <singularity-eos/base/math_utils.hpp>
-#include <singularity-eos/base/robust_utils.hpp>
-#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/base/spiner_table_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
+#include <singularity-utils/hermite.hpp>
+#include <singularity-utils/indexable_types.hpp>
+#include <singularity-utils/math_utils.hpp>
+#include <singularity-utils/robust_utils.hpp>
+#include <singularity-utils/root-finding-1d/root_finding.hpp>
 
 // spiner
 #include <spiner/databox.hpp>

@@ -41,9 +41,9 @@
 #include <ports-of-call/portable_errors.hpp>
 
 // This contains useful tools for preventing things like divide by zero
-#include <singularity-eos/base/robust_utils.hpp>
+#include <singularity-utils/robust_utils.hpp>
 // 1D root finding
-#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
+#include <singularity-utils/root-finding-1d/root_finding.hpp>
 // Needed to import the eos models
 #include <singularity-eos/eos/eos.hpp>
 

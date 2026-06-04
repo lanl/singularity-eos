@@ -15,7 +15,7 @@
 #include <array>
 
 #include <ports-of-call/portability.hpp>
-#include <singularity-eos/base/generic_indexer.hpp>
+#include <singularity-utils/generic_indexer.hpp>
 
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE

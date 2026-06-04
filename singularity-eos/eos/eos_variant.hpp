@@ -26,8 +26,8 @@
 #include <ports-of-call/portable_errors.hpp>
 #include <ports-of-call/variant.hpp>
 #include <singularity-eos/base/constants.hpp>
-#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
+#include <singularity-utils/variadic_utils.hpp>
 
 using Real = double;
 

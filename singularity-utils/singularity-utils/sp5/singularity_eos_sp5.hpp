@@ -14,8 +14,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef _SINGULARITY_EOS_UTILS_SP5_SINGULARITY_EOS_SP5_HPP_
-#define _SINGULARITY_EOS_UTILS_SP5_SINGULARITY_EOS_SP5_HPP_
+#ifndef _SINGULARITY_UTILS_SP5_SINGULARITY_EOS_SP5_HPP_
+#define _SINGULARITY_UTILS_SP5_SINGULARITY_EOS_SP5_HPP_
 
 namespace SP5 {
 
@@ -74,4 +74,4 @@ constexpr char massFrac[] = "mass fractions";
 
 } // namespace SP5
 
-#endif // _SINGULARITY_EOS_UTILS_SP5_SINGULARITY_EOS_SP5_HPP_
+#endif // _SINGULARITY_UTILS_SP5_SINGULARITY_EOS_SP5_HPP_

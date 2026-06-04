@@ -22,7 +22,7 @@
 // #include <ports-of-call/array.hpp>
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
-#include <singularity-eos/base/indexable_types.hpp>
+#include <singularity-utils/indexable_types.hpp>
 
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 

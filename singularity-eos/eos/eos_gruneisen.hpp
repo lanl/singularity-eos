@@ -21,10 +21,10 @@
 #include <limits>
 
 #include <singularity-eos/base/constants.hpp>
-#include <singularity-eos/base/math_utils.hpp>
-#include <singularity-eos/base/robust_utils.hpp>
-#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
+#include <singularity-utils/math_utils.hpp>
+#include <singularity-utils/robust_utils.hpp>
+#include <singularity-utils/root-finding-1d/root_finding.hpp>
 
 namespace singularity {
 
@@ -292,7 +292,7 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real
           maxbound = std::min(min_extremum, maxbound);
         }
       } // s3 > 0 ; else
-    }   // discriminant >= 0
+    } // discriminant >= 0
     if (poly(minbound) * poly(maxbound) < 0.) {
       // Root is appropriately bounded
       using RootFinding1D::regula_falsi;

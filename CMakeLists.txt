@@ -171,6 +171,9 @@ if (SINGULAIRTY_ON_ARM)
 endif()
 
 # ------------------------------------------------------------------------------#
+include(singularity-eos/spiner)
+include(singularity-eos/ports-of-call)
+add_subdirectory(singularity-utils)
 # singularity-eos Library
 # ------------------------------------------------------------------------------#
 
@@ -178,8 +181,6 @@ include(singularity-eos/Eigen3)
 include(singularity-eos/eospac)
 include(singularity-eos/hdf5)
 include(singularity-eos/kokkos)
-include(singularity-eos/spiner)
-include(singularity-eos/ports-of-call)
 
 add_library(singularity-eos INTERFACE)
 add_library(singularity-eos::singularity-eos ALIAS singularity-eos)
@@ -190,7 +191,7 @@ add_library(singularity-eos::singularity-eos_Common ALIAS singularity-eos_Common
 
 add_library(singularity-eos_Interface INTERFACE)
 add_library(singularity-eos::singularity-eos_Interface ALIAS singularity-eos_Interface)
-target_link_libraries(singularity-eos_Interface INTERFACE singularity-eos_Common)
+target_link_libraries(singularity-eos_Interface INTERFACE singularity-eos_Common singularity-utils::singularity-utils)
 target_link_libraries(singularity-eos INTERFACE singularity-eos_Interface)
 
 # ld has problems with Clang's libomp.so, use ldd instead
@@ -589,6 +590,8 @@ target_compile_options(
          # `-Wclass-memaccess now default with -Wall but we explicitly
          # manage this ourselves in our serialization routines.
          $<$<AND:$<CXX_COMPILER_ID:GNU>,$<COMPILE_LANGUAGE:CXX>>:-Wno-class-memaccess>
+         # Disable finite-math-only in Debug builds to allow NaN/Inf checks (Intel compilers)
+         $<$<AND:$<CONFIG:Debug>,$<OR:$<CXX_COMPILER_ID:IntelLLVM>,$<CXX_COMPILER_ID:Intel>>>:-fno-finite-math-only>
 )
 if (SINGULARITY_STRICT_WARNINGS)
   target_compile_options(singularity-eos_Interface INTERFACE

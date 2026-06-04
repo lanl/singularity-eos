@@ -35,7 +35,7 @@
 #include <memory>
 
 #include <ports-of-call/portability.hpp>
-#include <singularity-eos/base/robust_utils.hpp>
+#include <singularity-utils/robust_utils.hpp>
 
 inline std::string demangle(const char *name) {
 

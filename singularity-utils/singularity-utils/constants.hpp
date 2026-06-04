@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -12,35 +12,16 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef _SINGULARITY_EOS_EOS_DEFAULT_VARIANT_HPP_
-#define _SINGULARITY_EOS_EOS_DEFAULT_VARIANT_HPP_
-
-#include <cassert>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <iostream>
-#include <limits>
-#include <utility>
-
-#include <ports-of-call/portability.hpp>
-#include <singularity-eos/eos/eos_base.hpp>
-#include <singularity-eos/eos/eos_variant.hpp>
-
-// Base stuff
-#include <singularity-eos/base/constants.hpp>
-#include <singularity-eos/base/eos_error.hpp>
-#include <singularity-utils/variadic_utils.hpp>
-
-// EOS models
-#include <singularity-eos/eos/eos_type_lists.hpp>
-#include <singularity-eos/eos/variant_utils.hpp>
+#ifndef SINGULARITY_UTILS_CONSTANTS_HPP_
+#define SINGULARITY_UTILS_CONSTANTS_HPP_
 
 namespace singularity {
 
-// create the alias
-using EOS = typename decltype(singularity::tl_to_Variant(singularity::combined_list))::vt;
+// Enum for table splitting modes
+// Used when converting EOSPAC tables that can be split into
+// electron-only and ion-cold contributions
+enum class TableSplit { Total = 0, ElectronOnly = 1, IonCold = 2 };
 
 } // namespace singularity
 
-#endif // _SINGULARITY_EOS_EOS_DEFAULT_VARIANT_HPP_
+#endif // SINGULARITY_UTILS_CONSTANTS_HPP_

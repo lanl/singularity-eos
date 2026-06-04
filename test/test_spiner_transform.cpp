@@ -26,9 +26,9 @@
 #ifdef SINGULARITY_USE_SPINER
 
 #include <ports-of-call/portability.hpp>
-#include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/eos/eos_spiner_common.hpp>
 #include <singularity-eos/eos/eos_spiner_sie_transforms.hpp>
+#include <singularity-utils/indexable_types.hpp>
 
 #include <singularity-eos/base/spiner_table_utils.hpp>
 #include <spiner/databox.hpp>

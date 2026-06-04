@@ -21,9 +21,9 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
-#include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos_models.hpp>
 #include <singularity-eos/eos/eos_variant.hpp>
+#include <singularity-utils/robust_utils.hpp>
 
 constexpr int NMAT = 3;
 constexpr int NTRIAL = 100;

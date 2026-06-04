@@ -31,7 +31,7 @@
 // #include "hdf5_hl.h"
 
 #include <ports-of-call/portability.hpp>
-#include <singularity-eos/base/fast-math/logs.hpp>
+#include <singularity-utils/fast-math/logs.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
 #include <spiner/sp5.hpp>

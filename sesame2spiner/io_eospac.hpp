@@ -27,9 +27,9 @@
 #endif
 
 #include <ports-of-call/portability.hpp>
-#include <singularity-eos/base/constants.hpp>
-#include <singularity-eos/base/fast-math/logs.hpp>
-#include <singularity-eos/base/spiner_table_utils.hpp>
+#include <singularity-utils/constants.hpp>
+#include <singularity-utils/fast-math/logs.hpp>
+#include <singularity-utils/spiner_table_utils.hpp>
 #include <spiner/databox.hpp>
 
 #include <eospac-wrapper/eospac_wrapper.hpp>

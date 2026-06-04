@@ -36,8 +36,8 @@
 
 // singularity-eos
 #include <singularity-eos/base/eos_error.hpp>
-#include <singularity-eos/base/fast-math/logs.hpp>
-#include <singularity-eos/base/robust_utils.hpp>
+#include <singularity-utils/fast-math/logs.hpp>
+#include <singularity-utils/robust_utils.hpp>
 
 #define SPINER_EOS_VERBOSE (0)
 #define SP_ROOT_FINDER (RootFinding1D::regula_falsi)

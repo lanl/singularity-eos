@@ -15,8 +15,8 @@
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
 #include <ports-of-call/portable_errors.hpp>
-#include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
+#include <singularity-utils/robust_utils.hpp>
 
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE

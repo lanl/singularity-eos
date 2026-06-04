@@ -22,10 +22,10 @@
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
-#include <singularity-eos/base/indexable_types.hpp>
-#include <singularity-eos/base/robust_utils.hpp>
-#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
+#include <singularity-utils/indexable_types.hpp>
+#include <singularity-utils/robust_utils.hpp>
+#include <singularity-utils/variadic_utils.hpp>
 
 namespace singularity {
 

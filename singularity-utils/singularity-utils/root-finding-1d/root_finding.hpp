@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef _SINGULARITY_EOS_UTILS_ROOT_FINDING_HPP_
-#define _SINGULARITY_EOS_UTILS_ROOT_FINDING_HPP_
+#ifndef _SINGULARITY_UTILS_ROOT_FINDING_1D_ROOT_FINDING_HPP_
+#define _SINGULARITY_UTILS_ROOT_FINDING_1D_ROOT_FINDING_HPP_
 
 // Implementation based on gsl root finder API
 // Code originally taken from nubhlight, LA-UR-19-20336
@@ -608,4 +608,4 @@ PORTABLE_INLINE_FUNCTION Status bisect(const T &f, const Real ytarget, const Rea
 #undef SINGULARITY_ROOT_VERBOSE
 #undef SINGULARITY_MY_SIGN
 
-#endif // _SINGULARITY_EOS_UTILS_ROOT_FINDING_HPP_
+#endif // _SINGULARITY_UTILS_ROOT_FINDING_1D_ROOT_FINDING_HPP_

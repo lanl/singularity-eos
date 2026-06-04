@@ -62,9 +62,9 @@
 #include <ports-of-call/portability.hpp>
 
 // This contains logic for indexers
-#include <singularity-eos/base/indexable_types.hpp>
+#include <singularity-utils/indexable_types.hpp>
 // This contains useful tools for preventing things like divide by zero
-#include <singularity-eos/base/robust_utils.hpp>
+#include <singularity-utils/robust_utils.hpp>
 // The PTE closures
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 // Needed to import the eos models

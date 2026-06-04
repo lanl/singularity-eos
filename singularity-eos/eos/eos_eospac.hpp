@@ -31,8 +31,8 @@
 
 #include <eospac-wrapper/eospac_wrapper.hpp>
 #include <singularity-eos/base/constants.hpp>
-#include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
+#include <singularity-utils/robust_utils.hpp>
 
 // This file was made in part with generative AI
 

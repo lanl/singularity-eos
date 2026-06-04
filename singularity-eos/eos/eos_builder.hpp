@@ -19,8 +19,8 @@
 
 #include <ports-of-call/portability.hpp>
 
-#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_variant.hpp>
+#include <singularity-utils/variadic_utils.hpp>
 
 namespace singularity {
 namespace EOSBuilder {

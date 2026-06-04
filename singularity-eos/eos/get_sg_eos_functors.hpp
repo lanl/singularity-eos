@@ -16,8 +16,8 @@
 #define _SINGULARITY_EOS_EOS_GET_SG_EOS_LAMBDAS_HPP_
 
 #include <ports-of-call/portability.hpp>
-#include <singularity-eos/base/error_utils.hpp>
 #include <singularity-eos/eos/get_sg_eos.hpp>
+#include <singularity-utils/error_utils.hpp>
 
 #include <cmath>
 

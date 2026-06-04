@@ -18,10 +18,10 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
-#include <singularity-eos/base/fast-math/logs.hpp>
-#include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/closure/kinetic_phasetransition_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
+#include <singularity-utils/fast-math/logs.hpp>
+#include <singularity-utils/robust_utils.hpp>
 
 #include <cmath>
 
