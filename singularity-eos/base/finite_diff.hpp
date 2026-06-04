@@ -53,7 +53,7 @@ Real backwardDifference(Func &&f, Real x, std::optional<Real> pert = std::nullop
 }
 
 template <typename Func>
-Real finiteDifference(func &&f, Real x, Real xmin, Real xmax, std::optional<Real> pert = std::nulopt){
+Real finiteDifference(Func &&f, Real x, Real xmin, Real xmax, std::optional<Real> pert = std::nulopt){
   Real h = pert ? *pert : std::max(std::abs(x) * 1e-6, 1e-12);
   const Real left = x - xmin;
   const Real right = xmax - x;
