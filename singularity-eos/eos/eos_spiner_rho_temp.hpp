@@ -37,10 +37,10 @@
 
 // base
 #include <singularity-eos/base/constants.hpp>
-#include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/spiner_table_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 #include <singularity-eos/eos/eos_spiner_common.hpp>
+#include <singularity-utils/fast-math/logs.hpp>
 #include <singularity-utils/indexable_types.hpp>
 #include <singularity-utils/robust_utils.hpp>
 #include <singularity-utils/root-finding-1d/root_finding.hpp>

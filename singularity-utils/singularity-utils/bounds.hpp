@@ -26,7 +26,7 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
-#include <singularity-utils/fast_math.hpp>
+#include <singularity-utils/fast-math/logs.hpp>
 
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>

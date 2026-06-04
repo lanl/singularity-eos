@@ -171,9 +171,13 @@ if (SINGULAIRTY_ON_ARM)
 endif()
 
 # ------------------------------------------------------------------------------#
+# singularity-utils Library
+# ------------------------------------------------------------------------------#
 include(singularity-eos/spiner)
 include(singularity-eos/ports-of-call)
 add_subdirectory(singularity-utils)
+
+# ------------------------------------------------------------------------------#
 # singularity-eos Library
 # ------------------------------------------------------------------------------#
 
@@ -308,6 +312,8 @@ endif()
 
 if(SINGULARITY_BUILD_SESAME2SPINER)
   add_subdirectory(sesame2spiner)
+  target_link_libraries(singularity-eos_Interface INTERFACE sesame2spiner-lib)
+  target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_SESAME2SPINER)
 endif()
 
 if(SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)

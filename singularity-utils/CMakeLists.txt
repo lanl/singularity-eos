@@ -37,6 +37,14 @@ target_link_libraries(singularity-utils
     spiner::spiner
 )
 
+# Propate SPINER defines
+if (DEFINED SINGULARITY_USE_SPINER)
+  target_compile_definitions(singularity-utils
+    INTERFACE
+      $<$<BOOL:${SINGULARITY_USE_SPINER}>:SINGULARITY_USE_SPINER>
+  )
+endif()
+
 # Propagate HDF5 usage definitions
 # These must match the settings used by singularity-eos
 if (DEFINED SINGULARITY_USE_SPINER_WITH_HDF5)
@@ -45,6 +53,7 @@ if (DEFINED SINGULARITY_USE_SPINER_WITH_HDF5)
       $<$<BOOL:${SINGULARITY_USE_SPINER_WITH_HDF5}>:SINGULARITY_USE_SPINER_WITH_HDF5>
   )
 endif()
+
 
 # Propagate compile definitions for FastMath configuration
 # These must match the settings used by singularity-eos

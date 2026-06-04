@@ -24,7 +24,7 @@
 #include <vector>
 
 #include <ports-of-call/portability.hpp>
-#include <singularity-utils/constants.hpp>
+#include <singularity-eos/base/constants.hpp>
 
 #include <singularity-utils/bounds.hpp> // Bounds
 #include <spiner/databox.hpp>
