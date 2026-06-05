@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------#
-# © 2021-2025. Triad National Security, LLC. All rights reserved.  This program
+# © 2021-2026. Triad National Security, LLC. All rights reserved.  This program
 # was produced under U.S. Government contract 89233218CNA000001 for Los Alamos
 # National Laboratory (LANL), which is operated by Triad National Security, LLC
 # for the U.S.  Department of Energy/National Nuclear Security Administration.
@@ -10,6 +10,8 @@
 # reproduce, prepare derivative works, distribute copies to the public, perform
 # publicly and display publicly, and to permit others to do so.
 # ------------------------------------------------------------------------------#
+
+# This file was made in part with generative AI
 
 cmake_minimum_required(VERSION 3.19)
 
@@ -170,21 +172,83 @@ if (SINGULAIRTY_ON_ARM)
   endif()
 endif()
 
-# ------------------------------------------------------------------------------#
-# singularity-utils Library
-# ------------------------------------------------------------------------------#
-include(singularity-eos/spiner)
-include(singularity-eos/ports-of-call)
-add_subdirectory(singularity-utils)
+# checks if this is our build, or we've been imported via `add_subdirectory` NB:
+# this should make the `option(SINGULARITY_SUBMODULE_MODE ...)` unnecessary
+# This must happen before finding dependencies
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+  set(CMAKE_CXX_EXTENSIONS OFF)
+else()
+  message(
+    STATUS
+      "Detected that `singularity-eos` is a subproject, will configure build in submodule mode"
+  )
+  set(SINGULARITY_SUBMODULE_MODE ON)
+endif()
 
-# ------------------------------------------------------------------------------#
-# singularity-eos Library
-# ------------------------------------------------------------------------------#
+if(SINGULARITY_FORCE_SUBMODULE_MODE)
+  message(STATUS "Building as though project was a submodule.")
+  set(SINGULARITY_SUBMODULE_MODE ON)
+endif()
 
 include(singularity-eos/Eigen3)
 include(singularity-eos/eospac)
 include(singularity-eos/hdf5)
 include(singularity-eos/kokkos)
+include(singularity-eos/ports-of-call)
+include(singularity-eos/spiner)
+
+# ------------------------------------------------------------------------------#
+# Import/Find External Dependencies
+# ------------------------------------------------------------------------------#
+# Must happen before building singularity-utils (which needs ports-of-call and spiner)
+# Dependency order: Kokkos -> ports-of-call -> spiner -> singularity-utils
+
+if(SINGULARITY_SUBMODULE_MODE)
+  # add all submodules
+  message(STATUS "singularity-eos configuring in submodule mode.")
+
+  # Kokkos first (ports-of-call may depend on it if PORTABILITY_STRATEGY_KOKKOS is set)
+  if(SINGULARITY_USE_KOKKOS)
+    singularity_import_kokkos()
+    if(SINGULARITY_USE_KOKKOSKERNELS)
+      singularity_import_kokkoskernels()
+    endif()
+  endif()
+
+  # Then ports-of-call
+  singularity_import_ports_of_call()
+
+  # Then spiner (depends on ports-of-call)
+  if(SINGULARITY_USE_SPINER)
+    singularity_import_spiner()
+  endif()
+else()
+  # use system packages
+
+  # Kokkos first
+  if(SINGULARITY_USE_KOKKOS)
+    singularity_find_kokkos()
+    if(SINGULARITY_USE_KOKKOSKERNELS)
+      singularity_find_kokkoskernels()
+    endif()
+  endif()
+
+  # Then ports-of-call
+  singularity_find_ports_of_call()
+
+  # Then spiner
+  if(SINGULARITY_USE_SPINER)
+    singularity_find_spiner()
+  endif()
+endif()
+
+# Build singularity-utils first - it's a dependency for both
+# singularity-eos and sesame2spiner
+add_subdirectory(singularity-utils)
+
+# ------------------------------------------------------------------------------#
+# singularity-eos Library
+# ------------------------------------------------------------------------------#
 
 add_library(singularity-eos INTERFACE)
 add_library(singularity-eos::singularity-eos ALIAS singularity-eos)
@@ -230,6 +294,16 @@ if(SINGULARITY_BUILD_PYTHON)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
+# Enable HDF5 and EOSPAC now that languages and dependencies are set up
+if(SINGULARITY_USE_SPINER_WITH_HDF5)
+  singularity_enable_hdf5(singularity-eos_Common)
+endif()
+
+if(SINGULARITY_USE_EOSPAC)
+  # NB This will add the `eospac-wrapper` directory.
+  singularity_enable_eospac(singularity-eos_Common)
+endif()
+
 # require at least C++17, but allow newer versions to become a client requirement if
 # explicitly set at build time (needed for building with newer Kokkos)
 if(CMAKE_CXX_STANDARD)
@@ -238,22 +312,6 @@ else()
   target_compile_features(singularity-eos_Interface INTERFACE cxx_std_17)
 endif()
 
-# checks if this is our build, or we've been imported via `add_subdirectory` NB:
-# this should make the `option(SINGULARITY_SUBMODULE_MODE ...)` unnecessary
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-  set(CMAKE_CXX_EXTENSIONS OFF)
-else()
-  message(
-    STATUS
-      "Detected that `singularity-eos` is a subproject, will configure build in submodule mode"
-  )
-  set(SINGULARITY_SUBMODULE_MODE ON)
-endif()
-
-if(SINGULARITY_FORCE_SUBMODULE_MODE)
-  message(STATUS "Building as though project was a submodule.")
-  set(SINGULARITY_SUBMODULE_MODE ON)
-endif()
 
 # Use to determine if Eigen is used or not
 set(SINGULARITY_USE_EIGEN
@@ -305,13 +363,41 @@ if(SINGULARITY_BUILD_EXAMPLES)
   add_subdirectory(example)
 endif()
 
-# add subdirs
+# ------------------------------------------------------------------------------#
+# Import/Find Additional Dependencies (Eigen only)
+# ------------------------------------------------------------------------------#
+# Kokkos, ports-of-call, and spiner were already imported/found before singularity-utils
+
+if(SINGULARITY_SUBMODULE_MODE)
+  if(SINGULARITY_USE_EIGEN)
+    singularity_import_eigen()
+  endif()
+else()
+  if(SINGULARITY_USE_EIGEN)
+    singularity_find_eigen()
+  endif()
+endif()
+
+# Enable dependencies for singularity-eos_Interface
+singularity_enable_ports_of_call(singularity-eos_Interface)
+
+if(SINGULARITY_USE_SPINER)
+  singularity_enable_spiner(singularity-eos_Interface)
+  # if(SINGULARITY_USE_SPINER_WITH_HDF5)
+  # singularity_enable_hdf5(singularity-eos_Interface) endif()
+endif()
+
+# ------------------------------------------------------------------------------#
+# Add subdirectories
+# ------------------------------------------------------------------------------#
+
 if(SINGULARITY_BUILD_PYTHON)
   add_subdirectory(python)
 endif()
 
 if(SINGULARITY_BUILD_SESAME2SPINER)
   add_subdirectory(sesame2spiner)
+  # Link sesame2spiner library into singularity-eos
   target_link_libraries(singularity-eos_Interface INTERFACE sesame2spiner-lib)
   target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_SESAME2SPINER)
 endif()
@@ -385,59 +471,6 @@ endif()
 # `find_package`, and an error will be produced if the packages required for
 # building are not located outside of the source directory, except for explicit
 # cases.
-
-if(SINGULARITY_USE_SPINER_WITH_HDF5)
-  singularity_enable_hdf5(singularity-eos_Common)
-endif()
-
-if(SINGULARITY_USE_EOSPAC)
-  # NB This will add the `eospac-wrapper` directory.
-  singularity_enable_eospac(singularity-eos_Common)
-endif()
-
-if(SINGULARITY_SUBMODULE_MODE)
-  # add all submodules
-  message(STATUS "singularity-eos configuring in submodule mode.")
-  singularity_import_ports_of_call()
-  if(SINGULARITY_USE_SPINER)
-    singularity_import_spiner()
-  endif()
-  if(SINGULARITY_USE_KOKKOS)
-    singularity_import_kokkos()
-    if(SINGULARITY_USE_KOKKOSKERNELS)
-      singularity_import_kokkoskernels()
-    endif()
-  endif()
-
-  if(SINGULARITY_USE_EIGEN)
-    singularity_import_eigen()
-  endif()
-else()
-  # use system packages
-  singularity_find_ports_of_call()
-  if(SINGULARITY_USE_SPINER)
-    singularity_find_spiner()
-  endif()
-
-  if(SINGULARITY_USE_KOKKOS)
-    singularity_find_kokkos()
-    if(SINGULARITY_USE_KOKKOSKERNELS)
-      singularity_find_kokkoskernels()
-    endif()
-  endif()
-  if(SINGULARITY_USE_EIGEN)
-    singularity_find_eigen()
-  endif()
-
-endif()
-
-singularity_enable_ports_of_call(singularity-eos_Interface)
-
-if(SINGULARITY_USE_SPINER)
-  singularity_enable_spiner(singularity-eos_Interface)
-  # if(SINGULARITY_USE_SPINER_WITH_HDF5)
-  # singularity_enable_hdf5(singularity-eos_Interface) endif()
-endif()
 
 # Both the interface (headers) and the library (compiled) need to link to Kokkos
 # see get_sg_eos.cpp
@@ -596,8 +629,7 @@ target_compile_options(
          # `-Wclass-memaccess now default with -Wall but we explicitly
          # manage this ourselves in our serialization routines.
          $<$<AND:$<CXX_COMPILER_ID:GNU>,$<COMPILE_LANGUAGE:CXX>>:-Wno-class-memaccess>
-         # Intel compilers enable -ffast-math even in Debug builds. This disables finite-math-only in 
-         # Debug builds to allow NaN/Inf checks without pages of warnings
+         # Disable finite-math-only in Debug builds to allow NaN/Inf checks (Intel compilers)
          $<$<AND:$<CONFIG:Debug>,$<OR:$<CXX_COMPILER_ID:IntelLLVM>,$<CXX_COMPILER_ID:Intel>>>:-fno-finite-math-only>
 )
 if (SINGULARITY_STRICT_WARNINGS)

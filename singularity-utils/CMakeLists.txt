@@ -34,11 +34,13 @@ target_include_directories(singularity-utils
 target_link_libraries(singularity-utils
   INTERFACE
     ports-of-call::ports-of-call
-    spiner::spiner
 )
 
 # Propate SPINER defines
 if (DEFINED SINGULARITY_USE_SPINER)
+  target_link_libraries(singularity-utils INTERFACE
+      spiner::spiner
+  )
   target_compile_definitions(singularity-utils
     INTERFACE
       $<$<BOOL:${SINGULARITY_USE_SPINER}>:SINGULARITY_USE_SPINER>
