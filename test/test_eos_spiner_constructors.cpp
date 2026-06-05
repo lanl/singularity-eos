@@ -543,7 +543,8 @@ SCENARIO("SpinerEOS construction from minimal EOS with chain rule",
 // SpinerEOSDependsRhoT Constructor Tests
 // ============================================================================
 
-SCENARIO("SpinerEOSDependsRhoT construction from IdealGas", "[SpinerEOS][ConstructorRhoT]") {
+SCENARIO("SpinerEOSDependsRhoT construction from IdealGas",
+         "[SpinerEOS][ConstructorRhoT]") {
   GIVEN("An IdealGas EOS") {
     constexpr Real Cv = 2.0;
     constexpr Real gm1 = 0.4;
@@ -586,7 +587,7 @@ SCENARIO("SpinerEOSDependsRhoT construction from IdealGas", "[SpinerEOS][Constru
         Real sie_spiner = spiner_eos.InternalEnergyFromDensityTemperature(rho, T);
 
         // Should match closely (within interpolation error)
-        CHECK(isClose(P_spiner, P_ideal, 0.01));   // 1% error
+        CHECK(isClose(P_spiner, P_ideal, 0.01)); // 1% error
         CHECK(isClose(sie_spiner, sie_ideal, 0.01));
       }
 
@@ -674,10 +675,10 @@ SCENARIO("SpinerEOSDependsRhoT accuracy test", "[SpinerEOS][ConstructorRhoT]") {
       Real max_bmod_error = 0.0;
 
       for (int i = 0; i < num_tests; ++i) {
-        Real rho = params.rhoMin * std::pow(params.rhoMax / params.rhoMin,
-                                             Real(i) / (num_tests - 1));
-        Real T = params.TMin * std::pow(params.TMax / params.TMin,
-                                        Real(i) / (num_tests - 1));
+        Real rho = params.rhoMin *
+                   std::pow(params.rhoMax / params.rhoMin, Real(i) / (num_tests - 1));
+        Real T =
+            params.TMin * std::pow(params.TMax / params.TMin, Real(i) / (num_tests - 1));
 
         Real P_ideal = ideal_eos.PressureFromDensityTemperature(rho, T);
         Real P_spiner = spiner_eos.PressureFromDensityTemperature(rho, T);
@@ -697,25 +698,26 @@ SCENARIO("SpinerEOSDependsRhoT accuracy test", "[SpinerEOS][ConstructorRhoT]") {
 
       THEN("Interpolation errors are small") {
         // With fine grid, errors should be very small
-        REQUIRE(max_P_error < 0.005);    // < 0.5%
-        REQUIRE(max_sie_error < 0.005);  // < 0.5%
-        REQUIRE(max_bmod_error < 0.05);  // < 5% (uses source EOS method when available)
+        REQUIRE(max_P_error < 0.005);   // < 0.5%
+        REQUIRE(max_sie_error < 0.005); // < 0.5%
+        REQUIRE(max_bmod_error < 0.05); // < 5% (uses source EOS method when available)
       }
     }
   }
 }
 
 #ifdef SINGULARITY_USE_EOSPAC
-SCENARIO("SpinerEOSDependsRhoT construction from EOSPAC", "[SpinerEOS][ConstructorRhoT][EOSPAC]") {
+SCENARIO("SpinerEOSDependsRhoT construction from EOSPAC",
+         "[SpinerEOS][ConstructorRhoT][EOSPAC]") {
   GIVEN("An EOSPAC EOS for aluminum") {
     constexpr int matid = 3720; // Aluminum
     singularity::EOSPAC eospac_eos(matid);
 
     WHEN("We create a SpinerEOSDependsRhoT from it") {
       SpinerTableGridParams params;
-      params.rhoMin = 0.5;   // g/cm^3
+      params.rhoMin = 0.5; // g/cm^3
       params.rhoMax = 20.0;
-      params.TMin = 300.0;   // K
+      params.TMin = 300.0; // K
       params.TMax = 50000.0;
       params.numRhoPerDecade = 40;
       params.numTPerDecade = 40;
@@ -724,7 +726,7 @@ SCENARIO("SpinerEOSDependsRhoT construction from EOSPAC", "[SpinerEOS][Construct
       SpinerEOSDependsRhoT spiner_eos(eospac_eos, params);
 
       THEN("The table is created and interpolates correctly") {
-        const Real rho = 2.7;     // Near aluminum normal density
+        const Real rho = 2.7; // Near aluminum normal density
         const Real T = 1000.0;
 
         Real P_eospac = eospac_eos.PressureFromDensityTemperature(rho, T);
@@ -736,14 +738,16 @@ SCENARIO("SpinerEOSDependsRhoT construction from EOSPAC", "[SpinerEOS][Construct
 
       AND_THEN("Material properties are preserved") {
         CHECK(isClose(spiner_eos.MeanAtomicMass(), eospac_eos.MeanAtomicMass(), 1e-6));
-        CHECK(isClose(spiner_eos.MeanAtomicNumber(), eospac_eos.MeanAtomicNumber(), 1e-6));
+        CHECK(
+            isClose(spiner_eos.MeanAtomicNumber(), eospac_eos.MeanAtomicNumber(), 1e-6));
       }
     }
   }
 }
 #endif // SINGULARITY_USE_EOSPAC
 
-SCENARIO("SpinerEOSDependsRhoT vs SpinerEOSDependsRhoSie comparison", "[SpinerEOS][ConstructorRhoT]") {
+SCENARIO("SpinerEOSDependsRhoT vs SpinerEOSDependsRhoSie comparison",
+         "[SpinerEOS][ConstructorRhoT]") {
   GIVEN("An IdealGas EOS") {
     constexpr Real Cv = 2.0;
     constexpr Real gm1 = 0.4;
@@ -791,7 +795,8 @@ SCENARIO("SpinerEOSDependsRhoT vs SpinerEOSDependsRhoSie comparison", "[SpinerEO
 
         Real P_rhosie = rhosie_eos.PressureFromDensityInternalEnergy(rho, sie);
 
-        // RhoT can also do this but via root finding (TemperatureFromDensityInternalEnergy)
+        // RhoT can also do this but via root finding
+        // (TemperatureFromDensityInternalEnergy)
         Real T_rhot = rhot_eos.TemperatureFromDensityInternalEnergy(rho, sie);
         Real P_rhot = rhot_eos.PressureFromDensityTemperature(rho, T_rhot);
 
@@ -807,9 +812,10 @@ SCENARIO("SpinerEOSDependsRhoT from minimal EOS", "[SpinerEOS][ConstructorRhoT]"
     // This class intentionally lacks gamma, cv, and other optimizations
     // to test that finite differences work correctly
     class MinimalEOS {
-    private:
+     private:
       IdealGas ideal_;
-    public:
+
+     public:
       MinimalEOS(Real gm1, Real Cv) : ideal_(gm1, Cv) {}
 
       PORTABLE_INLINE_FUNCTION

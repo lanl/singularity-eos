@@ -34,24 +34,25 @@ template <typename EOS, typename = void>
 struct has_MinimumDensity : std::false_type {};
 
 template <typename EOS>
-struct has_MinimumDensity<EOS, 
-                          void_t<decltype(std::declval<EOS>().MinimumDensity())>> : std::true_type {};
+struct has_MinimumDensity<EOS, void_t<decltype(std::declval<EOS>().MinimumDensity())>>
+    : std::true_type {};
 
 // Detect MaximumDensity
 template <typename EOS, typename = void>
 struct has_MaximumDensity : std::false_type {};
 
 template <typename EOS>
-struct has_MaximumDensity<EOS, 
-                          void_t<decltype(std::declval<EOS>().MaximumDensity())>> : std::true_type {};             
+struct has_MaximumDensity<EOS, void_t<decltype(std::declval<EOS>().MaximumDensity())>>
+    : std::true_type {};
 
-                          // Detect MinimumTemperature
+// Detect MinimumTemperature
 template <typename EOS, typename = void>
 struct has_MinimumTemperature : std::false_type {};
 
 template <typename EOS>
-struct has_MinimumTemperature<EOS, 
-                          void_t<decltype(std::declval<EOS>().MinimumTemperature())>> : std::true_type {};   
+struct has_MinimumTemperature<EOS,
+                              void_t<decltype(std::declval<EOS>().MinimumTemperature())>>
+    : std::true_type {};
 
 // Detect PressureFromDensityTemperature
 template <typename EOS, typename = void>

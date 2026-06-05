@@ -44,11 +44,11 @@
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
-#include <singularity-eos/eos/eos_spiner_construction.hpp>
 #include <singularity-eos/base/spiner_table_utils.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 #include <singularity-eos/eos/eos_spiner_common.hpp>
+#include <singularity-eos/eos/eos_spiner_construction.hpp>
 
 // spiner
 #include <spiner/databox.hpp>
@@ -112,8 +112,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 
   // Constructor from generic EOS
   template <typename EOS>
-  inline SpinerEOSDependsRhoT(const EOS &source_eos,
-                              const SpinerTableGridParams &params,
+  inline SpinerEOSDependsRhoT(const EOS &source_eos, const SpinerTableGridParams &params,
                               bool reproducibility_mode = false);
 
   inline SpinerEOSDependsRhoT GetOnDevice();
@@ -1499,9 +1498,8 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const EOS &source_eos,
   Real sieMax = 1e99; // Will be overridden if source EOS provides bounds
 
   spiner_table_builder::populateDependsRhoT<EOS>(
-      source_eos, lRhoBounds, lTBounds, lRhoOffset_, lTOffset_, rhoMin, rhoMax_, TMin, TMax,
-      sieMin, sieMax,
-      [this](int j, int i, Real v) { sie_(j, i) = v; },
+      source_eos, lRhoBounds, lTBounds, lRhoOffset_, lTOffset_, rhoMin, rhoMax_, TMin,
+      TMax, sieMin, sieMax, [this](int j, int i, Real v) { sie_(j, i) = v; },
       [this](int j, int i, Real v) { P_(j, i) = v; },
       [this](int j, int i, Real v) { bMod_(j, i) = v; },
       [this](int j, int i, Real v) { dPdRho_(j, i) = v; },
@@ -1621,8 +1619,8 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const EOS &source_eos,
   }
 
   // Compute rho_at_pmin
-  PMin_ = spiner_common::SetRhoPMin(P_, rho_at_pmin_, pmin_vapor_dome_,
-                                    VAPOR_DPDR_THRESH, lRhoOffset_);
+  PMin_ = spiner_common::SetRhoPMin(P_, rho_at_pmin_, pmin_vapor_dome_, VAPOR_DPDR_THRESH,
+                                    lRhoOffset_);
 
   // No mass fractions from generic constructor
   has_mf = false;

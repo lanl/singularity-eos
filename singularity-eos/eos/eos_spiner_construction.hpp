@@ -151,10 +151,10 @@ inline void constructRhoBounds(const SpinerTableGridParams &params, Bounds &lRho
   // Construct piecewise or uniform grid
   if (params.piecewiseRho) {
     if (params.rhoFineMin > 0 && params.rhoFineMax > 0) {
-      lRhoBounds = Bounds(Bounds::ThreeGrids(), rhoMin, rhoMax, rhoAnchor,
-                          params.rhoFineMin, params.rhoFineMax, params.numRhoPerDecade,
-                          params.rhoCoarseFactorLo, params.rhoCoarseFactorHi, true,
-                          params.shrinklRhoBounds);
+      lRhoBounds =
+          Bounds(Bounds::ThreeGrids(), rhoMin, rhoMax, rhoAnchor, params.rhoFineMin,
+                 params.rhoFineMax, params.numRhoPerDecade, params.rhoCoarseFactorLo,
+                 params.rhoCoarseFactorHi, true, params.shrinklRhoBounds);
     } else {
       lRhoBounds = Bounds(Bounds::ThreeGrids(), rhoMin, rhoMax, rhoAnchor,
                           params.rhoFineDiameterDecades, params.numRhoPerDecade,
@@ -189,9 +189,9 @@ inline void constructTBounds(const SpinerTableGridParams &params, Bounds &lTBoun
 
   // Construct piecewise or uniform grid
   if (params.piecewiseT) {
-    lTBounds = Bounds(Bounds::TwoGrids(), TMin, TMax, TAnchor, params.TSplitPoint,
-                      params.numTPerDecade, params.TCoarseFactor, true,
-                      params.shrinklTBounds);
+    lTBounds =
+        Bounds(Bounds::TwoGrids(), TMin, TMax, TAnchor, params.TSplitPoint,
+               params.numTPerDecade, params.TCoarseFactor, true, params.shrinklTBounds);
   } else {
     lTBounds = Bounds(TMin, TMax, numT, true, params.shrinklTBounds, TAnchor);
   }
@@ -298,16 +298,16 @@ inline void computeColdCurves(const EOS &source_eos, const Bounds &lRhoBounds, R
 // constructors to ensure consistent table population
 //
 // Each set* callable has signature: void(int j, int i, Real value)
-template <typename EOS, typename SetSie, typename SetP, typename SetBMod, typename SetDPdRho,
-          typename SetDPdE, typename SetDTdRho, typename SetDTdE, typename SetDEdRho,
-          typename SetDEdT>
+template <typename EOS, typename SetSie, typename SetP, typename SetBMod,
+          typename SetDPdRho, typename SetDPdE, typename SetDTdRho, typename SetDTdE,
+          typename SetDEdRho, typename SetDEdT>
 inline void populateDependsRhoT(const EOS &source_eos, const Bounds &lRhoBounds,
                                 const Bounds &lTBounds, Real lRhoOffset, Real lTOffset,
                                 Real minimumRho, Real maximumRho, Real minimumT,
-                                Real maximumT, Real sieMin, Real sieMax, SetSie setSie, SetP setP,
-                                SetBMod setBMod, SetDPdRho setDPdRho, SetDPdE setDPdE,
-                                SetDTdRho setDTdRho, SetDTdE setDTdE, SetDEdRho setDEdRho,
-                                SetDEdT setDEdT) {
+                                Real maximumT, Real sieMin, Real sieMax, SetSie setSie,
+                                SetP setP, SetBMod setBMod, SetDPdRho setDPdRho,
+                                SetDPdE setDPdE, SetDTdRho setDTdRho, SetDTdE setDTdE,
+                                SetDEdRho setDEdRho, SetDEdT setDEdT) {
   const int numRho = lRhoBounds.grid.nPoints();
   const int numT = lTBounds.grid.nPoints();
 
