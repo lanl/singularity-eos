@@ -1852,6 +1852,84 @@ Example usage:
   are automatically extracted from the source EOS if available and not
   specified in ``params``.
 
+Constructing SpinerEOSDependsRhoT from a Generic EOS
+'''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+``SpinerEOSDependsRhoT`` also supports construction from any analytic or
+tabulated EOS object using the same ``SpinerTableGridParams`` struct. The
+RhoT variant is simpler and more memory-efficient than RhoSie, storing only
+(ρ,T)-indexed tables rather than both (ρ,T) and (ρ,sie) tables.
+
+The constructor signature is identical to RhoSie:
+
+.. code-block:: cpp
+
+  template <typename EOS>
+  SpinerEOSDependsRhoT(const EOS &source_eos,
+                       const SpinerTableGridParams &params,
+                       bool reproducibility_mode = false);
+
+The same ``SpinerTableGridParams`` struct is used for both constructors.
+RhoT-specific notes:
+
+- The ``sieMin``, ``sieMax``, ``numSie``, ``numSiePerDecade``,
+  ``piecewiseSie``, and ``sieCoarseFactor`` parameters are ignored
+  (only relevant for RhoSie)
+- All other parameters work identically
+
+Example usage:
+
+.. code-block:: cpp
+
+  #include <singularity-eos/eos/eos.hpp>
+
+  // Create an analytic EOS
+  constexpr Real Cv = 2.0;
+  constexpr Real gm1 = 0.4;
+  IdealGas ideal(gm1, Cv);
+
+  // Set up grid parameters (same struct as RhoSie)
+  SpinerTableGridParams params;
+  params.rhoMin = 1e-3;
+  params.rhoMax = 1e3;
+  params.TMin = 1e2;
+  params.TMax = 1e5;
+  params.matid = 1001;
+  params.numRhoPerDecade = 100;
+
+  // Construct SpinerEOSDependsRhoT
+  SpinerEOSDependsRhoT spiner_eos(ideal, params);
+
+  // Use like any other SpinerEOSDependsRhoT
+  Real P = spiner_eos.PressureFromDensityTemperature(rho, T);
+  Real sie = spiner_eos.InternalEnergyFromDensityTemperature(rho, T);
+  Real T_inv = spiner_eos.TemperatureFromDensityInternalEnergy(rho, sie);
+
+.. note::
+
+  **Choosing between RhoT and RhoSie**:
+
+  - Use ``SpinerEOSDependsRhoT`` when:
+    - Your code primarily uses (ρ,T) lookups
+    - Memory efficiency is important
+    - You don't need fast (ρ,sie) → P lookups
+
+  - Use ``SpinerEOSDependsRhoSie`` when:
+    - Your code uses both (ρ,T) and (ρ,sie) lookups
+    - You need direct P(ρ,sie) without root finding
+    - You're using mixed-cell closure models (PTE, etc.)
+
+  Both variants use the same grid construction and derivative computation,
+  so accuracy is equivalent for (ρ,T) lookups.
+
+.. note::
+
+  Like RhoSie, the RhoT constructor automatically detects optional EOS
+  methods (``GruneisenParamFromDensityTemperature``,
+  ``SpecificHeatFromDensityTemperature``, etc.) and uses them when available.
+  Otherwise, finite differences are used. Material properties are
+  automatically extracted from the source EOS.
+
 Additionally Spiner EOS models support mass fraction lookups of the form
 
 .. code-block:: cpp

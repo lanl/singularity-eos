@@ -113,6 +113,20 @@ EOS with interpolation errors typically less than 1%. The resulting
 performance, on GPUs via ``GetOnDevice()``, and with mixed-cell closure
 models.
 
+.. note::
+
+  The example uses ``SpinerEOSDependsRhoSie``, but you can also use
+  ``SpinerEOSDependsRhoT`` with the same parameters (just omit sie bounds):
+
+  .. code-block:: cpp
+
+    // For RhoT variant (simpler, less memory)
+    SpinerEOSDependsRhoT spiner_eos(custom_eos, params);
+
+  Choose RhoT if you primarily use (ρ,T) lookups, or RhoSie if you need
+  both (ρ,T) and (ρ,sie) lookups. Both use identical construction logic
+  for (ρ,T) tables.
+
 This approach is particularly valuable for:
 
 - Converting analytical models to tables for performance

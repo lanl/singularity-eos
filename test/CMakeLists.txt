@@ -55,6 +55,7 @@ add_executable(
   test_eos_stellar_collapse.cpp
   test_spiner_transform.cpp
   test_eos_spiner_constructor.cpp
+  test_eos_spiner_constructor_rhot.cpp
   )
 
 if (SINGULARITY_BUILD_CLOSURE)

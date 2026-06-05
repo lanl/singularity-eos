@@ -37,19 +37,20 @@
 
 // base
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/eos_concepts.hpp>
 #include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
+#include <singularity-eos/base/finite_diff.hpp>
 #include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
+#include <singularity-eos/eos/eos_spiner_construction.hpp>
 #include <singularity-eos/base/spiner_table_utils.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 #include <singularity-eos/eos/eos_spiner_common.hpp>
 #include <singularity-eos/eos/eos_spiner_sie_transforms.hpp>
-#include <singularity-eos/base/eos_concepts.hpp>
-#include <singularity-eos/base/finite_diff.hpp>
 
 
 // spiner
@@ -81,61 +82,8 @@ using namespace eos_base;
   mitigated by Ye and (1-Ye) to control how important each term is.
  */
 
-// Grid parameters for constructing Spiner tables from generic EOS
-// Defaults match sesame2spiner behavior
-struct SpinerTableGridParams {
-  // Density bounds
-  Real rhoMin, rhoMax;
-  int numRho = -1; // -1 means use numRhoPerDecade
-  int numRhoPerDecade = 350;
-  Real shrinklRhoBounds = 0.0;
-
-  // Temperature bounds
-  Real TMin, TMax;
-  int numT = -1;
-  int numTPerDecade = 100;
-  Real shrinklTBounds = 0.0;
-
-  // SIE bounds (energy can be negative!)
-  Real sieMin, sieMax;
-  int numSie = -1;
-  int numSiePerDecade = 100;
-  Real shrinkleBounds = 0.0;
-
-  // Offset control (usually automatic, but allow override)
-  // Set to -1 for auto-compute (default behavior)
-  Real rhoOffset = -1.0;
-  Real TOffset = -1.0;
-  Real sieOffset = -1.0;
-
-  // Enforce positive minimums (like sesame2spiner does for rho/T)
-  // Set to <= 0 to disable enforcement
-  Real strictlyPositiveMinRho = 1e-8;
-  Real strictlyPositiveMinT = 1e-2;
-  Real strictlyPositiveMinSie = -1.0; // disabled for sie (can be negative)
-
-  // Material properties
-  int matid = 0;
-  Real Abar = std::numeric_limits<Real>::signaling_NaN();
-  Real Zbar = std::numeric_limits<Real>::signaling_NaN();
-  Real rhoNormal = std::numeric_limits<Real>::signaling_NaN();
-
-  // Piecewise grid options (advanced - follow sesame2spiner defaults)
-  bool piecewiseRho = true;
-  bool piecewiseT = true;
-  bool piecewiseSie = true;
-  Real rhoCoarseFactorLo = 3.0;
-  Real rhoCoarseFactorHi = 5.0;
-  Real TCoarseFactor = 1.5;
-  Real sieCoarseFactor = 1.5;
-  Real rhoFineDiameterDecades = 1.5;
-  Real TSplitPoint = 1e4;
-
-  // Optional: fine grid bounds override (advanced use)
-  Real rhoFineMin = -1.0; // -1 means use diameter
-  Real rhoFineMax = -1.0;
-};
-
+// Import grid parameters from shared construction utilities
+using spiner_table_builder::SpinerTableGridParams;
 
 template <template <class> class TransformerT = transformations::NullTransform>
 class SpinerEOSDependsRhoSieTransformable
@@ -1323,166 +1271,19 @@ inline SpinerEOSDependsRhoSieTransformable<TransformerT>::
   Real maximumT = 1.e99; //OK
 
   // Populate tables - dependsRhoT (sie, P, etc. as function of rho, T)
-  for (int j = 0; j < numRho_; j++) {
-    Real lRho = lRhoBounds.grid.x(j);
-    Real rho = from_log(lRho, lRhoOffset_);
-
-    for (int i = 0; i < numT_; i++) {
-      Real lT = lTBounds.grid.x(i);
-      Real T = from_log(lT, lTOffset_);
-
-      // Fill the sie field on the rho-T grid
-      if constexpr (eos_concepts::has_sie_rho_T_v<EOS>) {
-        Real sie = source_eos.InternalEnergyFromDensityTemperature(rho, T);
-        sie_(j, i) = sie;
-      } else if constexpr (eos_concepts::has_T_rho_sie_v<EOS>) {
-        // Need to invert T(rho, sie) to find sie given (rho, T)
-        // Solve: source_eos.TemperatureFromDensityInternalEnergy(rho, sie_trial) = T
-
-        const auto T_from_sie = [&source_eos, rho](const Real sie_trial) -> Real {
-          return source_eos.TemperatureFromDensityInternalEnergy(rho, sie_trial);
-        };
-
-        // Use sie grid bounds for search range
-        Real sie_lower = sieMin;
-        Real sie_upper = sieMax;
-        Real sie_guess = 0.5 * (sie_lower + sie_upper); // midpoint as initial guess
-        Real sie_solution;
-
-        RootFinding1D::Status status =
-            SP_ROOT_FINDER(T_from_sie, T, sie_guess, sie_lower, sie_upper, robust::EPS(),
-                           robust::EPS(), sie_solution, nullptr);
-
-        PORTABLE_ALWAYS_REQUIRE(status == RootFinding1D::Status::SUCCESS,
-                                "Failed to invert TemperatureFromDensityInternalEnergy "
-                                "during table construction");
-
-        sie_(j, i) = sie_solution;
-      } else {
-        static_assert(eos_concepts::dependent_false_v<EOS>,
-                      "Source eos must provide either: \n"
-                      "InternalEnergyFromDensityTemperature or "
-                      "TemperatureFromDensityInternalEnergy.\n");
-      }
-
-      // Fill the pressure field on the rho-T grid
-      if constexpr (eos_concepts::has_P_rho_T_v<EOS>) {
-        Real P = source_eos.PressureFromDensityTemperature(rho, T);
-        dependsRhoT_.P(j, i) = P;
-      } else if (eos_concepts::has_P_rho_sie_v<EOS>) {
-        Real sie = sie_(j, i);
-        Real P = source_eos.PressureFromDensityInternalEnergy(rho, sie);
-        dependsRhoT_.P(j, i) = P;
-      } else {
-        static_assert(
-            eos_concepts::dependent_false_v<EOS>,
-            "Source eos must provide either: \n"
-            "PressureFromDensityTemperature or PressureFromDensityInternalEnergy.\n");
-      }
-      // Fill the dPdE field on the rho-T grid
-      if constexpr (eos_concepts::has_gamma_rho_T_v<EOS>) {
-        Real gamma = source_eos.GruneisenParamFromDensityTemperature(rho, T);
-        dependsRhoT_.dPdE(j, i) = rho * gamma;
-      } else if constexpr (eos_concepts::has_gamma_rho_sie_v<EOS>) {
-        Real sie = sie_(j, i);
-        Real gamma = source_eos.GruneisenParamFromDensityInternalEnergy(rho, sie);
-        dependsRhoT_.dPdE(j, i) = rho * gamma;
-      } else if constexpr (eos_concepts::has_P_rho_sie_v<EOS>) {
-        Real sie = sie_(j, i);
-        auto PofE = [&source_eos, rho](double sie){
-          return source_eos.PressureFromDensityInternalEnergy(rho, sie);
-        };
-        //Actually need to check bounds somehow (they're on temperature not sie)
-        // and decide whether to use central, forward, or backward difference.
-        dependsRhoT_.dPdE(j, i) = finite_diff::centralDifference(PofE, sie);
-
-        
-      } else if constexpr (eos_concepts::has_T_rho_sie_v<EOS>) {
-        Real sie = sie_(j, i);
-        auto PofE = [&source_eos, rho](Real sie){
-          auto T = source_eos.TemperatureFromDensityInternalEnergy(rho,sie);
-          return source_eos.PressureFromDensityTemperature(rho,T);
-        };
-        dependsRhoT_.dPdE(j, i) = finite_diff::centralDifference(PofE,sie);
-
-      } else {
-        auto PofT = [&source_eos, rho](Real T){
-          return source_eos.PressureFromDensityTemperature(rho, T);
-        };
-        //Real dPdT = finite_diff::centralDifference(PofT, T);
-        Real dPdT = finite_diff::finiteDifference(PofT, T, minimumT, maximumT);
-        auto EofT = [&source_eos, rho](Real T){
-          return source_eos.InternalEnergyFromDensityTEmperature(rho, T);
-        };
-        //Real dEdT = finite_diff::centralDifference(EofT, T);
-        Real dEdT = finite_diff::finiteDifference(EofT, T, minimumT, maximumT);
-        dependsRhoT_.dPdE(j, i) = robust::ratio(dPdT, dEdT);
-      }
-
-      // Fill the dTdE field on the rho-T grid
-      if constexpr (eos_concepts::has_cv_rho_T_v<EOS>) {
-        Real cv = source_eos.SpecificHeatFromDensityTemperature(rho, T);
-        dependsRhoT_.dTdE(j, i) = robust::ratio(1.0, cv);
-      } else if constexpr (eos_concepts::has_cv_rho_sie_v<EOS>) {
-        Real sie = sie_(j, i);
-        Real cv = source_eos.SpecificHeatFromDensityInternalEnergy(rho, sie);
-        dependsRhoT_.dTdE(j, i) = robust::ratio(1.0, cv);
-      } else if constexpr (eos_concepts::has_T_rho_sie_v<EOS>) {
-        Real sie = sie_(j, i);
-        auto TofE = [&source_eos, rho](Real sie){
-          return source_eos.TemperatureFromDensityInternalEnergy(rho, sie);
-        };
-        dependsRhoT_.dTdE(j, i) = finite_diff::centralDifference(TofE, sie);
-
-
-      } else {
-        auto EofT = [&source_eos, rho](Real T){
-          return source_eos.InternalEnergyFromDensityTemperature(rho, T);
-        };
-        //dependsRhoT_.dTdE(j, i) = finite_diff::centralDifference(EofT,T);
-        dependsRhoT_.dTdE(j, i) = finite_diff::finiteDifference(EofT,T,minimumT,maximumT);
-      }
-
-      // Fill dEdRho at constant T
-      {
-        auto EofR = [&source_eos, T](Real rho){
-          return source_eos.InternalEnergyFromDensityTemperature(rho, T);
-        };
-        //dependsRhoT_.dEdRho(j, i) = finite_diff::centralDifference(EofR,rho);
-        dependsRhoT_.dEdRho(j, i) = finite_diff::finiteDifference(EofR,rho,minimumRho,maximumRho);
-
-      }
-
-      // Fill dPdRho at constant E (not constant T!)
-      // First compute dPdRho_T via finite difference, then convert to dPdRho_E
-      {
-        auto PofR = [&source_eos, T](Real rho){
-          return source_eos.PressureFromDensityTemperature(rho,T);
-        };
-
-        // Here I could look at rho compared to minimumRho and decide 
-        //  to pass a floored or ceiled rho and fwd, bckward, or central diff.
-        //  Think about how to design that.
-        //Real dPdRho_T = finite_diff::centralDifference(PofR,rho);
-        Real dPdRho_T = finite_diff::finiteDifference(PofR,rho,minimumRho,maximumRho);
-
-        // Convert to dPdRho_E using chain rule:
-        // (dP/drho)_E = (dP/drho)_T - (dP/dE)_rho * (dE/drho)_T
-        dependsRhoT_.dPdRho(j, i) = dPdRho_T - dependsRhoT_.dPdE(j, i) * dependsRhoT_.dEdRho(j, i);
-      }
-
-      // Fill dTdRho at constant E
-      // Use chain rule: dTdRho_E = -dEdRho_T * dTdE
-      {
-        Real dEdRho = dependsRhoT_.dEdRho(j, i);
-        Real dTdE = dependsRhoT_.dTdE(j, i);
-        dependsRhoT_.dTdRho(j, i) = -dEdRho * dTdE;
-      }
-
-      // Bulk modulus will be computed by calcBMod_() later
-      dependsRhoT_.bMod(j, i) = robust::EPS();
-    }
-  }
+  // Use shared construction utility
+  spiner_table_builder::populateDependsRhoT<EOS>(
+      source_eos, lRhoBounds, lTBounds, lRhoOffset_, lTOffset_, minimumRho, maximumRho,
+      minimumT, maximumT, sieMin, sieMax,
+      [this](int j, int i, Real v) { sie_(j, i) = v; },
+      [this](int j, int i, Real v) { dependsRhoT_.P(j, i) = v; },
+      [this](int j, int i, Real v) { dependsRhoT_.bMod(j, i) = v; },
+      [this](int j, int i, Real v) { dependsRhoT_.dPdRho(j, i) = v; },
+      [this](int j, int i, Real v) { dependsRhoT_.dPdE(j, i) = v; },
+      [this](int j, int i, Real v) { dependsRhoT_.dTdRho(j, i) = v; },
+      [this](int j, int i, Real v) { dependsRhoT_.dTdE(j, i) = v; },
+      [this](int j, int i, Real v) { dependsRhoT_.dEdRho(j, i) = v; },
+      [](int, int, Real) { /* RhoSie doesn't store dEdT in dependsRhoT_ */ });
 
   // Populate tables - dependsRhoSie (T, P, etc. as function of rho, sie)
   const int numSieGrid = leBounds.grid.nPoints();
