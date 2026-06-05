@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------
-# © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+# © 2026. Triad National Security, LLC. All rights reserved.  This
 # program was produced under U.S. Government contract 89233218CNA000001
 # for Los Alamos National Laboratory (LANL), which is operated by Triad
 # National Security, LLC for the U.S.  Department of Energy/National
@@ -11,6 +11,8 @@
 # prepare derivative works, distribute copies to the public, perform
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------
+
+# This file was made in part with generative AI
 
 cmake_minimum_required(VERSION 3.19)
 
@@ -37,7 +39,7 @@ target_link_libraries(singularity-utils
 )
 
 # Propate SPINER defines
-if (DEFINED SINGULARITY_USE_SPINER)
+if (SINGULARITY_USE_SPINER)
   target_link_libraries(singularity-utils INTERFACE
       spiner::spiner
   )
@@ -49,7 +51,7 @@ endif()
 
 # Propagate HDF5 usage definitions
 # These must match the settings used by singularity-eos
-if (DEFINED SINGULARITY_USE_SPINER_WITH_HDF5)
+if (SINGULARITY_USE_SPINER_WITH_HDF5)
   target_compile_definitions(singularity-utils
     INTERFACE
       $<$<BOOL:${SINGULARITY_USE_SPINER_WITH_HDF5}>:SINGULARITY_USE_SPINER_WITH_HDF5>
@@ -59,28 +61,28 @@ endif()
 
 # Propagate compile definitions for FastMath configuration
 # These must match the settings used by singularity-eos
-if (DEFINED SINGULARITY_USE_TRUE_LOG_GRIDDING)
+if (SINGULARITY_USE_TRUE_LOG_GRIDDING)
   target_compile_definitions(singularity-utils
     INTERFACE
       $<$<BOOL:${SINGULARITY_USE_TRUE_LOG_GRIDDING}>:SINGULARITY_USE_TRUE_LOG_GRIDDING>
   )
 endif()
 
-if (DEFINED SINGULARITY_USE_SINGLE_LOGS)
+if (SINGULARITY_USE_SINGLE_LOGS)
   target_compile_definitions(singularity-utils
     INTERFACE
       $<$<BOOL:${SINGULARITY_USE_SINGLE_LOGS}>:SINGULARITY_USE_SINGLE_LOGS>
   )
 endif()
 
-if (DEFINED SINGULARITY_NQT_PORTABLE)
+if (SINGULARITY_NQT_PORTABLE)
   target_compile_definitions(singularity-utils
     INTERFACE
       $<$<BOOL:${SINGULARITY_NQT_PORTABLE}>:SINGULARITY_NQT_PORTABLE>
   )
 endif()
 
-if (DEFINED SINGULARITY_NQT_ORDER_1)
+if (SINGULARITY_NQT_ORDER_1)
   target_compile_definitions(singularity-utils
     INTERFACE
       $<$<BOOL:${SINGULARITY_NQT_ORDER_1}>:SINGULARITY_NQT_ORDER_1>
