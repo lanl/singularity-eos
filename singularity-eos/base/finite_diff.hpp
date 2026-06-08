@@ -42,6 +42,15 @@ Real forwardDifference(Func &&f, Real x, std::optional<Real> pert = std::nullopt
 }
 
 template <typename Func>
+Real forwardDifferenceOrder1(Func &&f, Real x, std::optional<Real> pert = std::nullopt) {
+  //  f(x) is a function that calls some g(x1,x2) with either x1 or x2 fixed
+  Real h = pert ? *pert : std::max(std::abs(x) * 1e-6, 1e-12);
+  Real f0 = f(x);
+  Real fp = f(x + h);
+  return robust::ratio(fp - f0, h);
+}
+
+template <typename Func>
 Real backwardDifference(Func &&f, Real x, std::optional<Real> pert = std::nullopt) {
   //  f(x) is a function that calls some g(x1,x2) with either x1 or x2 fixed
   Real h = pert ? *pert : std::max(std::abs(x) * 1e-6, 1e-12);
@@ -49,6 +58,15 @@ Real backwardDifference(Func &&f, Real x, std::optional<Real> pert = std::nullop
   Real fm = f(x - h);
   Real fmm = f(x - 2 * h);
   return robust::ratio(3 * f0 - 4 * fm + fmm, 2 * h);
+}
+
+template <typename Func>
+Real backwardDifferenceOrder1(Func &&f, Real x, std::optional<Real> pert = std::nullopt) {
+  //  f(x) is a function that calls some g(x1,x2) with either x1 or x2 fixed
+  Real h = pert ? *pert : std::max(std::abs(x) * 1e-6, 1e-12);
+  Real f0 = f(x);
+  Real fm = f(x - h);
+  return robust::ratio(f0 - fm, h);
 }
 
 template <typename Func>
@@ -61,9 +79,9 @@ Real finiteDifference(Func &&f, Real x, Real xmin, Real xmax,
   if (left >= h && right >= h) {
     return centralDifference(f, x, h);
   } else if (right >= 2 * h) {
-    return forwardDifference(f, x, h);
+    return forwardDifferenceOrder1(f, x, h);
   } else {
-    return backwardDifference(f, x, h);
+    return backwardDifferenceOrder1(f, x, h);
   }
 }
 
