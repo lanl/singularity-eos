@@ -1912,15 +1912,14 @@ Example usage:
   - Use ``SpinerEOSDependsRhoT`` when:
     - Your code primarily uses (ρ,T) lookups
     - Memory efficiency is important
-    - You don't need fast (ρ,sie) → P lookups
+    - You rarely require direct (ρ,sie) queries
 
   - Use ``SpinerEOSDependsRhoSie`` when:
-    - Your code uses both (ρ,T) and (ρ,sie) lookups
-    - You need direct P(ρ,sie) without root finding
-    - You're using mixed-cell closure models (PTE, etc.)
+    - Your code frequently uses both (ρ,T) and (ρ,sie) lookups
+    - You want direct P(ρ,sie) evaluation without additional inversion or root-finding steps
+    - You're using mixed-cell closure models (PTE, etc.) that naturally operate in (ρ,sie)
 
-  Both variants use the same grid construction and derivative computation,
-  so accuracy is equivalent for (ρ,T) lookups.
+  In general, SpinerEOSDependsRhoT is the more natural representation for EOS tables tabulated in (ρ,T), while SpinerEOSDependsRhoSie can provide better performance when frequent (ρ,sie) evaluations are required. The optimal choice depends on the access patterns and closure algorithms used by a particular application.
 
 .. note::
 
