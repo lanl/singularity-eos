@@ -43,9 +43,9 @@
 #include "parser.hpp"
 
 using namespace EospacWrapper;
-using singularity::spiner_table_builder::SpinerTableGridParams;
 using singularity::spiner_table_builder::constructRhoBounds;
 using singularity::spiner_table_builder::constructTBounds;
+using singularity::spiner_table_builder::SpinerTableGridParams;
 
 herr_t saveMaterial(hid_t loc, const SesameMetadata &metadata, const Bounds &lRhoBounds,
                     const Bounds &lTBounds, const Bounds &leBounds,
@@ -295,7 +295,7 @@ herr_t saveTablesRhoT(hid_t loc, int matid, TableSplit split, const Bounds &lRho
 // Convert string-based Params to structured SpinerTableGridParams
 // This bridges sesame2spiner's parameter file format with the SpinerEOS constructor API
 SpinerTableGridParams paramsToGridParams(int matid, const SesameMetadata &metadata,
-                                          const Params &params) {
+                                         const Params &params) {
   SpinerTableGridParams gridParams;
 
   // The "epsilon" shifts here are required to avoid eospac
@@ -321,30 +321,36 @@ SpinerTableGridParams paramsToGridParams(int matid, const SesameMetadata &metada
 
   // Allow direct specification of grid points (overrides per-decade)
   int numRhoDefault = Bounds::getNumPointsFromPPD(gridParams.rhoMin, gridParams.rhoMax,
-                                                   gridParams.numRhoPerDecade);
-  int numTDefault =
-      Bounds::getNumPointsFromPPD(gridParams.TMin, gridParams.TMax, gridParams.numTPerDecade);
+                                                  gridParams.numRhoPerDecade);
+  int numTDefault = Bounds::getNumPointsFromPPD(gridParams.TMin, gridParams.TMax,
+                                                gridParams.numTPerDecade);
   int numSieDefault = Bounds::getNumPointsFromPPD(gridParams.sieMin, gridParams.sieMax,
-                                                   gridParams.numSiePerDecade);
+                                                  gridParams.numSiePerDecade);
   gridParams.numRho = params.Get("numrho", numRhoDefault);
   gridParams.numT = params.Get("numT", numTDefault);
   gridParams.numSie = params.Get("numsie", numSieDefault);
 
   // Shrink bounds controls
-  gridParams.shrinklRhoBounds = std::min(1., std::max(params.Get("shrinklRhoBounds", 0.), 0.));
-  gridParams.shrinklTBounds = std::min(1., std::max(params.Get("shrinklTBounds", 0.), 0.));
-  gridParams.shrinkleBounds = std::min(1., std::max(params.Get("shrinkleBounds", 0.), 0.));
+  gridParams.shrinklRhoBounds =
+      std::min(1., std::max(params.Get("shrinklRhoBounds", 0.), 0.));
+  gridParams.shrinklTBounds =
+      std::min(1., std::max(params.Get("shrinklTBounds", 0.), 0.));
+  gridParams.shrinkleBounds =
+      std::min(1., std::max(params.Get("shrinkleBounds", 0.), 0.));
 
   // Warnings for inconsistent settings
-  if (gridParams.shrinklRhoBounds > 0 && (params.Contains("rhomin") || params.Contains("rhomax"))) {
+  if (gridParams.shrinklRhoBounds > 0 &&
+      (params.Contains("rhomin") || params.Contains("rhomax"))) {
     std::cerr << "WARNING [" << matid << "]: "
               << "shrinklRhoBounds > 0 and rhomin or rhomax set" << std::endl;
   }
-  if (gridParams.shrinklTBounds > 0 && (params.Contains("Tmin") || params.Contains("Tmax"))) {
+  if (gridParams.shrinklTBounds > 0 &&
+      (params.Contains("Tmin") || params.Contains("Tmax"))) {
     std::cerr << "WARNING [" << matid << "]: "
               << "shrinklTBounds > 0 and Tmin or Tmax set" << std::endl;
   }
-  if (gridParams.shrinkleBounds > 0 && (params.Contains("siemin") || params.Contains("siemax"))) {
+  if (gridParams.shrinkleBounds > 0 &&
+      (params.Contains("siemin") || params.Contains("siemax"))) {
     std::cerr << "WARNING [" << matid << "]: "
               << "shrinkleBounds > 0 and siemin or siemax set" << std::endl;
   }
@@ -355,7 +361,8 @@ SpinerTableGridParams paramsToGridParams(int matid, const SesameMetadata &metada
   if (std::isnan(gridParams.rhoNormal) || gridParams.rhoNormal <= 0 ||
       gridParams.rhoNormal > 1e8) {
     std::cerr << "WARNING [" << matid << "] "
-              << "normal density ill defined. Setting it to a sensible default." << std::endl;
+              << "normal density ill defined. Setting it to a sensible default."
+              << std::endl;
     gridParams.rhoNormal = 1.0;
   }
 
@@ -364,11 +371,14 @@ SpinerTableGridParams paramsToGridParams(int matid, const SesameMetadata &metada
   gridParams.piecewiseT = params.Get("piecewiseT", true);
   gridParams.piecewiseSie = params.Get("piecewiseSie", true);
 
-  gridParams.rhoCoarseFactorLo = params.Get("rhoCoarseFactorLo", COARSE_FACTOR_DEFAULT_RHO_LO);
-  gridParams.rhoCoarseFactorHi = params.Get("rhoCoarseFactorHi", COARSE_FACTOR_DEFAULT_RHO_HI);
+  gridParams.rhoCoarseFactorLo =
+      params.Get("rhoCoarseFactorLo", COARSE_FACTOR_DEFAULT_RHO_LO);
+  gridParams.rhoCoarseFactorHi =
+      params.Get("rhoCoarseFactorHi", COARSE_FACTOR_DEFAULT_RHO_HI);
   gridParams.TCoarseFactor = params.Get("TCoarseFactor", COARSE_FACTOR_DEFAULT_T);
   gridParams.sieCoarseFactor = params.Get("sieCoarseFactor", COARSE_FACTOR_DEFAULT_T);
-  gridParams.rhoFineDiameterDecades = params.Get("rhoFineDiameterDecades", RHO_FINE_DIAMETER_DEFAULT);
+  gridParams.rhoFineDiameterDecades =
+      params.Get("rhoFineDiameterDecades", RHO_FINE_DIAMETER_DEFAULT);
   gridParams.TSplitPoint = params.Get("TSplitPoint", T_SPLIT_POINT_DEFAULT);
 
   // Optional fine grid bounds override
@@ -396,12 +406,16 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   SpinerTableGridParams gridParams = paramsToGridParams(matid, metadata, params);
 
   // Validate that requested bounds are within metadata bounds
-  checkValInMatBounds(matid, "rhoMin", gridParams.rhoMin, metadata.rhoMin, metadata.rhoMax);
-  checkValInMatBounds(matid, "rhoMax", gridParams.rhoMax, metadata.rhoMin, metadata.rhoMax);
+  checkValInMatBounds(matid, "rhoMin", gridParams.rhoMin, metadata.rhoMin,
+                      metadata.rhoMax);
+  checkValInMatBounds(matid, "rhoMax", gridParams.rhoMax, metadata.rhoMin,
+                      metadata.rhoMax);
   checkValInMatBounds(matid, "TMin", gridParams.TMin, metadata.TMin, metadata.TMax);
   checkValInMatBounds(matid, "TMax", gridParams.TMax, metadata.TMin, metadata.TMax);
-  checkValInMatBounds(matid, "sieMin", gridParams.sieMin, metadata.sieMin, metadata.sieMax);
-  checkValInMatBounds(matid, "sieMax", gridParams.sieMax, metadata.sieMin, metadata.sieMax);
+  checkValInMatBounds(matid, "sieMin", gridParams.sieMin, metadata.sieMin,
+                      metadata.sieMax);
+  checkValInMatBounds(matid, "sieMax", gridParams.sieMax, metadata.sieMin,
+                      metadata.sieMax);
 
   // Use shared grid construction utilities for rho and T grids
   constructRhoBounds(gridParams, lRhoBounds);
@@ -430,14 +444,14 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
     const Real sieAnchor = sie[0];
     const Real sieSplitPoint = sie[1];
     leBounds = Bounds(Bounds::TwoGrids(), gridParams.sieMin, gridParams.sieMax, sieAnchor,
-                      sieSplitPoint, gridParams.numSiePerDecade, gridParams.sieCoarseFactor,
-                      true, gridParams.shrinkleBounds);
+                      sieSplitPoint, gridParams.numSiePerDecade,
+                      gridParams.sieCoarseFactor, true, gridParams.shrinkleBounds);
   } else {
     // Uniform sie grid
     int numSie = gridParams.numSie;
     if (numSie <= 0) {
       numSie = Bounds::getNumPointsFromPPD(gridParams.sieMin, gridParams.sieMax,
-                                             gridParams.numSiePerDecade);
+                                           gridParams.numSiePerDecade);
     }
     leBounds = Bounds(gridParams.sieMin, gridParams.sieMax, numSie, true,
                       gridParams.shrinkleBounds);

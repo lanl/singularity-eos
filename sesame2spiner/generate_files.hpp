@@ -67,9 +67,10 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
                   Bounds &lRhoBounds, Bounds &lTBounds, Bounds &leBounds);
 
 // Convert string-based Params to structured SpinerTableGridParams
-// This allows sesame2spiner to use the same grid construction logic as the EOS constructors
+// This allows sesame2spiner to use the same grid construction logic as the EOS
+// constructors
 SpinerTableGridParams paramsToGridParams(int matid, const SesameMetadata &metadata,
-                                          const Params &params);
+                                         const Params &params);
 
 bool checkValInMatBounds(int matid, const std::string &name, Real val, Real vmin,
                          Real vmax);
