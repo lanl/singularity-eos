@@ -43,6 +43,9 @@
 #include "parser.hpp"
 
 using namespace EospacWrapper;
+using singularity::spiner_table_builder::SpinerTableGridParams;
+using singularity::spiner_table_builder::constructRhoBounds;
+using singularity::spiner_table_builder::constructTBounds;
 
 herr_t saveMaterial(hid_t loc, const SesameMetadata &metadata, const Bounds &lRhoBounds,
                     const Bounds &lTBounds, const Bounds &leBounds,
@@ -289,8 +292,11 @@ herr_t saveTablesRhoT(hid_t loc, int matid, TableSplit split, const Bounds &lRho
   return status;
 }
 
-void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params &params,
-                  Bounds &lRhoBounds, Bounds &lTBounds, Bounds &leBounds) {
+// Convert string-based Params to structured SpinerTableGridParams
+// This bridges sesame2spiner's parameter file format with the SpinerEOS constructor API
+SpinerTableGridParams paramsToGridParams(int matid, const SesameMetadata &metadata,
+                                          const Params &params) {
+  SpinerTableGridParams gridParams;
 
   // The "epsilon" shifts here are required to avoid eospac
   // extrapolation errors at table bounds
@@ -300,119 +306,112 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
     return val + sign * shift;
   };
 
-  Real rhoMin = params.Get("rhomin", TinyShift(metadata.rhoMin, 1));
-  Real rhoMax = params.Get("rhomax", metadata.rhoMax);
-  Real TMin = params.Get("Tmin", TinyShift(metadata.TMin, 1));
-  Real TMax = params.Get("Tmax", metadata.TMax);
-  Real sieMin = params.Get("siemin", TinyShift(metadata.sieMin, 1));
-  Real sieMax = params.Get("siemax", metadata.sieMax);
+  // Extract bounds from params or metadata
+  gridParams.rhoMin = params.Get("rhomin", TinyShift(metadata.rhoMin, 1));
+  gridParams.rhoMax = params.Get("rhomax", metadata.rhoMax);
+  gridParams.TMin = params.Get("Tmin", TinyShift(metadata.TMin, 1));
+  gridParams.TMax = params.Get("Tmax", metadata.TMax);
+  gridParams.sieMin = params.Get("siemin", TinyShift(metadata.sieMin, 1));
+  gridParams.sieMax = params.Get("siemax", metadata.sieMax);
 
-  checkValInMatBounds(matid, "rhoMin", rhoMin, metadata.rhoMin, metadata.rhoMax);
-  checkValInMatBounds(matid, "rhoMax", rhoMax, metadata.rhoMin, metadata.rhoMax);
-  checkValInMatBounds(matid, "TMin", TMin, metadata.TMin, metadata.TMax);
-  checkValInMatBounds(matid, "TMax", TMax, metadata.TMin, metadata.TMax);
-  checkValInMatBounds(matid, "sieMin", sieMin, metadata.sieMin, metadata.sieMax);
-  checkValInMatBounds(matid, "sieMax", sieMax, metadata.sieMin, metadata.sieMax);
+  // Grid resolution controls
+  gridParams.numRhoPerDecade = params.Get("numrho/decade", PPD_DEFAULT_RHO);
+  gridParams.numTPerDecade = params.Get("numT/decade", PPD_DEFAULT_T);
+  gridParams.numSiePerDecade = params.Get("numSie/decade", PPD_DEFAULT_T);
 
-  Real shrinklRhoBounds = params.Get("shrinklRhoBounds", 0.);
-  Real shrinklTBounds = params.Get("shrinklTBounds", 0.);
-  Real shrinkleBounds = params.Get("shrinkleBounds", 0.);
+  // Allow direct specification of grid points (overrides per-decade)
+  int numRhoDefault = Bounds::getNumPointsFromPPD(gridParams.rhoMin, gridParams.rhoMax,
+                                                   gridParams.numRhoPerDecade);
+  int numTDefault =
+      Bounds::getNumPointsFromPPD(gridParams.TMin, gridParams.TMax, gridParams.numTPerDecade);
+  int numSieDefault = Bounds::getNumPointsFromPPD(gridParams.sieMin, gridParams.sieMax,
+                                                   gridParams.numSiePerDecade);
+  gridParams.numRho = params.Get("numrho", numRhoDefault);
+  gridParams.numT = params.Get("numT", numTDefault);
+  gridParams.numSie = params.Get("numsie", numSieDefault);
 
-  shrinklRhoBounds = std::min(1., std::max(shrinklRhoBounds, 0.));
-  shrinklTBounds = std::min(1., std::max(shrinklTBounds, 0.));
-  shrinkleBounds = std::min(1., std::max(shrinkleBounds, 0.));
+  // Shrink bounds controls
+  gridParams.shrinklRhoBounds = std::min(1., std::max(params.Get("shrinklRhoBounds", 0.), 0.));
+  gridParams.shrinklTBounds = std::min(1., std::max(params.Get("shrinklTBounds", 0.), 0.));
+  gridParams.shrinkleBounds = std::min(1., std::max(params.Get("shrinkleBounds", 0.), 0.));
 
-  if (shrinklRhoBounds > 0 && (params.Contains("rhomin") || params.Contains("rhomax"))) {
+  // Warnings for inconsistent settings
+  if (gridParams.shrinklRhoBounds > 0 && (params.Contains("rhomin") || params.Contains("rhomax"))) {
     std::cerr << "WARNING [" << matid << "]: "
               << "shrinklRhoBounds > 0 and rhomin or rhomax set" << std::endl;
   }
-  if (shrinklTBounds > 0 && (params.Contains("Tmin") || params.Contains("Tmax"))) {
+  if (gridParams.shrinklTBounds > 0 && (params.Contains("Tmin") || params.Contains("Tmax"))) {
     std::cerr << "WARNING [" << matid << "]: "
               << "shrinklTBounds > 0 and Tmin or Tmax set" << std::endl;
   }
-  if (shrinkleBounds > 0 && (params.Contains("siemin") || params.Contains("siemax"))) {
+  if (gridParams.shrinkleBounds > 0 && (params.Contains("siemin") || params.Contains("siemax"))) {
     std::cerr << "WARNING [" << matid << "]: "
               << "shrinkleBounds > 0 and siemin or siemax set" << std::endl;
   }
 
-  int ppdRho = params.Get("numrho/decade", PPD_DEFAULT_RHO);
-  int numRhoDefault = Bounds::getNumPointsFromPPD(rhoMin, rhoMax, ppdRho);
-
-  int ppdT = params.Get("numT/decade", PPD_DEFAULT_T);
-  int numTDefault = Bounds::getNumPointsFromPPD(TMin, TMax, ppdT);
-
-  int ppdSie = params.Get("numSie/decade", PPD_DEFAULT_T);
-  int numSieDefault = Bounds::getNumPointsFromPPD(sieMin, sieMax, ppdSie);
-
-  int numRho = params.Get("numrho", numRhoDefault);
-  int numT = params.Get("numT", numTDefault);
-  int numSie = params.Get("numsie", numSieDefault);
-
-  constexpr Real TAnchor = 298.15;
-  Real rhoAnchor = params.Get("rho_fine_center", metadata.normalDensity);
-  if (std::isnan(rhoAnchor) || rhoAnchor <= 0 || rhoAnchor > 1e8) {
+  // Material properties
+  gridParams.matid = matid;
+  gridParams.rhoNormal = params.Get("rho_fine_center", metadata.normalDensity);
+  if (std::isnan(gridParams.rhoNormal) || gridParams.rhoNormal <= 0 ||
+      gridParams.rhoNormal > 1e8) {
     std::cerr << "WARNING [" << matid << "] "
-              << "normal density ill defined. Setting it to a sensible default."
-              << std::endl;
-    rhoAnchor = 1;
+              << "normal density ill defined. Setting it to a sensible default." << std::endl;
+    gridParams.rhoNormal = 1.0;
   }
 
-  // Piecewise grids stuff
-  const bool piecewiseRho = params.Get("piecewiseRho", true);
-  const bool piecewiseT = params.Get("piecewiseT", true);
-  const bool piecewiseSie = params.Get("piecewiseSie", true);
+  // Piecewise grid controls
+  gridParams.piecewiseRho = params.Get("piecewiseRho", true);
+  gridParams.piecewiseT = params.Get("piecewiseT", true);
+  gridParams.piecewiseSie = params.Get("piecewiseSie", true);
 
-  const Real ppd_factor_rho_lo =
-      params.Get("rhoCoarseFactorLo", COARSE_FACTOR_DEFAULT_RHO_LO);
-  const Real ppd_factor_rho_hi =
-      params.Get("rhoCoarseFactorHi", COARSE_FACTOR_DEFAULT_RHO_HI);
-  const Real ppd_factor_T = params.Get("TCoarseFactor", COARSE_FACTOR_DEFAULT_T);
-  const Real ppd_factor_sie = params.Get("sieCoarseFactor", COARSE_FACTOR_DEFAULT_T);
-  const Real rho_fine_diameter =
-      params.Get("rhoFineDiameterDecades", RHO_FINE_DIAMETER_DEFAULT);
-  const Real TSplitPoint = params.Get("TSplitPoint", T_SPLIT_POINT_DEFAULT);
-  const Real rho_fine_center = rhoAnchor;
+  gridParams.rhoCoarseFactorLo = params.Get("rhoCoarseFactorLo", COARSE_FACTOR_DEFAULT_RHO_LO);
+  gridParams.rhoCoarseFactorHi = params.Get("rhoCoarseFactorHi", COARSE_FACTOR_DEFAULT_RHO_HI);
+  gridParams.TCoarseFactor = params.Get("TCoarseFactor", COARSE_FACTOR_DEFAULT_T);
+  gridParams.sieCoarseFactor = params.Get("sieCoarseFactor", COARSE_FACTOR_DEFAULT_T);
+  gridParams.rhoFineDiameterDecades = params.Get("rhoFineDiameterDecades", RHO_FINE_DIAMETER_DEFAULT);
+  gridParams.TSplitPoint = params.Get("TSplitPoint", T_SPLIT_POINT_DEFAULT);
 
-  // These override the rho center/diameter settings
-  Real rho_fine_min = params.Get("rhoFineMin", -1);
-  Real rho_fine_max = params.Get("rhoFineMax", -1);
+  // Optional fine grid bounds override
+  Real rho_fine_min = params.Get("rhoFineMin", -1.0);
+  Real rho_fine_max = params.Get("rhoFineMax", -1.0);
   if (rho_fine_min * rho_fine_max < 0) {
     std::cerr << "WARNING [" << matid << "]: "
               << "Either rhoFineMin or rhoFineMax is set while the other is still unset."
               << " Both must be set to be sensible. Ignoring." << std::endl;
-    rho_fine_min = rho_fine_max = -1;
+    rho_fine_min = rho_fine_max = -1.0;
   }
+  gridParams.rhoFineMin = rho_fine_min;
+  gridParams.rhoFineMax = rho_fine_max;
 
-  // Forces density and temperature to be in a region where an offset
-  // is not needed. This improves resolution at low densities and
-  // temperatures.
+  // Note: Abar and Zbar are not in Params, they come from metadata in sesame2spiner
+  // Offsets are auto-computed by constructRhoBounds/constructTBounds, not in Params
 
-  // Extrapolation and other resolution tricks will be explored in the
-  // future.
-  if (rhoMin < STRICTLY_POS_MIN_RHO) rhoMin = STRICTLY_POS_MIN_RHO;
-  if (TMin < STRICTLY_POS_MIN_T) TMin = STRICTLY_POS_MIN_T;
+  return gridParams;
+}
 
-  if (piecewiseRho) {
-    if (rho_fine_min > 0) {
-      lRhoBounds = Bounds(Bounds::ThreeGrids(), rhoMin, rhoMax, rho_fine_center,
-                          rho_fine_min, rho_fine_max, ppdRho, ppd_factor_rho_lo,
-                          ppd_factor_rho_hi, true, shrinklRhoBounds);
-    } else {
-      lRhoBounds =
-          Bounds(Bounds::ThreeGrids(), rhoMin, rhoMax, rho_fine_center, rho_fine_diameter,
-                 ppdRho, ppd_factor_rho_lo, ppd_factor_rho_hi, true, shrinklRhoBounds);
-    }
-  } else {
-    lRhoBounds = Bounds(rhoMin, rhoMax, numRho, true, shrinklRhoBounds, rhoAnchor);
-  }
-  if (piecewiseT) {
-    lTBounds = Bounds(Bounds::TwoGrids(), TMin, TMax, TAnchor, TSplitPoint, ppdT,
-                      ppd_factor_T, true, shrinklTBounds);
-  } else {
-    lTBounds = Bounds(TMin, TMax, numT, true, shrinklTBounds, TAnchor);
-  }
-  if (piecewiseSie) {
-    // compute temperature as a reasonable anchor point
+void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params &params,
+                  Bounds &lRhoBounds, Bounds &lTBounds, Bounds &leBounds) {
+
+  // Convert string-based Params to structured grid parameters
+  SpinerTableGridParams gridParams = paramsToGridParams(matid, metadata, params);
+
+  // Validate that requested bounds are within metadata bounds
+  checkValInMatBounds(matid, "rhoMin", gridParams.rhoMin, metadata.rhoMin, metadata.rhoMax);
+  checkValInMatBounds(matid, "rhoMax", gridParams.rhoMax, metadata.rhoMin, metadata.rhoMax);
+  checkValInMatBounds(matid, "TMin", gridParams.TMin, metadata.TMin, metadata.TMax);
+  checkValInMatBounds(matid, "TMax", gridParams.TMax, metadata.TMin, metadata.TMax);
+  checkValInMatBounds(matid, "sieMin", gridParams.sieMin, metadata.sieMin, metadata.sieMax);
+  checkValInMatBounds(matid, "sieMax", gridParams.sieMax, metadata.sieMin, metadata.sieMax);
+
+  // Use shared grid construction utilities for rho and T grids
+  constructRhoBounds(gridParams, lRhoBounds);
+  constructTBounds(gridParams, lTBounds);
+
+  // Sie grid construction: requires EOSPAC queries for anchor points
+  // Cannot use constructSieBounds because it needs a source EOS, not EOSPAC
+  if (gridParams.piecewiseSie) {
+    // Compute sie anchor points at (rhoNormal, TAnchor) and (rhoNormal, TSplitPoint)
+    constexpr Real TAnchor = 298.15; // Room temperature
     constexpr int NT = 1;
     constexpr EOS_INTEGER nXYPairs = 2;
     EOS_INTEGER tableHandle[NT];
@@ -421,19 +420,27 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
     {
       eosSafeLoad(NT, matid, tableType, tableHandle, {"EOS_Ut_DT"}, Verbosity::Quiet);
       EOS_INTEGER eospacEofRT = tableHandle[0];
-      rho[0] = rho[1] = densityToSesame(rhoAnchor);
+      rho[0] = rho[1] = densityToSesame(gridParams.rhoNormal);
       T[0] = temperatureToSesame(TAnchor);
-      T[1] = temperatureToSesame(TSplitPoint);
+      T[1] = temperatureToSesame(gridParams.TSplitPoint);
       eosSafeInterpolate(&eospacEofRT, nXYPairs, rho, T, sie, dx, dy, "EofRT",
                          Verbosity::Quiet);
       eosSafeDestroy(NT, tableHandle, Verbosity::Quiet);
     }
     const Real sieAnchor = sie[0];
     const Real sieSplitPoint = sie[1];
-    leBounds = Bounds(Bounds::TwoGrids(), sieMin, sieMax, sieAnchor, sieSplitPoint,
-                      ppdSie, ppd_factor_sie, true, shrinkleBounds);
+    leBounds = Bounds(Bounds::TwoGrids(), gridParams.sieMin, gridParams.sieMax, sieAnchor,
+                      sieSplitPoint, gridParams.numSiePerDecade, gridParams.sieCoarseFactor,
+                      true, gridParams.shrinkleBounds);
   } else {
-    leBounds = Bounds(sieMin, sieMax, numSie, true, shrinkleBounds);
+    // Uniform sie grid
+    int numSie = gridParams.numSie;
+    if (numSie <= 0) {
+      numSie = Bounds::getNumPointsFromPPD(gridParams.sieMin, gridParams.sieMax,
+                                             gridParams.numSiePerDecade);
+    }
+    leBounds = Bounds(gridParams.sieMin, gridParams.sieMax, numSie, true,
+                      gridParams.shrinkleBounds);
   }
 
   std::cout << "lRho bounds are\n"

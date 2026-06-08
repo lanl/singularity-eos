@@ -146,7 +146,15 @@ inline void constructRhoBounds(const SpinerTableGridParams &params, Bounds &lRho
     numRho = Bounds::getNumPointsFromPPD(rhoMin, rhoMax, params.numRhoPerDecade);
   }
 
-  Real rhoAnchor = std::sqrt(rhoMin * rhoMax);
+  // Compute rhoAnchor for piecewise grid center point
+  // Match sesame2spiner behavior: use rhoNormal if valid, else geometric mean
+  Real rhoAnchor;
+  if (!std::isnan(params.rhoNormal) && params.rhoNormal > 0.0 &&
+      params.rhoNormal <= 1e8) {
+    rhoAnchor = params.rhoNormal;
+  } else {
+    rhoAnchor = std::sqrt(rhoMin * rhoMax);
+  }
 
   // Construct piecewise or uniform grid
   if (params.piecewiseRho) {
