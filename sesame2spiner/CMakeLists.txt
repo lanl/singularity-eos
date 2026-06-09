@@ -79,28 +79,8 @@ target_link_libraries(sesame2spiner
 
 install(TARGETS sesame2spiner DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-# Install singularity-utils (required by sesame2spiner-lib)
-install(TARGETS singularity-utils
-  EXPORT sesame2spiner-targets
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
-
-install(TARGETS sesame2spiner-lib
-  EXPORT sesame2spiner-targets
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  INCLUDES DESTINATION include
-)
 
 install(DIRECTORY sesame2spiner/
   DESTINATION include/sesame2spiner
 )
-
-if(NOT SINGULARITY_SUBMODULE_MODE)
-  install(EXPORT sesame2spiner-targets
-    FILE sesame2spiner-targets.cmake
-    NAMESPACE sesame2spiner::
-    DESTINATION lib/cmake/sesame2spiner
-  )
-endif()
 

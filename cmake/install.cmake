@@ -71,6 +71,16 @@ install(
   EXPORT singularity-eos_Interface
   DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
+# Install sesame2spiner-lib if it was built (required by singularity-eos_Interface when enabled)
+if(TARGET sesame2spiner-lib)
+  install(
+    TARGETS sesame2spiner-lib
+    EXPORT singularity-eos_Interface
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    INCLUDES DESTINATION include
+  )
+endif()
 install(
   TARGETS singularity-eos_Interface
   EXPORT singularity-eos_Interface
