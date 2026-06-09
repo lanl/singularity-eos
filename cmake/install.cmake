@@ -65,6 +65,12 @@ install(
   NAMESPACE "singularity-eos::"
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/singularity-eos)
 
+# Install singularity-utils (required by singularity-eos_Interface)
+install(
+  TARGETS singularity-utils
+  EXPORT singularity-eos_Interface
+  DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
 install(
   TARGETS singularity-eos_Interface
   EXPORT singularity-eos_Interface
@@ -122,6 +128,12 @@ export(
   EXPORT singularity-eos_Common
   FILE ${CMAKE_CURRENT_BINARY_DIR}/singularity-eos_Common.cmake
   NAMESPACE singularity-eos::)
+
+# Export singularity-utils with singularity-eos_Interface
+export(
+  TARGETS singularity-utils
+  FILE ${CMAKE_CURRENT_BINARY_DIR}/singularity-utils.cmake
+  NAMESPACE singularity-utils::)
 
 export(
   EXPORT singularity-eos_Interface

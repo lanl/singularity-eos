@@ -172,83 +172,17 @@ if (SINGULAIRTY_ON_ARM)
   endif()
 endif()
 
-# checks if this is our build, or we've been imported via `add_subdirectory` NB:
-# this should make the `option(SINGULARITY_SUBMODULE_MODE ...)` unnecessary
-# This must happen before finding dependencies
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-  set(CMAKE_CXX_EXTENSIONS OFF)
-else()
-  message(
-    STATUS
-      "Detected that `singularity-eos` is a subproject, will configure build in submodule mode"
-  )
-  set(SINGULARITY_SUBMODULE_MODE ON)
-endif()
+# ------------------------------------------------------------------------------#
+# singularity-eos Library
+# ------------------------------------------------------------------------------#
 
-if(SINGULARITY_FORCE_SUBMODULE_MODE)
-  message(STATUS "Building as though project was a submodule.")
-  set(SINGULARITY_SUBMODULE_MODE ON)
-endif()
-
+# Load CMake modules for finding dependencies
 include(singularity-eos/Eigen3)
 include(singularity-eos/eospac)
 include(singularity-eos/hdf5)
 include(singularity-eos/kokkos)
-include(singularity-eos/ports-of-call)
 include(singularity-eos/spiner)
-
-# ------------------------------------------------------------------------------#
-# Import/Find External Dependencies
-# ------------------------------------------------------------------------------#
-# Must happen before building singularity-utils (which needs ports-of-call and spiner)
-# Dependency order: Kokkos -> ports-of-call -> spiner -> singularity-utils
-
-if(SINGULARITY_SUBMODULE_MODE)
-  # add all submodules
-  message(STATUS "singularity-eos configuring in submodule mode.")
-
-  # Kokkos first (ports-of-call may depend on it if PORTABILITY_STRATEGY_KOKKOS is set)
-  if(SINGULARITY_USE_KOKKOS)
-    singularity_import_kokkos()
-    if(SINGULARITY_USE_KOKKOSKERNELS)
-      singularity_import_kokkoskernels()
-    endif()
-  endif()
-
-  # Then ports-of-call
-  singularity_import_ports_of_call()
-
-  # Then spiner (depends on ports-of-call)
-  if(SINGULARITY_USE_SPINER)
-    singularity_import_spiner()
-  endif()
-else()
-  # use system packages
-
-  # Kokkos first
-  if(SINGULARITY_USE_KOKKOS)
-    singularity_find_kokkos()
-    if(SINGULARITY_USE_KOKKOSKERNELS)
-      singularity_find_kokkoskernels()
-    endif()
-  endif()
-
-  # Then ports-of-call
-  singularity_find_ports_of_call()
-
-  # Then spiner
-  if(SINGULARITY_USE_SPINER)
-    singularity_find_spiner()
-  endif()
-endif()
-
-# Build singularity-utils first - it's a dependency for both
-# singularity-eos and sesame2spiner
-add_subdirectory(singularity-utils)
-
-# ------------------------------------------------------------------------------#
-# singularity-eos Library
-# ------------------------------------------------------------------------------#
+include(singularity-eos/ports-of-call)
 
 add_library(singularity-eos INTERFACE)
 add_library(singularity-eos::singularity-eos ALIAS singularity-eos)
@@ -264,6 +198,25 @@ target_link_libraries(singularity-eos INTERFACE singularity-eos_Interface)
 
 # ld has problems with Clang's libomp.so, use ldd instead
 target_link_options(singularity-eos_Interface INTERFACE $<$<CXX_COMPILER_ID:Clang>:-fuse-ld=lld>)
+
+# ------------------------------------------------------------------------------#
+# Determine if we're in submodule mode
+# ------------------------------------------------------------------------------#
+# This must happen before finding dependencies
+
+# checks if this is our build, or we've been imported via `add_subdirectory`
+if(NOT CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+  message(
+    STATUS
+      "Detected that `singularity-eos` is a subproject, will configure build in submodule mode"
+  )
+  set(SINGULARITY_SUBMODULE_MODE ON)
+endif()
+
+if(SINGULARITY_FORCE_SUBMODULE_MODE)
+  message(STATUS "Building as though project was a submodule.")
+  set(SINGULARITY_SUBMODULE_MODE ON)
+endif()
 
 # ------------------------------------------------------------------------------#
 # Compiler & language setup
@@ -293,6 +246,65 @@ if(SINGULARITY_BUILD_PYTHON)
   # need position independent code for Python shared library
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
+
+# ------------------------------------------------------------------------------#
+# Import/Find External Dependencies
+# ------------------------------------------------------------------------------#
+# Must happen before building singularity-utils (which needs ports-of-call and spiner)
+# Dependency order: Kokkos -> ports-of-call -> spiner -> singularity-utils
+
+if(SINGULARITY_SUBMODULE_MODE)
+  # add all submodules
+  message(STATUS "singularity-eos configuring in submodule mode.")
+
+  # Kokkos first (ports-of-call may depend on it if PORTABILITY_STRATEGY_KOKKOS is set)
+  if(SINGULARITY_USE_KOKKOS)
+    singularity_import_kokkos()
+    if(SINGULARITY_USE_KOKKOSKERNELS)
+      singularity_import_kokkoskernels()
+    endif()
+  endif()
+
+  # Then ports-of-call
+  singularity_import_ports_of_call()
+
+  # Then spiner (depends on ports-of-call)
+  if(SINGULARITY_USE_SPINER)
+    singularity_import_spiner()
+  endif()
+
+  # Eigen (if needed)
+  if(SINGULARITY_USE_EIGEN)
+    singularity_import_eigen()
+  endif()
+else()
+  # use system packages
+
+  # Kokkos first
+  if(SINGULARITY_USE_KOKKOS)
+    singularity_find_kokkos()
+    if(SINGULARITY_USE_KOKKOSKERNELS)
+      singularity_find_kokkoskernels()
+    endif()
+  endif()
+
+  # Then ports-of-call
+  singularity_find_ports_of_call()
+
+  # Then spiner
+  if(SINGULARITY_USE_SPINER)
+    singularity_find_spiner()
+  endif()
+
+  # Eigen (if needed)
+  if(SINGULARITY_USE_EIGEN)
+    singularity_find_eigen()
+  endif()
+endif()
+
+# Build singularity-utils first - it's a dependency for both
+# singularity-eos and sesame2spiner
+add_subdirectory(singularity-utils)
 
 # Enable HDF5 and EOSPAC now that languages and dependencies are set up
 if(SINGULARITY_USE_SPINER_WITH_HDF5)
@@ -361,21 +373,6 @@ endif()
 
 if(SINGULARITY_BUILD_EXAMPLES)
   add_subdirectory(example)
-endif()
-
-# ------------------------------------------------------------------------------#
-# Import/Find Additional Dependencies (Eigen only)
-# ------------------------------------------------------------------------------#
-# Kokkos, ports-of-call, and spiner were already imported/found before singularity-utils
-
-if(SINGULARITY_SUBMODULE_MODE)
-  if(SINGULARITY_USE_EIGEN)
-    singularity_import_eigen()
-  endif()
-else()
-  if(SINGULARITY_USE_EIGEN)
-    singularity_find_eigen()
-  endif()
 endif()
 
 # Enable dependencies for singularity-eos_Interface

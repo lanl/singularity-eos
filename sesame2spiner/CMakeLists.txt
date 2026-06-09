@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------
-# © 2021-2026. Triad National Security, LLC. All rights reserved.  This
+# © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 # program was produced under U.S. Government contract 89233218CNA000001
 # for Los Alamos National Laboratory (LANL), which is operated by Triad
 # National Security, LLC for the U.S.  Department of Energy/National
@@ -13,7 +13,10 @@
 #------------------------------------------------------------------------------
 
 
-# sesame2spiner library
+# ------------------------------------------------------------------------------
+# sesame2spiner Library
+# ------------------------------------------------------------------------------
+
 add_library(sesame2spiner-lib
   sesame2spiner/io_eospac.cpp
   sesame2spiner/io_eospac.hpp
@@ -21,17 +24,19 @@ add_library(sesame2spiner-lib
   sesame2spiner/generate_files.hpp
   sesame2spiner/parser.cpp
   sesame2spiner/parser.hpp
-
 )
 
+# Set library output name (without -lib suffix)
 set_target_properties(sesame2spiner-lib PROPERTIES OUTPUT_NAME sesame2spiner)
 
 target_include_directories(sesame2spiner-lib
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
     $<INSTALL_INTERFACE:include>
 )
 
+# sesame2spiner library depends on singularity-utils (not full singularity-eos)
 target_link_libraries(sesame2spiner-lib
   PUBLIC
     singularity-utils::singularity-utils
@@ -39,32 +44,19 @@ target_link_libraries(sesame2spiner-lib
     singularity-eos::singularity-eos_Common  # For HDF5
 )
 
+# Version information for library
 target_compile_definitions(sesame2spiner-lib
   PUBLIC
   SESAME2SPINER_VERSION=\"${PROJECT_VERSION}\"
 )
 
-# Propate SPINER defines
-if (DEFINED SINGULARITY_USE_SPINER)
-  target_compile_definitions(sesame2spiner-lib
-  PUBLIC
-      $<$<BOOL:${SINGULARITY_USE_SPINER}>:SINGULARITY_USE_SPINER>
-  )
-endif()
-
-# Propagate HDF5 usage definitions
-# These must match the settings used by singularity-eos
-if (DEFINED SINGULARITY_USE_SPINER_WITH_HDF5)
-  target_compile_definitions(sesame2spiner-lib
-  PUBLIC
-      $<$<BOOL:${SINGULARITY_USE_SPINER_WITH_HDF5}>:SINGULARITY_USE_SPINER_WITH_HDF5>
-  )
-endif()
-
-
+# Create alias for consistency
 add_library(sesame2spiner::sesame2spiner ALIAS sesame2spiner-lib)
 
-# sesame2spiner executable
+# ------------------------------------------------------------------------------
+# sesame2spiner Executable
+# ------------------------------------------------------------------------------
+
 add_executable(sesame2spiner
   src/parse_cli.cpp
   src/parse_cli.hpp
@@ -77,13 +69,21 @@ target_include_directories(sesame2spiner
 )
 
 target_link_libraries(sesame2spiner
-  PUBLIC
+  PRIVATE
     sesame2spiner-lib
 )
 
-# install
+# ------------------------------------------------------------------------------
+# Installation
+# ------------------------------------------------------------------------------
 
 install(TARGETS sesame2spiner DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# Install singularity-utils (required by sesame2spiner-lib)
+install(TARGETS singularity-utils
+  EXPORT sesame2spiner-targets
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
 
 install(TARGETS sesame2spiner-lib
   EXPORT sesame2spiner-targets
@@ -104,5 +104,3 @@ if(NOT SINGULARITY_SUBMODULE_MODE)
   )
 endif()
 
-
-# TODO: Add tests for sesame2spiner here.
