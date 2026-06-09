@@ -14,11 +14,6 @@
 
 # This file was made in part with generative AI
 
-cmake_minimum_required(VERSION 3.19)
-
-project(singularity-utils
-  VERSION 1.0.0
-  LANGUAGES CXX)
 
 # Create interface library (header-only)
 add_library(singularity-utils INTERFACE)
