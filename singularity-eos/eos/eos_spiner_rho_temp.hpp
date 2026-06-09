@@ -37,9 +37,12 @@
 
 // base
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/eos_concepts.hpp>
+#include <singularity-eos/base/finite_diff.hpp>
 #include <singularity-eos/base/spiner_table_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 #include <singularity-eos/eos/eos_spiner_common.hpp>
+#include <singularity-eos/eos/eos_spiner_construction.hpp>
 #include <singularity-utils/fast-math/logs.hpp>
 #include <singularity-utils/indexable_types.hpp>
 #include <singularity-utils/robust_utils.hpp>
@@ -56,6 +59,9 @@
 namespace singularity {
 
 using namespace eos_base;
+
+// Import grid parameters from shared construction utilities
+using spiner_table_builder::SpinerTableGridParams;
 
 /*
   Tables all have indep. variables log10(rho), log10(T)
@@ -103,6 +109,11 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   PORTABLE_INLINE_FUNCTION
   SpinerEOSDependsRhoT()
       : split_(TableSplit::Total), memoryStatus_(DataStatus::Deallocated) {}
+
+  // Constructor from generic EOS
+  template <typename EOS>
+  inline SpinerEOSDependsRhoT(const EOS &source_eos, const SpinerTableGridParams &params,
+                              bool reproducibility_mode = false);
 
   inline SpinerEOSDependsRhoT GetOnDevice();
 
@@ -1401,6 +1412,245 @@ SpinerEOSDependsRhoT::getLocDependsRhoT_(const Real lRho, const Real lT) const {
   else
     whereAmI = TableStatus::OnTable;
   return whereAmI;
+}
+
+// Generic constructor: build SpinerEOSDependsRhoT from any EOS
+template <typename EOS>
+inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const EOS &source_eos,
+                                                  const SpinerTableGridParams &params,
+                                                  bool reproducibility_mode)
+    : matid_(params.matid), split_(TableSplit::Total),
+      reproducible_(reproducibility_mode), pmin_vapor_dome_(false),
+      memoryStatus_(DataStatus::OnHost) {
+
+  using namespace spiner_table_builder;
+
+  // Construct grids from parameters
+  Bounds lRhoBounds, lTBounds;
+  constructRhoBounds(params, lRhoBounds);
+  constructTBounds(params, lTBounds);
+
+  // Grid dimensions
+  numRho_ = lRhoBounds.grid.nPoints();
+  numT_ = lTBounds.grid.nPoints();
+
+  // Store offsets
+  lRhoOffset_ = lRhoBounds.offset;
+  lTOffset_ = lTBounds.offset;
+
+  // Store grid bounds
+  lRhoMin_ = lRhoBounds.grid.min();
+  lRhoMax_ = lRhoBounds.grid.max();
+  rhoMax_ = from_log(lRhoMax_, lRhoOffset_);
+  lTMin_ = lTBounds.grid.min();
+  lTMax_ = lTBounds.grid.max();
+  TMax_ = from_log(lTMax_, lTOffset_);
+
+  // Get actual min values (after offset)
+  Real rhoMin = from_log(lRhoMin_, lRhoOffset_);
+  Real TMin = from_log(lTMin_, lTOffset_);
+  Real TMax = TMax_;
+
+  // Anchor for piecewise grids
+  Real rhoAnchor = std::sqrt(rhoMin * rhoMax_);
+
+  // Allocate and initialize (rho, T) tables
+  // NOTE: Spiner convention is dimension 0 = T, dimension 1 = rho
+  P_.resize(numRho_, numT_);
+  P_.setRange(1, lRhoBounds.grid);
+  P_.setRange(0, lTBounds.grid);
+
+  sie_.resize(numRho_, numT_);
+  sie_.setRange(1, lRhoBounds.grid);
+  sie_.setRange(0, lTBounds.grid);
+
+  bMod_.resize(numRho_, numT_);
+  bMod_.setRange(1, lRhoBounds.grid);
+  bMod_.setRange(0, lTBounds.grid);
+
+  dPdRho_.resize(numRho_, numT_);
+  dPdRho_.setRange(1, lRhoBounds.grid);
+  dPdRho_.setRange(0, lTBounds.grid);
+
+  dPdE_.resize(numRho_, numT_);
+  dPdE_.setRange(1, lRhoBounds.grid);
+  dPdE_.setRange(0, lTBounds.grid);
+
+  dTdRho_.resize(numRho_, numT_);
+  dTdRho_.setRange(1, lRhoBounds.grid);
+  dTdRho_.setRange(0, lTBounds.grid);
+
+  dTdE_.resize(numRho_, numT_);
+  dTdE_.setRange(1, lRhoBounds.grid);
+  dTdE_.setRange(0, lTBounds.grid);
+
+  dEdRho_.resize(numRho_, numT_);
+  dEdRho_.setRange(1, lRhoBounds.grid);
+  dEdRho_.setRange(0, lTBounds.grid);
+
+  dEdT_.resize(numRho_, numT_);
+  dEdT_.setRange(1, lRhoBounds.grid);
+  dEdT_.setRange(0, lTBounds.grid);
+
+  // Populate (rho, T) tables using shared construction utility
+  // sieMin/sieMax are used for root finding bounds if needed
+  Real sieMin = 0.0;  // Will be overridden if source EOS provides bounds
+  Real sieMax = 1e99; // Will be overridden if source EOS provides bounds
+
+  spiner_table_builder::populateDependsRhoT<EOS>(
+      source_eos, lRhoBounds, lTBounds, lRhoOffset_, lTOffset_, rhoMin, rhoMax_, TMin,
+      TMax, sieMin, sieMax, [this](int j, int i, Real v) { sie_(j, i) = v; },
+      [this](int j, int i, Real v) { P_(j, i) = v; },
+      [this](int j, int i, Real v) { bMod_(j, i) = v; },
+      [this](int j, int i, Real v) { dPdRho_(j, i) = v; },
+      [this](int j, int i, Real v) { dPdE_(j, i) = v; },
+      [this](int j, int i, Real v) { dTdRho_(j, i) = v; },
+      [this](int j, int i, Real v) { dTdE_(j, i) = v; },
+      [this](int j, int i, Real v) { dEdRho_(j, i) = v; },
+      [this](int j, int i, Real v) { dEdT_(j, i) = v; });
+
+  // Compute isentropic bulk modulus from derivatives
+  // B_S = rho * (dP/drho)_E + (dP/dE)_rho * (P/rho)
+  fixBulkModulus_();
+
+  // Compute cold curves at minimum temperature
+  computeColdCurves(source_eos, lRhoBounds, TMin, lRhoOffset_, PCold_, sieCold_,
+                    bModCold_, dPdRhoCold_);
+
+  // Additional cold curve derivatives
+  dPdECold_.resize(numRho_);
+  dPdECold_.setRange(0, lRhoBounds.grid);
+  dTdRhoCold_.resize(numRho_);
+  dTdRhoCold_.setRange(0, lRhoBounds.grid);
+  dTdECold_.resize(numRho_);
+  dTdECold_.setRange(0, lRhoBounds.grid);
+  dEdTCold_.resize(numRho_);
+  dEdTCold_.setRange(0, lRhoBounds.grid);
+
+  for (int j = 0; j < numRho_; ++j) {
+    Real lRho = lRhoBounds.grid.x(j);
+    Real rho = from_log(lRho, lRhoOffset_);
+
+    // dPdE at cold curve
+    if constexpr (eos_concepts::has_gamma_rho_T_v<EOS>) {
+      Real gamma = source_eos.GruneisenParamFromDensityTemperature(rho, TMin);
+      dPdECold_(j) = rho * gamma;
+    } else {
+      auto PofT = [&source_eos, rho](Real T_p) {
+        return source_eos.PressureFromDensityTemperature(rho, T_p);
+      };
+      Real dPdT = finite_diff::centralDifference(PofT, TMin);
+      auto EofT = [&source_eos, rho](Real T_e) {
+        return source_eos.InternalEnergyFromDensityTemperature(rho, T_e);
+      };
+      Real dEdT_cold = finite_diff::centralDifference(EofT, TMin);
+      dPdECold_(j) = robust::ratio(dPdT, dEdT_cold);
+      dEdTCold_(j) = dEdT_cold;
+    }
+
+    // dTdE at cold curve
+    if constexpr (eos_concepts::has_cv_rho_T_v<EOS>) {
+      Real cv = source_eos.SpecificHeatFromDensityTemperature(rho, TMin);
+      dTdECold_(j) = robust::ratio(1.0, cv);
+    } else {
+      dTdECold_(j) = robust::ratio(1.0, dEdTCold_(j));
+    }
+
+    // dTdRho at cold curve
+    auto EofR = [&source_eos, TMin](Real r) {
+      return source_eos.InternalEnergyFromDensityTemperature(r, TMin);
+    };
+    Real dEdRho_cold = finite_diff::centralDifference(EofR, rho);
+    dTdRhoCold_(j) = -dEdRho_cold * dTdECold_(j);
+
+    // Recompute bModCold with correct isentropic formula
+    // B_S = rho * (dP/drho)_E + (dP/dE) * (P/rho)
+    // Note: GruneisenParam returns Gamma = (gamma - 1), not heat capacity ratio gamma
+    // For ideal gas: B_S = (Gamma + 1) * P
+    if constexpr (eos_concepts::has_gamma_rho_T_v<EOS>) {
+      Real Gamma = source_eos.GruneisenParamFromDensityTemperature(rho, TMin);
+      bModCold_(j) = (Gamma + 1.0) * PCold_(j);
+    } else {
+      // Use the isentropic formula from derivatives
+      Real DPDR_T = dPdRhoCold_(j);
+      Real DPDE = dPdECold_(j);
+      // Convert (dP/drho)_T to (dP/drho)_E: need dEdRho_cold
+      Real DEDR_T = dEdRho_cold;
+      Real DEDT = dEdTCold_(j);
+      Real DPDR_E = DPDR_T - (dPdECold_(j) / DEDT) * DEDR_T;
+      bModCold_(j) = rho * DPDR_E + DPDE * (PCold_(j) / rho);
+    }
+  }
+
+  // Compute extrapolation data at maximum temperature
+  PMax_.resize(numRho_);
+  PMax_.setRange(0, lRhoBounds.grid);
+  sielTMax_.resize(numRho_);
+  sielTMax_.setRange(0, lRhoBounds.grid);
+  dEdTMax_.resize(numRho_);
+  dEdTMax_.setRange(0, lRhoBounds.grid);
+  gm1Max_.resize(numRho_);
+  gm1Max_.setRange(0, lRhoBounds.grid);
+
+  for (int j = 0; j < numRho_; ++j) {
+    Real lRho = lRhoBounds.grid.x(j);
+    Real rho = from_log(lRho, lRhoOffset_);
+
+    PMax_(j) = source_eos.PressureFromDensityTemperature(rho, TMax);
+    sielTMax_(j) = source_eos.InternalEnergyFromDensityTemperature(rho, TMax);
+
+    auto EofT = [&source_eos, rho](Real T_e) {
+      return source_eos.InternalEnergyFromDensityTemperature(rho, T_e);
+    };
+    dEdTMax_(j) = finite_diff::centralDifference(EofT, TMax);
+
+    if constexpr (eos_concepts::has_gamma_rho_T_v<EOS>) {
+      gm1Max_(j) = source_eos.GruneisenParamFromDensityTemperature(rho, TMax);
+    } else {
+      gm1Max_(j) = robust::ratio(PMax_(j), rho * sielTMax_(j));
+    }
+  }
+
+  // Critical temperature curve - just use TMax for now
+  lTColdCrit_.resize(numRho_);
+  lTColdCrit_.setRange(0, lRhoBounds.grid);
+  for (int j = 0; j < numRho_; ++j) {
+    lTColdCrit_(j) = lTMax_;
+  }
+
+  // Compute rho_at_pmin
+  PMin_ = spiner_common::SetRhoPMin(P_, rho_at_pmin_, pmin_vapor_dome_, VAPOR_DPDR_THRESH,
+                                    lRhoOffset_);
+
+  // No mass fractions from generic constructor
+  has_mf = false;
+
+  // Material properties
+  AZbar_.Abar = extractAbar(source_eos, params);
+  AZbar_.Zbar = extractZbar(source_eos, params);
+
+  // Reference state
+  rhoNormal_ = rhoAnchor;
+  Real lRhoNormal = to_log(rhoNormal_, lRhoOffset_);
+  if (!(lRhoMin_ < lRhoNormal && lRhoNormal < lRhoMax_)) {
+    lRhoNormal = 0.5 * (lRhoMin_ + lRhoMax_);
+    rhoNormal_ = from_log(lRhoNormal, lRhoOffset_);
+  }
+
+  TNormal_ = ROOM_TEMPERATURE;
+  Real lTNormal = to_log(TNormal_, lTOffset_);
+  if (!(lTMin_ < lTNormal && lTNormal < lTMax_)) {
+    lTNormal = 0.5 * (lTMin_ + lTMax_);
+    TNormal_ = from_log(lTNormal, lTOffset_);
+  }
+
+  sieNormal_ = sie_.interpToReal(lRhoNormal, lTNormal);
+  PNormal_ = P_.interpToReal(lRhoNormal, lTNormal);
+  CvNormal_ = robust::ratio(1.0, dTdE_.interpToReal(lRhoNormal, lTNormal));
+  bModNormal_ = bMod_.interpToReal(lRhoNormal, lTNormal);
+  dPdENormal_ = dPdE_.interpToReal(lRhoNormal, lTNormal);
+  Real dPdR = dPdRho_.interpToReal(lRhoNormal, lTNormal);
+  dVdTNormal_ = robust::ratio(dPdENormal_ * CvNormal_, rhoNormal_ * rhoNormal_ * dPdR);
 }
 
 } // namespace singularity

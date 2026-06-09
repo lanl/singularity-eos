@@ -24,11 +24,13 @@
 #include <hdf5_hl.h>
 
 #include <eospac-wrapper/eospac_wrapper.hpp>
+#include <singularity-eos/eos/eos_spiner_construction.hpp>
 
 #include "io_eospac.hpp"
 #include "parser.hpp"
 
 using namespace EospacWrapper;
+using singularity::spiner_table_builder::SpinerTableGridParams;
 
 namespace sesame2spiner {
 
@@ -65,6 +67,12 @@ herr_t saveTablesRhoT(hid_t loc, int matid, TableSplit split, const Bounds &lRho
 
 void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params &params,
                   Bounds &lRhoBounds, Bounds &lTBounds, Bounds &leBounds);
+
+// Convert string-based Params to structured SpinerTableGridParams
+// This allows sesame2spiner to use the same grid construction logic as the EOS
+// constructors
+SpinerTableGridParams paramsToGridParams(int matid, const SesameMetadata &metadata,
+                                         const Params &params);
 
 bool checkValInMatBounds(int matid, const std::string &name, Real val, Real vmin,
                          Real vmax);
