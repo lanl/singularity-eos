@@ -247,6 +247,22 @@ if(SINGULARITY_BUILD_PYTHON)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
+# Use to determine if Eigen is used or not
+set(SINGULARITY_USE_EIGEN
+    OFF
+    CACHE BOOL "" FORCE)
+if(SINGULARITY_BUILD_CLOSURE AND NOT SINGULARITY_USE_KOKKOSKERNELS)
+  if(SINGULARITY_USE_CUDA)
+    message(
+      FATAL_ERROR
+        "\"SINGULARITY_BUILD_CLOSURE=ON\" and \"SINGULARITY_USE_CUDA=ON\" requires \"SINGULARITY_USE_KOKKOSKERNELS=ON\""
+    )
+  endif()
+  set(SINGULARITY_USE_EIGEN
+      ON
+      CACHE BOOL "" FORCE)
+endif()
+
 # ------------------------------------------------------------------------------#
 # Import/Find External Dependencies
 # ------------------------------------------------------------------------------#
@@ -322,23 +338,6 @@ if(CMAKE_CXX_STANDARD)
   target_compile_features(singularity-eos_Interface INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
 else()
   target_compile_features(singularity-eos_Interface INTERFACE cxx_std_17)
-endif()
-
-
-# Use to determine if Eigen is used or not
-set(SINGULARITY_USE_EIGEN
-    OFF
-    CACHE BOOL "" FORCE)
-if(SINGULARITY_BUILD_CLOSURE AND NOT SINGULARITY_USE_KOKKOSKERNELS)
-  if(SINGULARITY_USE_CUDA)
-    message(
-      FATAL_ERROR
-        "\"SINGULARITY_BUILD_CLOSURE=ON\" and \"SINGULARITY_USE_CUDA=ON\" requires \"SINGULARITY_USE_KOKKOSKERNELS=ON\""
-    )
-  endif()
-  set(SINGULARITY_USE_EIGEN
-      ON
-      CACHE BOOL "" FORCE)
 endif()
 
 # ------------------------------------------------------------------------------#
