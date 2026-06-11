@@ -24,13 +24,13 @@
 #include <hdf5_hl.h>
 
 #include <eospac-wrapper/eospac_wrapper.hpp>
-#include <singularity-eos/eos/eos_spiner_construction.hpp>
+#include <singularity-utils/spiner_params.hpp>
 
 #include "io_eospac.hpp"
 #include "parser.hpp"
 
 using namespace EospacWrapper;
-using singularity::spiner_table_builder::SpinerTableGridParams;
+using singularity::table_utils::SpinerTableGridParams;
 
 namespace sesame2spiner {
 

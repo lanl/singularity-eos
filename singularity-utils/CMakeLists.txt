@@ -19,6 +19,23 @@
 add_library(singularity-utils INTERFACE)
 add_library(singularity-utils::singularity-utils ALIAS singularity-utils)
 
+# List of header files (for IDE support and installation tracking)
+target_sources(singularity-utils INTERFACE
+  singularity-utils/bounds.hpp
+  singularity-utils/constants.hpp
+  singularity-utils/error_utils.hpp
+  singularity-utils/fast-math/logs.hpp
+  singularity-utils/generic_indexer.hpp
+  singularity-utils/hermite.hpp
+  singularity-utils/indexable_types.hpp
+  singularity-utils/math_utils.hpp
+  singularity-utils/robust_utils.hpp
+  singularity-utils/root-finding-1d/root_finding.hpp
+  singularity-utils/sp5/singularity_eos_sp5.hpp
+  singularity-utils/spiner_params.hpp
+  singularity-utils/variadic_utils.hpp
+)
+
 # Set include directories
 target_include_directories(singularity-utils
   INTERFACE

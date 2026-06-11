@@ -33,6 +33,7 @@
 #include <ports-of-call/portability.hpp>
 #include <singularity-utils/fast-math/logs.hpp>
 #include <singularity-utils/sp5/singularity_eos_sp5.hpp>
+#include <singularity-utils/spiner_params.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
 #include <spiner/sp5.hpp>
@@ -42,9 +43,9 @@
 #include "parser.hpp"
 
 using namespace EospacWrapper;
-using singularity::spiner_table_builder::constructRhoBounds;
-using singularity::spiner_table_builder::constructTBounds;
-using singularity::spiner_table_builder::SpinerTableGridParams;
+using singularity::table_utils::constructRhoBounds;
+using singularity::table_utils::constructTBounds;
+using singularity::table_utils::SpinerTableGridParams;
 
 namespace sesame2spiner {
 
