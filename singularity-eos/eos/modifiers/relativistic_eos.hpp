@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -15,9 +15,9 @@
 #ifndef _SINGULARITY_EOS_EOS_RELATIVISTIC_EOS_
 #define _SINGULARITY_EOS_EOS_RELATIVISTIC_EOS_
 
-#include "stdio.h"
 #include <cassert>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
@@ -140,6 +140,20 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
     return t_.GruneisenParamFromDensityTemperature(rho, temperature, lambda);
   }
   template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION void
+  InternalEnergyFromDensityPressure(const Real rho, const Real P, Real &sie,
+                                    Indexer_t &&lambda = nullptr) const {
+    t_.InternalEnergyFromDensityPressure(rho, P, sie, lambda);
+  }
+  template <typename Lambda_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P,
+                             const Real temp, Lambda_t &&lambda, Real &dedP_T,
+                             Real &drdP_T, Real &dedT_P, Real &drdT_P) const {
+    t_.PTDerivativesFromPreferred(rho, sie, P, temp, lambda, dedP_T, drdP_T, dedT_P,
+                                  drdT_P);
+  }
+  template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                  Real &cv, Real &bmod, const unsigned long output,
                                  Indexer_t &&lambda = nullptr) const {
@@ -150,22 +164,6 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
   template <typename Indexable>
   static inline constexpr bool NeedsLambda() {
     return T::template NeedsLambda<Indexable>();
-  }
-
-  PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const {
-    return t_.MinimumDensity();
-  }
-  PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const {
-    return t_.MinimumTemperature();
-  }
-  PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const {
-    return t_.MaximumDensity();
-  }
-  PORTABLE_FORCEINLINE_FUNCTION Real MinimumPressure() const {
-    return t_.MinimumPressure();
-  }
-  PORTABLE_FORCEINLINE_FUNCTION Real MaximumPressureAtTemperature(const Real temp) const {
-    return t_.MaximumPressureAtTemperature(temp);
   }
 
   static constexpr unsigned long PreferredInput() { return T::PreferredInput(); }
@@ -208,7 +206,8 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
   }
 
   SG_ADD_MODIFIER_METHODS(T, t_);
-  SG_ADD_MODIFIER_MEAN_METHODS(t_)
+  SG_ADD_MODIFIER_MEAN_METHODS(t_);
+  SG_ADD_MODIFIER_INTROSPECTION_METHODS(t_);
 
  private:
   T t_;

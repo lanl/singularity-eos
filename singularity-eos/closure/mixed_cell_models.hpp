@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -17,6 +17,7 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
+#include <singularity-eos/base/error_utils.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
@@ -28,7 +29,7 @@
 #ifdef SINGULARITY_USE_KOKKOSKERNELS
 #include <KokkosBatched_ApplyQ_Decl.hpp>
 #include <KokkosBatched_QR_Decl.hpp>
-#include <KokkosBatched_Trsv_Decl.hpp>
+#include <KokkosBatched_Trsm_Decl.hpp>
 #else
 #include <Eigen/Dense>
 #endif // SINGULARITY_USE_KOKKOSKERNELS
@@ -84,6 +85,69 @@ struct SolverStatus {
   std::size_t small_step_iters = 0;
   Real residual;
 };
+
+/* Sets the volume fraction of the material occupying the most volume to be exactly
+ * tot_vol - the sum of the others
+ * Does so in a way that maintains the mass fractions sum to 1.
+ */
+namespace MixUtils {
+template <typename RhoIndexer_t, typename VFracIndexer_t>
+PORTABLE_INLINE_FUNCTION void
+EnforceMassVolumesSum(const std::size_t nmat, const Real tot_vol, RhoIndexer_t &&rho,
+                      VFracIndexer_t &&vfracs) {
+  std::size_t imax = 0;
+  Real fmax = -1;
+  for (std::size_t m = 0; m < nmat; ++m) {
+    PORTABLE_REQUIRE(vfracs[m] > 0, "volume fractions must all be strictly positive");
+    if (vfracs[m] > fmax) {
+      fmax = vfracs[m];
+      imax = m;
+    }
+  }
+  Real vfrac_new = tot_vol;
+  for (std::size_t m = 0; m < nmat; ++m) {
+    if (m == imax) continue;
+    vfrac_new -= vfracs[m];
+  }
+  PORTABLE_REQUIRE(vfrac_new > 0, "New majority volume fraction must be positive");
+  PORTABLE_REQUIRE(vfrac_new <= tot_vol, "New majority volume fraction must be bounded");
+  rho[imax] *= robust::ratio(vfracs[imax], vfrac_new);
+  vfracs[imax] = vfrac_new;
+}
+
+template <typename RhoIndexer_t, typename VFracIndexer_t, typename SieIndexer_t>
+PORTABLE_INLINE_FUNCTION void
+EnforceEnergiesSum(const std::size_t nmat, const Real tot_rho, const Real tot_sie,
+                   RhoIndexer_t &&rhos, VFracIndexer_t &&vfracs, SieIndexer_t &&sies) {
+  // TODO(JMM): I decided to let the host code pass in this
+  // information so that we can avoid duplicating work and so that it
+  // can enforce exactly what it wants. But we could alternatively
+  // compute it ourselves as:
+  /*
+  Real tot_rho = 0;
+  for (std::size_t m = 0; m < nmat; ++m) {
+    tot_rho += rhos[m] * vfracs[m];
+  }
+  */
+  const Real tot_u = tot_sie * tot_rho;
+  std::size_t imax = 0;
+  Real max_contribution = 0;
+  for (std::size_t m = 0; m < nmat; ++m) {
+    Real um = rhos[m] * vfracs[m] * sies[m];
+    if (std::abs(um) > max_contribution) {
+      imax = m;
+      max_contribution = std::abs(um);
+    }
+  }
+  PORTABLE_REQUIRE(max_contribution > 0, "We found a meaningful energy to modify");
+  Real unew = tot_u;
+  for (std::size_t m = 0; m < nmat; ++m) {
+    if (m == imax) continue;
+    unew -= rhos[m] * vfracs[m] * sies[m];
+  }
+  sies[imax] = robust::ratio(unew, rhos[imax] * vfracs[imax]);
+}
+} // namespace MixUtils
 
 namespace mix_impl {
 template <typename T,
@@ -169,12 +233,12 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
     using ApQ_alg = KokkosBatched::Algo::ApplyQ::Unblocked;
     using UP = KokkosBatched::Uplo::Upper;
     using NonU = KokkosBatched::Diag::NonUnit;
-    using Tr_alg = KokkosBatched::Algo::Trsv::Unblocked;
+    using Tr_alg = KokkosBatched::Algo::Trsm::Unblocked;
     // aliases for solver structs ('invoke' member of the struct is the
     // actual function call)
     using QR_factor = KokkosBatched::SerialQR<QR_alg>;
     using ApplyQ_transpose = KokkosBatched::SerialApplyQ<Lft, Trs, ApQ_alg>;
-    using InvertR = KokkosBatched::SerialTrsv<UP, nTrs, NonU, Tr_alg>;
+    using InvertR = KokkosBatched::SerialTrsm<Lft, UP, nTrs, NonU, Tr_alg>;
     // view of matrix
     Kokkos::View<Real **, Lrgt, Unmgd> A(a, n, n);
     // view of RHS
@@ -276,11 +340,10 @@ class PTESolverBase {
   // pointers, and avoid relocatable device code.
 
   // Fixup is meant to be a hook for derived classes to provide arbitrary manipulations
-  // after each iteration of the Newton solver.  This version just renormalizes the
-  // volume fractions, which is useful to deal with roundoff error.
+  // after each iteration of the Newton solver.
   // See comment above about virtual keyword
   PORTABLE_INLINE_FUNCTION
-  virtual void Fixup() { NormalizeVfrac(); }
+  virtual void Fixup() {}
   // Finalize restores the temperatures, energies, and pressures to unscaled values from
   // the internally scaled quantities used by the solvers
   // See comment above about virtual keyword
@@ -368,12 +431,12 @@ class PTESolverBase {
     constexpr Real safety = 0.9;
 
     // TODO(JMM): Stash this somewhere rather than recomputing it?
-    auto get_vfrac_max = [=](const std::size_t m) {
+    auto get_vfrac_max = [T, this](const std::size_t m) {
       const Real rho_min = eos[m].RhoPmin(T);
       const Real vfrac_max = std::min(safety * robust::ratio(rhobar[m], rho_min), 1.0);
       return vfrac_max;
     };
-    auto get_dv = [=](const std::size_t m) {
+    auto get_dv = [&get_vfrac_max, this](const std::size_t m) {
       const Real vfrac_max = get_vfrac_max(m);
       const Real vnew = std::min(vfrac_max, vfrac[m]);
       const Real dv = vfrac[m] - vnew;
@@ -456,15 +519,18 @@ class PTESolverBase {
     // if it makes the temperature larger. Empirically, we find this
     // avoids local saddle points that the solver can have trouble
     // navigating.
-    auto newton_step = [=](Real T) {
+    auto newton_step = [this](Real T) {
       Real dudt = 0;
       Real usum = 0;
       for (std::size_t m = 0; m < nmat; ++m) {
         Real rho_max = eos[m].MaximumDensity();
-        Real sie = eos[m].InternalEnergyFromDensityTemperature(std::min(rho[m], rho_max),
-                                                               T, lambda[m]);
-        Real cv = eos[m].SpecificHeatFromDensityTemperature(std::min(rho[m], rho_max), T,
-                                                            lambda[m]);
+
+        // TODO(JMM): Note that this assumes sensible pressures were
+        // passed in as an initial guess.
+        Real sie, cv;
+        GetSieCvFromTAndPreferred(eos[m], std::min(rho[m], rho_max), press[m], T,
+                                  lambda[m], sie, cv);
+
         usum += rhobar[m] * sie;
         dudt += rhobar[m] * cv;
       }
@@ -494,7 +560,7 @@ class PTESolverBase {
       bad_vfrac_guess = false;
       for (std::size_t m = 0; m < nmat; ++m) {
         const Real rho_min = eos[m].RhoPmin(Tguess);
-        const Real rho_max = eos[m].MaximumDensity();
+        [[maybe_unused]] const Real rho_max = eos[m].MaximumDensity();
         PORTABLE_REQUIRE(rho_min < rho_max, "Valid density range must exist!");
         PORTABLE_REQUIRE(rho[m] < rho_max, "Density must be less than rho_max");
         if (rho[m] < rho_min) {
@@ -519,16 +585,38 @@ class PTESolverBase {
   GetPressureFromPreferred(const EOS_t &eos, const Real rho, const Real T, Real sie,
                            Indexer_t lambda, const bool do_e_lookup) {
     Real P{};
-    if (eos.PreferredInput() ==
-        (thermalqs::density | thermalqs::specific_internal_energy)) {
+    if (eos.PreferredInput() & thermalqs::specific_internal_energy) {
       if (do_e_lookup) {
         sie = eos.InternalEnergyFromDensityTemperature(rho, T, lambda);
       }
       P = eos.PressureFromDensityInternalEnergy(rho, sie, lambda);
-    } else if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
+    } else { // if (eos.PreferredInput() & thermalqs::temperature) {
       P = eos.PressureFromDensityTemperature(rho, T, lambda);
     }
     return P;
+  }
+
+  // Uses temperature always. Sometimes uses P sometimes uses rho
+  // depending on what the EOS wants.
+  template <typename EOS_t, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION static void
+  GetSieCvFromTAndPreferred(const EOS_t &eos, Real rho, const Real P, const Real T,
+                            Indexer_t lambda, Real &sie, Real &cv) {
+    if (eos.PreferredInput() & thermalqs::pressure) {
+      Real Pmin = eos.MinimumPressure();
+      Real Pmax = eos.MaximumPressureAtTemperature(T);
+      Real Pguess;
+      if (error_utils::bad_value(P, "Pressure in GetSieCvFromTAndPreferred")) {
+        Pguess = 0.5 * (Pmin + Pmax);
+      } else {
+        Pguess = std::max(Pmin, std::min(Pmax, P));
+      }
+      eos.DensityEnergyFromPressureTemperature(Pguess, T, lambda, rho, sie);
+      cv = eos.SpecificHeatFromDensityInternalEnergy(rho, sie, lambda);
+    } else { // use density, not pressure.
+      sie = eos.InternalEnergyFromDensityTemperature(rho, T, lambda);
+      cv = eos.SpecificHeatFromDensityTemperature(rho, T, lambda);
+    }
   }
 
   // Initialize the volume fractions, avg densities, temperatures, energies, and
@@ -556,9 +644,16 @@ class PTESolverBase {
       temp[m] = 1.0;
       sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tguess, lambda[m]);
       // note the scaling of pressure
-      press[m] = robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tguess,
-                                                              sie[m], lambda[m], false),
-                               uscale);
+      auto prefinput = eos[m].PreferredInput();
+      if ((prefinput & thermalqs::pressure) &&
+          !(error_utils::bad_value(press[m], "press[m]"))) {
+        // Use input pressure for this material as the guess
+        press[m] = robust::ratio(press[m], uscale);
+      } else {
+        press[m] = robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tguess,
+                                                                sie[m], lambda[m], false),
+                                 uscale);
+      }
     }
 
     // note the scaling of the material internal energy densities
@@ -818,6 +913,11 @@ class PTESolverRhoT
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::lambda;
 
  public:
+  PORTABLE_INLINE_FUNCTION
+  constexpr static unsigned long ExactlySum() {
+    return thermalqs::mass_fractions | thermalqs::volume_fractions;
+  }
+
   // template the ctor to get type deduction/universal references prior to c++17
   template <typename EOS_t, typename Real_t, typename Lambda_t>
   PORTABLE_INLINE_FUNCTION
@@ -1138,6 +1238,9 @@ class PTESolverPT
   enum RES { RV = 0, RSIE = 1 };
 
  public:
+  PORTABLE_INLINE_FUNCTION
+  constexpr static unsigned long ExactlySum() { return thermalqs::mass_fractions; }
+
   // template the ctor to get type deduction/universal references prior to c++17
   template <typename EOS_t, typename Real_t, typename Lambda_t>
   PORTABLE_INLINE_FUNCTION
@@ -1287,7 +1390,7 @@ class PTESolverPT
     if (scale * dx[0] < -0.95 * Tequil) {
       scale = robust::ratio(-0.95 * Tequil, dx[0]);
     }
-    auto bounded = [=](Real Pbound, Real delta) {
+    auto bounded = [this](Real Pbound, Real delta) {
       return robust::ratio(robust::ratio(Pbound, uscale) - Pequil, delta);
     };
 
@@ -1384,6 +1487,11 @@ class PTESolverFixedT
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::lambda;
 
  public:
+  PORTABLE_INLINE_FUNCTION
+  constexpr static unsigned long ExactlySum() {
+    return thermalqs::mass_fractions | thermalqs::volume_fractions;
+  }
+
   // template the ctor to get type deduction/universal references prior to c++17
   // allow the type of the temperature array to be different, potentially a const Real*
   template <typename EOS_t, typename Real_t, typename CReal_t, typename Lambda_t>
@@ -1605,6 +1713,11 @@ class PTESolverFixedP
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::lambda;
 
  public:
+  PORTABLE_INLINE_FUNCTION
+  constexpr static unsigned long ExactlySum() {
+    return thermalqs::mass_fractions | thermalqs::volume_fractions;
+  }
+
   // template the ctor to get type deduction/universal references prior to c++17
   template <typename EOS_t, typename Real_t, typename CReal_t, typename Lambda_t>
   PORTABLE_INLINE_FUNCTION
@@ -1850,10 +1963,16 @@ class PTESolverRhoU
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::lambda;
 
  public:
+  PORTABLE_INLINE_FUNCTION
+  constexpr static unsigned long ExactlySum() {
+    return thermalqs::mass_fractions | thermalqs::volume_fractions |
+           thermalqs::internal_energy_densities;
+  }
+
   // template the ctor to get type deduction/universal references prior to c++17
   template <typename EOS_t, typename Real_t, typename Lambda_t>
   PORTABLE_INLINE_FUNCTION
-  PTESolverRhoU(const std::size_t nmat, const EOS_t &&eos, const Real vfrac_tot,
+  PTESolverRhoU(const std::size_t nmat, EOS_t &&eos, const Real vfrac_tot,
                 const Real sie_tot, Real_t &&rho, Real_t &&vfrac, Real_t &&sie,
                 Real_t &&temp, Real_t &&press, Lambda_t &&lambda, Real *scratch,
                 const Real Tnorm = 0.0, const MixParams &params = MixParams())
@@ -2164,6 +2283,8 @@ PORTABLE_INLINE_FUNCTION SolverStatus PTESolver(System &s) {
       break;
     }
   }
+  // In case we bailed out early, fixup here for consistency
+  s.Fixup();
   // undo any scaling that was applied internally for the solver
   s.Finalize();
   return status;

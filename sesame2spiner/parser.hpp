@@ -19,11 +19,13 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 // Parse a simple parameter file with
 // "#" denoting comments.
 class Params {
  public:
+  Params() = default;
   Params(const std::string &input_file);
   Params(std::stringstream &input) { Parse(input); }
 
@@ -34,10 +36,17 @@ class Params {
   T Get(const std::string &key, T default_value) const {
     return Contains(key) ? Get<T>(key) : default_value;
   }
+  void Print(std::ostream &s) const;
+  void Clear() { params_.clear(); }
+  bool Empty() const { return params_.size() == 0; }
+  void Set(const std::string &key, const std::string &val) { params_[key] = val; }
 
  private:
   void Parse(std::istream &s);
   std::unordered_map<std::string, std::string> params_;
 };
+
+void AddMaterials(std::vector<Params> &params, std::vector<int> &matids,
+                  const std::string &input_file);
 
 #endif // SESAME2SPINER_PARSER_HPP_

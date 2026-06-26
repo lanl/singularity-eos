@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -89,6 +89,55 @@ SCENARIO("Ideal gas entropy", "[IdealGas][Entropy][GibbsFreeEnergy]") {
   }
 }
 
+SCENARIO("Ideal gas energy from pressure and temperature",
+         "[IdealGas][VectorEOS][SieFromRhoP]") {
+  GIVEN("An ideal gas object") {
+    constexpr Real Cv = 5.0;
+    constexpr Real gm1 = 0.4;
+    EOS eos_host = IdealGas(gm1, Cv);
+    EOS eos = eos_host.GetOnDevice();
+
+    WHEN("We compute pressure from energy for several energies") {
+      constexpr int N = 20;
+      constexpr Real sie_min = 0;
+      constexpr Real dsie = 0.5;
+      Real *rhos = (Real *)PORTABLE_MALLOC(sizeof(Real) * N);
+      Real *sies = (Real *)PORTABLE_MALLOC(sizeof(Real) * N);
+      Real *Ps = (Real *)PORTABLE_MALLOC(sizeof(Real) * N);
+      portableFor(
+          "Set rho, sie, and P", 0, N, PORTABLE_LAMBDA(const int i) {
+            rhos[i] = 1;
+            sies[i] = sie_min + dsie * i;
+            Ps[i] = eos.PressureFromDensityInternalEnergy(rhos[i], sies[i]);
+          });
+
+      THEN("We can compute the internal energy from the pressure") {
+        Real *sies_new = (Real *)PORTABLE_MALLOC(sizeof(Real) * N);
+        eos_host.InternalEnergyFromDensityPressure(rhos, Ps, sies_new, N);
+
+        AND_THEN("They agree with the previous pressures") {
+          std::size_t nwrong = 0;
+          portableReduce(
+              "Compute sie diff", 0, N,
+              PORTABLE_LAMBDA(const int i, std::size_t &nw) {
+                nw += !isClose(sies[i], sies_new[i], 1e-12);
+              },
+              nwrong);
+          REQUIRE(nwrong == 0);
+        }
+
+        PORTABLE_FREE(sies_new);
+      }
+
+      PORTABLE_FREE(Ps);
+      PORTABLE_FREE(sies);
+      PORTABLE_FREE(rhos);
+    }
+
+    eos.Finalize();
+  }
+}
+
 SCENARIO("Ideal gas mean atomic properties",
          "[IdealGas][MeanAtomicMass][MeanAtomicNumber]") {
   constexpr Real Cv = 5.0;
@@ -145,6 +194,53 @@ SCENARIO("Ideal gas density energy from prssure temperature",
             Real rho = i;
             Real T = 100.0 * i;
             nw += !CheckRhoSieFromPT(device_eos, rho, T);
+          },
+          nwrong);
+      THEN("There are no errors") { REQUIRE(nwrong == 0); }
+    }
+    WHEN("We check PT derivatives from preferred") {
+      constexpr int N = 100;
+      constexpr Real derivative_eps = 3e-6;
+      int nwrong = 0;
+      portableReduce(
+          "Check PT derivatives from preferred", 1, N,
+          PORTABLE_LAMBDA(const int i, int &nw) {
+            Real rho = i;
+            Real T = 100 * i;
+            Real P = device_eos.PressureFromDensityTemperature(rho, T);
+            Real sie = device_eos.InternalEnergyFromDensityTemperature(rho, T);
+            Real dedP_T, drdP_T, dedT_P, drdT_P;
+            Real dedP_T_fd, drdP_T_fd, dedT_P_fd, drdT_P_fd;
+            device_eos.PTDerivativesFromPreferred(rho, sie, P, T,
+                                                  static_cast<Real *>(nullptr), dedP_T,
+                                                  drdP_T, dedT_P, drdT_P);
+            singularity::eos_base::PTDerivativesByFiniteDifferences(
+                device_eos, rho, sie, P, T, derivative_eps, static_cast<Real *>(nullptr),
+                dedP_T_fd, drdP_T_fd, dedT_P_fd, drdT_P_fd);
+            if (!isClose(dedP_T, dedP_T_fd)) {
+              printf("rho, sie, P, T, dedP_T expected, true, diff:\n\t"
+                     "%.14e %.14e %.14e %.14e %.14e %.14e %.14e\n",
+                     rho, sie, P, T, dedP_T, dedP_T_fd, dedP_T - dedP_T_fd);
+              nw += 1;
+            }
+            if (!isClose(drdP_T, drdP_T_fd)) {
+              printf("rho, sie, P, T, drdP_T expected, true, diff:\n\t"
+                     "%.14e %.14e %.14e %.14e %.14e %.14e %.14e\n",
+                     rho, sie, P, T, drdP_T, drdP_T_fd, drdP_T - drdP_T_fd);
+              nw += 1;
+            }
+            if (!isClose(dedT_P, dedT_P_fd)) {
+              printf("rho, sie, P, T, dedT_P expected, true, diff:\n\t"
+                     "%.14e %.14e %.14e %.14e %.14e %.14e %.14e\n",
+                     rho, sie, P, T, dedT_P, dedT_P_fd, dedT_P - dedT_P_fd);
+              nw += 1;
+            }
+            if (!isClose(drdT_P, drdT_P_fd)) {
+              printf("rho, sie, P, T, drdT_P expected, true, diff:\n\t"
+                     "%.14e %.14e %.14e %.14e %.14e %.14e %.14e\n",
+                     rho, sie, P, T, drdT_P, drdT_P_fd, drdT_P - drdT_P_fd);
+              nw += 1;
+            }
           },
           nwrong);
       THEN("There are no errors") { REQUIRE(nwrong == 0); }
@@ -251,10 +347,10 @@ SCENARIO("Ideal gas serialization", "[IdealGas][Serialization]") {
 
       THEN("We can de-serialize new objects from them") {
         IdealGas new_bare;
-        new_bare.DeSerialize(data_bare);
+        new_bare.DeSerialize(data_bare.get());
 
         EOS new_variant;
-        new_variant.DeSerialize(data_var);
+        new_variant.DeSerialize(data_var.get());
 
         AND_THEN("The bare eos has the right Cv and Gruneisen params") {
           REQUIRE(new_bare.SpecificHeatFromDensityTemperature(1.0, 1.0) == Cv);
@@ -269,11 +365,10 @@ SCENARIO("Ideal gas serialization", "[IdealGas][Serialization]") {
           REQUIRE(new_variant.SpecificHeatFromDensityTemperature(1.0, 1.0) == Cv);
           REQUIRE(new_variant.GruneisenParamFromDensityTemperature(1.0, 1.0) == gm1);
         }
-      }
 
-      // cleanup
-      free(data_bare);
-      free(data_var);
+        new_bare.Finalize();
+        new_variant.Finalize();
+      }
     }
 
     // cleanup

@@ -26,6 +26,7 @@ namespace Depends {
 constexpr char logRhoLogSie[] = "dependsLogRhoLogSie";
 constexpr char logRhoLogT[] = "dependsLogRhoLogT";
 constexpr char coldCurve[] = "coldCurve";
+constexpr char massFrac[] = "massFrac";
 } // namespace Depends
 
 namespace SubTable {
@@ -68,6 +69,7 @@ constexpr char dEdRho[] = "dEdRho";
 constexpr char dEdT[] = "dEdT";
 constexpr char mask[] = "mask";
 constexpr char transitionMask[] = "transition mask";
+constexpr char massFrac[] = "mass fractions";
 } // namespace Fields
 
 } // namespace SP5

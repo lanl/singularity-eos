@@ -54,7 +54,6 @@ Dependencies
   Package Name                          Distribution                    Comment
 ====================================== =============================== ===========================================
  `ports-of-call`_                       submodule / external             Required
- `mpark_variant`_                       submodule / external             Required
  `spiner`_                              submodule [*]_ / external [*]_   Optional; enhanced backend for EOS tables
  `hdf5`_                                external only                    Optional; used for table I/O
  `eospac`_                              external only                    Optional; used for sesame tables.
@@ -71,8 +70,6 @@ Dependencies
 .. _spiner: https://github.com/lanl/spiner
 
 .. _ports-of-call: https://github.com/lanl/spiner
-
-.. _mpark_variant: https://github.com/mpark/variant
 
 .. _hdf5: https://www.hdfgroup.org/solutions/hdf5/
 
@@ -166,7 +163,7 @@ preconditions:
 ============================================== ================================================================================= ===========================================
 
 When installing ``singularity-eos``, data files are also installed. The
-follwing options control where the data files are installed:
+following options control where the data files are installed:
 
 ====================================== ======= ===========================================
   Option                               Default  Comment
@@ -398,7 +395,7 @@ To start using Spack, we use the provided activation script
    $> source ~/spack/share/spack/setup-env.sh
 
 You will always need to *activate* spack for each new shell. You may
-find it convienant to invoke this Spack setup in your login script,
+find it convenient to invoke this Spack setup in your login script,
 though be aware that Spack will prepend paths to your environment which
 may cause conflicts with other package tools and software.
 
@@ -425,7 +422,7 @@ However, Spack has put in a lot of effort to be able to automatically
 discover the available tools and software on any given system. While not
 perfect, we can get a fairly robust starting point.
 
-Assume we are on an HPC system that has Envionrmental Modules that
+Assume we are on an HPC system that has Environmental Modules that
 provides compilers, MPI implementations, and sundry other common tools.
 To help Spack find these, let's load a specific configuration into the
 active shell environment.
@@ -670,22 +667,13 @@ https://spack.readthedocs.io
 Installing ``singularity-eos`` using Spack
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-. warning::
-  The spack build is currently experimental.
-  Please report problems you havee as github issues.
-
 The spackage is available in the main `Spack`_
-repositories, and we provide a spackage for ``singularity-eos`` witin the
-the singularity-eos source repository. The distributed spackage may be
-more up-to-date than the one in the main `Spack`_ repository. If you
-have spack installed, simply call
+repositories. If you have spack installed, simply call
 
 .. _Spack: https://spack.io/
 
 .. code-block:: bash
 
-   git clone --recursive git@github.com:lanl/singularity-eos.git
-   spack repo add singularity-eos/spack-repo
    spack install singularity-eos
 
 to install ``singularity-eos`` into your spack instance. The spackage

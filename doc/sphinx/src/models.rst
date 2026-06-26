@@ -37,7 +37,7 @@ EOS Theory
 
 An equation of state (EOS) is a constituitive model that generally relates
 thermodynamic quantities such as pressure, temperature, density, internal
-energy, free energy, and entropy consistent with the constraints of equillibrium
+energy, free energy, and entropy consistent with the constraints of equilibrium
 thermodynamics.
 
 ``singularity-eos`` contains a number of equations of state that are most useful
@@ -78,7 +78,7 @@ To some degree it is the complexity of the reference state and the heat
 capacity that will determine an EOS's ability to capture the complex behavior of
 a material. At the simplest level, the ideal gas EOS uses a reference state at
 zero pressure and energy, while more complex equations of state such as the
-Davis EOS use the material's isentrope. In ths way, the reference curve
+Davis EOS use the material's isentrope. In this way, the reference curve
 indicates the conditions under which you can expect the EOS to represent the
 intended behavior.
 
@@ -109,7 +109,7 @@ where all potentials are specific. Here :math:`e` is again the internal energy,
 is the Gibbs free energy. While equations of state formulated using the
 Helmholtz free energy can be particularly attractive (such as the sesame
 tables), finding a convenient form can be difficult. As such, it becomes
-imperitive to extend the Mie-Gruneisen form so that it can form a complete
+imperative to extend the Mie-Gruneisen form so that it can form a complete
 EOS.
 
 The heat capacity is defined as
@@ -225,7 +225,7 @@ the electron equation of state or ion equation of state.
 
 The tabulated models may also support loading tables specifically for
 electron or ion equations of state. In these cases, an ``enum class``
-specifies which component of the material is being requst:
+specifies which component of the material is being requested:
 
 .. code-block:: cpp
 
@@ -235,7 +235,7 @@ where here ``ElectronOnly`` is the free electrons of the material,
 corresponding to Sesame 304 tables, ``IonCold`` is the ions plus cold
 curve (i.e., the ions if you don't know what a cold curve is),
 corresponding to the Sesame 303 tables, and ``Total`` is the sum of
-free electrons and ions, correspodning to the Sesame 301 tables.
+free electrons and ions, corresponding to the Sesame 301 tables.
 
 .. note::
 
@@ -358,7 +358,7 @@ Nomenclature Disambiguation
 The Gruneisen Parameter
 '''''''''''''''''''''''
 In this description of the EOS models, we use :math:`\Gamma` to represent the
-Gruneisen coeficient since this is the most commonly-used symbol in the
+Gruneisen coefficient since this is the most commonly-used symbol in the
 context of Mie-Gruneisen equations of state. The definition of the Gruneisen
 parameter is
 
@@ -873,7 +873,7 @@ Gruneisen EOS
 
 One of the most commonly-used EOS to represent solids is the Steinberg variation
 of the Mie-Gruneisen EOS, often just shortened to "Gruneisen" EOS. This EOS
-uses the Hugoniot as the reference curve and thus is extremly powerful because
+uses the Hugoniot as the reference curve and thus is extremely powerful because
 the basic shock response of a material can be modeled using minimal parameters.
 
 The pressure follows the traditional Mie-Gruneisen form,
@@ -899,7 +899,7 @@ The user should note that this implies that :math:`e=0` at the reference
 temperature, :math:`T_0`. Given this simple relationship, the user should
 treat the temperature from this EOS as only a rough estimate.
 
-Given the inconsisetency in the temperature, we have made the choice **not** to
+Given the inconsistency in the temperature, we have made the choice **not** to
 expose the entropy for this EOS. **Requesting an entropy value will result in an
 error.**
 
@@ -930,7 +930,7 @@ When the unitless user parameter :math:`b=0`, the Gruneisen parameter is of a
 form where :math:`\rho\Gamma =` constant in compression, i.e. when
 :math:`\eta > 0`.
 If the unitless user parameter :math:`b=\Gamma_0`, the Gruneisen parameter is of a
-form where :math:`\Gamma_0 =` constant in compression. These two limitig cases are 
+form where :math:`\Gamma_0 =` constant in compression. These two limiting cases are
 shown in the figure below.
 
 .. image:: ../SteinbergGammarho.png
@@ -949,7 +949,7 @@ The reference pressure along the Hugoniot is determined by
       \end{cases}
 
 where :math:`P_0` is the reference pressure and :math:`c_0`, :math:`s_1`,
-:math:`s_2`, and :math:`s_3` are fitting paramters to the
+:math:`s_2`, and :math:`s_3` are fitting parameters to the
 :math:`U_s`-:math:`u_p` curve such that
 
 .. math::
@@ -1005,7 +1005,7 @@ There is an overload of the ``Gruneisen`` class which computes
 Both constructors also optionally accept `MeanAtomicProperties` for
 the atomic mass and number as a final optional parameter.
 
-Extendended Vinet EOS
+Extended Vinet EOS
 `````````````````````
 
 The extended Vinet EOS is a full EOS, extended in both temperature and density
@@ -1175,7 +1175,7 @@ Solving the jump equations above gives that the reference pressure along the Hug
 
 Note the singularity at :math:`s \eta = 1` which limits this model's validity to compressions
 :math:`\eta << 1/s`. If your problem can be expected to have compressions of this order, you should use the PowerMG
-EOS that is explicitely constructed for large compressions. 
+EOS that is explicitly constructed for large compressions.
 The assumption of linear :math:`U_s`- :math:`u_p` relation is simply not valid at large compressions.
 
 The energy along the Hugoniot is given by
@@ -1184,7 +1184,7 @@ The energy along the Hugoniot is given by
 
     E_H(\rho) = \frac{P_H \eta }{2 \rho_0} + E_0 .
 
-The temperature on the Hugoniot is hard to derive explicitely but with the help of Mathematica
+The temperature on the Hugoniot is hard to derive explicitly but with the help of Mathematica
 we can solve
 
 .. math::
@@ -1242,7 +1242,7 @@ the atomic mass and number as a final optional parameter.
 Mie-Gruneisen power expansion EOS
 `````````````````````````````````
 As we noted above, the assumption of a linear :math:`U_s`- :math:`u_p` relation is simply not valid at large compressions. At 
-Sandia National Laboratories Z-pinch machine, the compression is routinely so large that a new Mie-Gruneisen EOS was developped,
+Sandia National Laboratories Z-pinch machine, the compression is routinely so large that a new Mie-Gruneisen EOS was developed,
 by `Robinson <PowerMG_>`_, that could handle these large compressions. The overall structure and motivation for approximations 
 are as described above; in compression it is only the formula for :math:`P_H`, and by extension :math:`T_H`, that differ. This 
 EOS is however modified in expansion to follow an isentrope instead of the invalid-in-expansion Hugoniot.
@@ -1506,7 +1506,7 @@ Using the fact that the heat capacity can be expressed as
 
     C_V = T\left( \frac{\partial S}{\partial T} \right)_V,
 
-the temperature off of the reference isoentrope can be integrated from this
+the temperature off of the reference isentrope can be integrated from this
 identity to yield
 
 .. math::
@@ -1522,7 +1522,7 @@ expressed as a function of temperature and density such that
     S(\rho, T) = \frac{C_{V,0}}{\alpha} \left( \frac{T}{T_{S,0}(\rho)} \right)^\alpha.
 
 The :math:`e(\rho, P)` formulation can now be more-conveniently cast in terms of
-termperature such that
+temperature such that
 
 .. math::
 
@@ -1549,7 +1549,7 @@ Finally, the pressure and energy along the isentrope are given by
 
 
 where :math:`A`, :math:`B`, :math:`C`, :math:`y`, and :math:`Z` are all
-user-settable parameters and again quantities with a subcript of :math:`0`
+user-settable parameters and again quantities with a subscript of :math:`0`
 refer to the reference state. The variable :math:`\bar{\rho}` is simply an
 integration variable. The parameter :math:`C` is especially useful for ensuring
 that the high-pressure portion of the shock Hugoniot does not cross that of the
@@ -1584,7 +1584,7 @@ Davis Products EOS
 
 The Davis products EOS is created from the reference isentrope passing through
 the CJ state of the high explosive along with a constant heat capacity. The
-constant heat capacity leads to the energy being a simple funciton of the
+constant heat capacity leads to the energy being a simple function of the
 temperature deviation from the reference isentrope such that
 
 .. math::
@@ -1772,6 +1772,248 @@ constructor for ``SpinerEOSDependsRhoSie`` is identical.
   Mean atomic mass and number are loaded from input tables. The
   ``SpinerEOS`` model does **not** support the
   ``MeanAtomicProperties`` struct.
+
+Constructing SpinerEOS from a Generic EOS
+'''''''''''''''''''''''''''''''''''''''''''
+
+``SpinerEOSDependsRhoSie`` can also be constructed directly from any
+analytic or tabulated EOS object, allowing you to tabulate any equation
+of state into the high-performance Spiner format in memory. This is
+useful for converting analytic models (like ``IdealGas``, ``Gruneisen``,
+etc.) into tabulated form, or for creating custom resolution tables
+from existing EOS models.
+
+The constructor has the signature:
+
+.. code-block:: cpp
+
+  template <typename EOS>
+  SpinerEOSDependsRhoSie(const EOS &source_eos,
+                         const SpinerTableGridParams &params,
+                         bool reproducibility_mode = false);
+
+where ``source_eos`` is any EOS object that provides the standard
+singularity-eos interface (at minimum:
+``TemperatureFromDensityInternalEnergy``,
+``InternalEnergyFromDensityTemperature``,
+``PressureFromDensityTemperature``, and
+``PressureFromDensityInternalEnergy``). The ``params`` struct controls
+the grid construction and material properties.
+
+The ``SpinerTableGridParams`` struct contains grid parameters that match
+the options available in ``sesame2spiner``:
+
+.. code-block:: cpp
+
+  struct SpinerTableGridParams {
+    // Density bounds
+    Real rhoMin, rhoMax;
+    int numRho = -1;           // -1 means use numRhoPerDecade
+    int numRhoPerDecade = 350;
+
+    // Temperature bounds
+    Real TMin, TMax;
+    int numT = -1;             // -1 means use numTPerDecade
+    int numTPerDecade = 100;
+
+    // Specific internal energy bounds
+    Real sieMin, sieMax;
+    int numSie = -1;           // -1 means use numSiePerDecade
+    int numSiePerDecade = 100;
+
+    // Material properties
+    int matid = 0;
+    Real Abar = NaN;           // defaults from source EOS if available
+    Real Zbar = NaN;
+    Real rhoNormal = NaN;      // defaults to geometric mean of bounds
+
+    // Piecewise grid options (see Piecewise Spiner Grids section)
+    bool piecewiseRho = true;
+    bool piecewiseT = true;
+    bool piecewiseSie = true;
+    Real rhoCoarseFactorLo = 3.0;
+    Real rhoCoarseFactorHi = 5.0;
+    Real TCoarseFactor = 1.5;
+    Real sieCoarseFactor = 1.5;
+    Real rhoFineDiameterDecades = 1.5;
+    Real TSplitPoint = 1e4;
+
+    // Advanced options
+    Real shrinklRhoBounds = 0.0;
+    Real shrinklTBounds = 0.0;
+    Real shrinkleBounds = 0.0;
+    Real strictlyPositiveMinRho = 1e-8;
+    Real strictlyPositiveMinT = 1e-2;
+  };
+
+Defaults follow the ``sesame2spiner`` tool conventions. The grid
+construction automatically handles offset computation for negative
+values (especially important for specific internal energy).
+
+Example usage:
+
+.. code-block:: cpp
+
+  #include <singularity-eos/eos/eos.hpp>
+
+  // Create an analytic EOS
+  constexpr Real Cv = 2.0;
+  constexpr Real gm1 = 0.4;
+  IdealGas ideal(gm1, Cv);
+
+  // Set up grid parameters
+  SpinerTableGridParams params;
+  params.rhoMin = 1e-3;
+  params.rhoMax = 1e3;
+  params.TMin = 1e2;
+  params.TMax = 1e5;
+  params.sieMin = Cv * params.TMin;
+  params.sieMax = Cv * params.TMax;
+  params.matid = 1001;
+  params.numRhoPerDecade = 100;  // optional: finer resolution
+
+  // Construct SpinerEOS from the IdealGas
+  SpinerEOSDependsRhoSie spiner_eos(ideal, params);
+
+  // Use like any other SpinerEOS
+  Real P = spiner_eos.PressureFromDensityTemperature(rho, T);
+  Real T_out = spiner_eos.TemperatureFromDensityInternalEnergy(rho, sie);
+
+.. note::
+
+  This constructor only supports ``TableSplit::Total``. Electron-only
+  and ion-cold splits are not available for generic EOS, as these
+  require additional physics that generic EOS models may not provide.
+
+.. note::
+
+  The constructor automatically detects and uses optional EOS methods
+  when available to improve accuracy:
+
+  - ``GruneisenParamFromDensityTemperature`` or
+    ``GruneisenParamFromDensityInternalEnergy`` for computing dP/dE
+  - ``SpecificHeatFromDensityTemperature`` or
+    ``SpecificHeatFromDensityInternalEnergy`` for computing dT/dE
+  - ``PressureFromDensityInternalEnergy`` for direct pressure lookups
+    (otherwise uses chain rule conversions)
+
+  If these methods are not provided, derivatives are computed via centered
+  finite differences. Bulk modulus is always computed consistently from
+  derivatives using the internal ``calcBMod_()`` method.
+
+  Material properties (``MeanAtomicMass()`` and ``MeanAtomicNumber()``)
+  are automatically extracted from the source EOS if available and not
+  specified in ``params``.
+
+Constructing SpinerEOSDependsRhoT from a Generic EOS
+'''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+``SpinerEOSDependsRhoT`` also supports construction from any analytic or
+tabulated EOS object using the same ``SpinerTableGridParams`` struct. The
+RhoT variant is simpler and more memory-efficient than RhoSie, storing only
+(ρ,T)-indexed tables rather than both (ρ,T) and (ρ,sie) tables.
+
+The constructor signature is identical to RhoSie:
+
+.. code-block:: cpp
+
+  template <typename EOS>
+  SpinerEOSDependsRhoT(const EOS &source_eos,
+                       const SpinerTableGridParams &params,
+                       bool reproducibility_mode = false);
+
+The same ``SpinerTableGridParams`` struct is used for both constructors.
+RhoT-specific notes:
+
+- The ``sieMin``, ``sieMax``, ``numSie``, ``numSiePerDecade``,
+  ``piecewiseSie``, and ``sieCoarseFactor`` parameters are ignored
+  (only relevant for RhoSie)
+- All other parameters work identically
+
+Example usage:
+
+.. code-block:: cpp
+
+  #include <singularity-eos/eos/eos.hpp>
+
+  // Create an analytic EOS
+  constexpr Real Cv = 2.0;
+  constexpr Real gm1 = 0.4;
+  IdealGas ideal(gm1, Cv);
+
+  // Set up grid parameters (same struct as RhoSie)
+  SpinerTableGridParams params;
+  params.rhoMin = 1e-3;
+  params.rhoMax = 1e3;
+  params.TMin = 1e2;
+  params.TMax = 1e5;
+  params.matid = 1001;
+  params.numRhoPerDecade = 100;
+
+  // Construct SpinerEOSDependsRhoT
+  SpinerEOSDependsRhoT spiner_eos(ideal, params);
+
+  // Use like any other SpinerEOSDependsRhoT
+  Real P = spiner_eos.PressureFromDensityTemperature(rho, T);
+  Real sie = spiner_eos.InternalEnergyFromDensityTemperature(rho, T);
+  Real T_inv = spiner_eos.TemperatureFromDensityInternalEnergy(rho, sie);
+
+.. note::
+
+  **Choosing between RhoT and RhoSie**:
+
+  - Use ``SpinerEOSDependsRhoT`` when:
+    - Your code primarily uses (ρ,T) lookups
+    - Memory efficiency is important
+    - You rarely require direct (ρ,sie) queries
+
+  - Use ``SpinerEOSDependsRhoSie`` when:
+    - Your code frequently uses both (ρ,T) and (ρ,sie) lookups
+    - You want direct P(ρ,sie) evaluation without additional inversion or root-finding steps
+    - You're using mixed-cell closure models (PTE, etc.) that naturally operate in (ρ,sie)
+
+  In general, SpinerEOSDependsRhoT is the more natural representation for EOS tables tabulated in (ρ,T), while SpinerEOSDependsRhoSie can provide better performance when frequent (ρ,sie) evaluations are required. The optimal choice depends on the access patterns and closure algorithms used by a particular application.
+
+.. note::
+
+  Like RhoSie, the RhoT constructor automatically detects optional EOS
+  methods (``GruneisenParamFromDensityTemperature``,
+  ``SpecificHeatFromDensityTemperature``, etc.) and uses them when available.
+  Otherwise, finite differences are used. Material properties are
+  automatically extracted from the source EOS.
+
+Additionally Spiner EOS models support mass fraction lookups of the form
+
+.. code-block:: cpp
+
+  template <typename Indexer_t>
+  PORTABLE_INLINE_FUNCTION
+  void SpinerEOSDependsRhoT::MassFractionsFromDensityTemperature(
+    const Real rho, const Real temp, Real *mass_fracs, Indexer_t &&lambda) const;
+
+  template <typename Indexer_t>
+  PORTABLE_INLINE_FUNCTION void
+  SpinerEOSDependsRhoT::MassFractionsFromDensityInternalEnergy(
+    const Real rho, const Real sie, Real *mass_fracs, Indexer_t &&lambda) const;
+
+which sets the members of the ``*mass_fracs`` array the mass fractions of multiple phases as a function of density and either temperature or internal energy in a table if they are available. If they are not available, the ``mass_fracs`` array is assumed to be of at least length 1 and is set to unity. Alternatively, the functions 
+
+.. code-block:: cpp
+
+  template <typename Indexer_t>
+  PORTABLE_INLINE_FUNCTION
+  void SpinerEOSDependsRhoT::MassFractionsFromDensityTemperature(
+    const Real rho, const Real temp, Indexer_t &&lambda) const;
+
+  template <typename Indexer_t>
+  PORTABLE_INLINE_FUNCTION
+  void SpinerEOSDependsRhoT::MassFractionsFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const;
+
+assume the mass fractions array is contained in the lambda indexer and
+set them accordingly. They are assumed to be indexable via the
+``MassFractions`` indexable type, discussed above, or to be appended
+at the end of the lambda after ``nlambda()`` elements.
 
 ``sp5`` files and ``sesame2spiner``
 `````````````````````````````````````
@@ -2290,7 +2532,7 @@ curve plus Cowan-nuclear model for ions and the final option
 Note for performance reasons this EOS uses a slightly different vector API.
 See :ref:`EOSPAC Vector Functions <eospac_vector>` for more details.
 
-.. _Sesame: https://www.lanl.gov/org/ddste/aldsc/theoretical/physics-chemistry-materials/sesame-database.php
+.. _Sesame: https://www.lanl.gov/engage/organizations/aldsct/theoretical/pcm/sesame
 
 .. _EOSPAC: https://laws.lanl.gov/projects/data/eos/eospacReleases.php
 

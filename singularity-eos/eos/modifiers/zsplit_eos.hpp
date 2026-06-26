@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2024-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2024-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -170,6 +170,32 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
   }
 
   template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION void
+  InternalEnergyFromDensityPressure(const Real rho, const Real P, Real &sie,
+                                    Indexer_t &&lambda = nullptr) const {
+    const Real scale = GetScale_(lambda);
+    const Real iscale = GetInvScale_(lambda);
+    sie *= iscale;
+    t_.InternalEnergyFromDensityPressure(rho, P, sie, lambda);
+    sie *= scale;
+  }
+
+  template <typename Lambda_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P,
+                             const Real temp, Lambda_t &&lambda, Real &dedP_T,
+                             Real &drdP_T, Real &dedT_P, Real &drdT_P) const {
+    const Real scale = GetScale_(lambda);
+    const Real iscale = GetInvScale_(lambda);
+    t_.PTDerivativesFromPreferred(rho, sie * iscale, P * iscale, temp, lambda, dedP_T,
+                                  drdP_T, dedT_P, drdT_P);
+    // dedP scale cancels
+    drdP_T *= iscale;
+    dedT_P *= scale;
+    // drdT_P does not need scaling
+  }
+
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
           const unsigned long output,
@@ -239,22 +265,6 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
   }
   PORTABLE_FUNCTION void PrintParams() const { t_.PrintParams(); }
 
-  PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const {
-    return t_.MinimumDensity();
-  }
-  PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const {
-    return t_.MinimumTemperature();
-  }
-  PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const {
-    return t_.MaximumDensity();
-  }
-  PORTABLE_FORCEINLINE_FUNCTION Real MinimumPressure() const {
-    return t_.MinimumPressure();
-  }
-  PORTABLE_FORCEINLINE_FUNCTION Real MaximumPressureAtTemperature(const Real temp) const {
-    return t_.MaximumPressureAtTemperature(temp);
-  }
-
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
       const Real rho, const Real temperature,
@@ -269,7 +279,8 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
   }
 
   SG_ADD_MODIFIER_METHODS(T, t_);
-  SG_ADD_MODIFIER_MEAN_METHODS(t_)
+  SG_ADD_MODIFIER_MEAN_METHODS(t_);
+  SG_ADD_MODIFIER_INTROSPECTION_METHODS(t_);
 
  private:
   template <typename Indexer_t = Real *>

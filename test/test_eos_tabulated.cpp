@@ -18,10 +18,12 @@
 #include <cstdlib>
 #include <iostream> // debug
 
+#include "pte_test_utils.hpp" // For Indexers
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
@@ -37,6 +39,8 @@
 using singularity::SpinerEOSDependsRhoSie;
 using singularity::SpinerEOSDependsRhoT;
 #endif
+using singularity::UnitSystem;
+using singularity::Variant;
 
 #ifdef SINGULARITY_USE_EOSPAC
 using singularity::EOSPAC;
@@ -48,6 +52,7 @@ using singularity::variadic_utils::np;
 const std::string eosName = "../materials.sp5";
 const std::string airName = "air";
 const std::string steelName = "stainless steel 347";
+const std::string tinName = "tin";
 
 #ifdef SPINER_USE_HDF
 #ifdef SINGULARITY_TEST_SESAME
@@ -55,6 +60,8 @@ constexpr int steelID = 4272;
 constexpr int airID = 5030;
 constexpr int DTID = 5267;
 constexpr int gID = 2700;
+constexpr int titaniumID = 2961;
+constexpr int tinID = 2162;
 constexpr Real ev2k = 1.160451812e4;
 #endif // SINGULARITY_TEST_SESAME
 #endif // SPINER_USE_HDF
@@ -62,7 +69,25 @@ constexpr Real ev2k = 1.160451812e4;
 #ifdef SPINER_USE_HDF
 #ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_EOSPAC
-using EOS = singularity::Variant<SpinerEOSDependsRhoSie, SpinerEOSDependsRhoT, EOSPAC>;
+
+namespace IndexableTypes = singularity::IndexableTypes;
+using EOS = Variant<SpinerEOSDependsRhoSie, SpinerEOSDependsRhoT, EOSPAC>;
+
+struct MassFracIndexer {
+  constexpr static bool is_type_indexable = true;
+
+  PORTABLE_FORCEINLINE_FUNCTION
+  MassFracIndexer(Real *x_, Real *l_) : x(x_), l(l_) {}
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real &operator[](IndexableTypes::LogDensity t) const { return l[0]; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real &operator[](IndexableTypes::LogTemperature t) const { return l[1]; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real &operator[](IndexableTypes::MassFractions t) const { return x[t.n]; }
+
+  Real *x;
+  Real *l;
+};
 
 SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS][DependsRhoT][EOSPAC]") {
 
@@ -72,6 +97,45 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS][DependsRhoT][EOSPAC]") {
     auto steelEOS_host = steelEOS_host_polymorphic.get<SpinerEOSDependsRhoT>();
 
     EOS eospac = EOSPAC(steelID);
+    THEN("The EOSPAC model can provide derivatives from preferred") {
+      Real rho = 50;
+      Real T = 500;
+      Real P = eospac.PressureFromDensityTemperature(rho, T);
+      Real sie = eospac.InternalEnergyFromDensityTemperature(rho, T);
+
+      constexpr Real derivative_eps = 1e-8;
+      Real dedP_T, drdP_T, dedT_P, drdT_P;
+      Real dedP_T_fd, drdP_T_fd, dedT_P_fd, drdT_P_fd;
+      eospac.PTDerivativesFromPreferred(rho, sie, P, T, static_cast<Real *>(nullptr),
+                                        dedP_T, drdP_T, dedT_P, drdT_P);
+      singularity::eos_base::PTDerivativesByFiniteDifferences(
+          eospac, rho, sie, P, T, derivative_eps, static_cast<Real *>(nullptr), dedP_T_fd,
+          drdP_T_fd, dedT_P_fd, drdT_P_fd);
+      bool is_close_dedp = isClose(dedP_T, dedP_T_fd);
+      if (!is_close_dedp) {
+        printf("dedP_T not close! %.14e %.14e %.14e\n", dedP_T, dedP_T_fd,
+               dedP_T - dedP_T_fd);
+      }
+      REQUIRE(is_close_dedp);
+      bool is_close_drdP = isClose(drdP_T, drdP_T_fd);
+      if (!is_close_drdP) {
+        printf("drdP_T not close! %.14e %.14e %.14e\n", drdP_T, drdP_T_fd,
+               drdP_T - drdP_T_fd);
+      }
+      REQUIRE(is_close_drdP);
+      bool is_close_dedT = isClose(dedT_P, dedT_P_fd);
+      if (!is_close_dedT) {
+        printf("dedT_P not close! %.14e %.14e %.14e\n", dedT_P, dedT_P_fd,
+               dedT_P - dedT_P_fd);
+      }
+      REQUIRE(is_close_dedT);
+      bool is_close_drdT = isClose(drdT_P, drdT_P_fd);
+      if (!is_close_drdT) {
+        printf("drdT_P not close! %.14e %.14e %.14e\n", drdT_P, drdT_P_fd,
+               drdT_P - drdT_P_fd);
+      }
+      REQUIRE(is_close_drdT);
+    }
 
     THEN("The correct metadata is read in") {
       REQUIRE(steelEOS_host.matid() == steelID);
@@ -237,6 +301,42 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS][DependsRhoT][EOSPAC]") {
 
 SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS][DependsRhoSie]") {
 
+  GIVEN("A titanium EOS in density energy space") {
+    using EOS = Variant<SpinerEOSDependsRhoSie, UnitSystem<SpinerEOSDependsRhoSie>>;
+    constexpr Real time_unit = 1e-6; // These are the numbers you MULTIPLY BY to get cgs
+    constexpr Real mass_unit = 1;
+    constexpr Real length_unit = 1;
+    constexpr Real temp_unit = 1;
+    constexpr Real press_unit = (time_unit * time_unit) / (mass_unit * length_unit);
+    auto tag = singularity::eos_units_init::LengthTimeUnitsInit();
+
+    EOS eos = SpinerEOSDependsRhoSie(eosName, titaniumID);
+    THEN("We can modify it with a unit system with microseconds") {
+      EOS eos_mod =
+          eos.Modify<UnitSystem>(tag, time_unit, mass_unit, length_unit, temp_unit);
+      Real rho_normal_cgs = 4.447;
+      Real T = 298;
+      AND_THEN("Pressure from density and temperature produces the right value for both "
+               "EOSs") {
+        Real P_cgs = eos.PressureFromDensityTemperature(rho_normal_cgs, T);
+        Real P_cgmu = eos_mod.PressureFromDensityTemperature(rho_normal_cgs, T);
+        REQUIRE(isClose(P_cgs, P_cgmu * press_unit, 1e-10));
+      }
+      AND_THEN("We can request density energy from pressure temperature") {
+        Real P_cgs = 1e6;
+        Real P_cgmu = P_cgs / press_unit;
+        Real rho_cgs = 4.447;
+        Real rho_cgmu = rho_cgs;
+        Real sie_cgs, sie_cgmu;
+        eos.DensityEnergyFromPressureTemperature(P_cgs, T, static_cast<Real *>(nullptr),
+                                                 rho_cgs, sie_cgs);
+        eos_mod.DensityEnergyFromPressureTemperature(
+            P_cgmu, T, static_cast<Real *>(nullptr), rho_cgmu, sie_cgmu);
+        REQUIRE(isClose(rho_cgs, rho_cgmu, 1e-10));
+      }
+    }
+  }
+
   GIVEN("SpinerEOSes for steel can be initialised with matid") {
     SpinerEOSDependsRhoSie steelEOS_host(eosName, steelID);
     EOS steelEOS = steelEOS_host.GetOnDevice();
@@ -279,6 +379,171 @@ SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS][DependsRhoSie]") {
     // this can be removed with with reference counting or other tricks
     steelEOS_host.Finalize(); // cleans up host memory
     steelEOS.Finalize();      // cleans up device memory
+  }
+}
+
+SCENARIO("SpinerEOS with multiphase fields") {
+  GIVEN("EOS initialized with matid") {
+    SpinerEOSDependsRhoT eosrt_h = SpinerEOSDependsRhoT(eosName, tinID);
+    SpinerEOSDependsRhoSie eosre_h = SpinerEOSDependsRhoSie(eosName, tinID);
+    THEN("We can recover the phase names") {
+      REQUIRE(eosrt_h.GetNumberofPhases() == 5);
+      REQUIRE(eosre_h.GetNumberofPhases() == 5);
+      std::string phase_names_rt = eosrt_h.GetPhaseNames();
+      REQUIRE(phase_names_rt.size() > 0);
+      REQUIRE(phase_names_rt.c_str()[0] == '5');
+      std::string phase_names_re = eosrt_h.GetPhaseNames();
+      REQUIRE(phase_names_re.size() > 0);
+      REQUIRE(phase_names_re.c_str()[0] == '5');
+    }
+    THEN("We can recover the mass fractions on host using scratch") {
+      Real frac_rt[5], frac_re[5];
+      Real rho = 1.0; // g/cc
+      Real T = 1000;  // K
+      eosrt_h.MassFractionsFromDensityTemperature(rho, T, frac_rt);
+      eosre_h.MassFractionsFromDensityTemperature(rho, T, frac_re);
+      Real sum_rt = 0.0;
+      Real sum_re = 0.0;
+      for (int i = 0; i < 5; i++) {
+        REQUIRE(frac_rt[i] >= 0.0);
+        REQUIRE(frac_rt[i] <= 1.0);
+        sum_rt += frac_rt[i];
+        REQUIRE(frac_re[i] >= 0.0);
+        REQUIRE(frac_re[i] <= 1.0);
+        sum_re += frac_re[i];
+      }
+      REQUIRE(isClose(sum_re, 1.0));
+      REQUIRE(isClose(sum_rt, 1.0));
+    }
+    THEN("We can recover the mass fractions on host using lambda") {
+      Real frac_rt[5], l[2];
+      MassFracIndexer lam_rt(frac_rt, l);
+
+      Real re_mem[SpinerEOSDependsRhoSie::nlambda() + 5];
+      Real *frac_re = &re_mem[SpinerEOSDependsRhoSie::nlambda() + 0];
+      FlatIndexer<Real *> lam_re(re_mem);
+
+      Real rho = 1.0; // g/cc
+      Real T = 1000;  // K
+      eosrt_h.MassFractionsFromDensityTemperature(rho, T, lam_rt);
+      eosre_h.MassFractionsFromDensityTemperature(rho, T, lam_re);
+
+      Real sum_rt = 0.0;
+      Real sum_re = 0.0;
+      for (int i = 0; i < 5; i++) {
+        REQUIRE(frac_rt[i] >= 0.0);
+        REQUIRE(frac_rt[i] <= 1.0);
+        sum_rt += frac_rt[i];
+        REQUIRE(frac_re[i] >= 0.0);
+        REQUIRE(frac_re[i] <= 1.0);
+        sum_re += frac_re[i];
+      }
+      REQUIRE(isClose(sum_re, 1.0));
+      REQUIRE(isClose(sum_rt, 1.0));
+    }
+    THEN("We can recover the mass fractions on device using scratch") {
+
+      constexpr size_t ntot = 16 * 5; // 4x4 grid of 5 phases
+      constexpr size_t bytes = ntot * sizeof(Real);
+
+      std::vector<Real> frac_rt(ntot);
+      std::vector<Real> frac_re(ntot);
+      Real *frac_rt_d = (Real *)PORTABLE_MALLOC(bytes);
+      Real *frac_re_d = (Real *)PORTABLE_MALLOC(bytes);
+
+      portableCopyToDevice(frac_rt_d, frac_rt.data(), bytes);
+      portableCopyToDevice(frac_re_d, frac_re.data(), bytes);
+
+      std::array<Real, 4> rho{1.0, 3.0, 10.0, 30.0};
+      std::array<Real, 4> T{300., 1000., 3000., 1e4};
+      auto eosrt = eosrt_h.GetOnDevice();
+      auto eosre = eosre_h.GetOnDevice();
+      portableFor(
+          "calc mass fractions", 0, 16, PORTABLE_LAMBDA(const int &idx) {
+            const int i = idx % 4;
+            const int j = idx / 4;
+            eosrt.MassFractionsFromDensityTemperature(rho[i], T[j], &frac_rt_d[idx * 5]);
+            eosre.MassFractionsFromDensityTemperature(rho[i], T[j], &frac_re_d[idx * 5]);
+          });
+      PORTABLE_FENCE();
+      portableCopyToHost(frac_rt.data(), frac_rt_d, bytes);
+      portableCopyToHost(frac_re.data(), frac_re_d, bytes);
+
+      // Now check for correctness
+      for (int j = 0; j < 16; j++) {
+        Real sum_rt = 0.0;
+        Real sum_re = 0.0;
+        for (int i = 0; i < 5; i++) {
+          const int idx = i + 5 * j;
+          REQUIRE(frac_rt[idx] >= 0.0);
+          REQUIRE(frac_rt[idx] <= 1.0);
+          sum_rt += frac_rt[idx];
+          REQUIRE(frac_re[idx] >= 0.0);
+          REQUIRE(frac_re[idx] <= 1.0);
+          sum_re += frac_re[idx];
+        }
+        REQUIRE(isClose(sum_re, 1.0));
+        REQUIRE(isClose(sum_rt, 1.0));
+      }
+      PORTABLE_FREE(frac_rt_d);
+      PORTABLE_FREE(frac_re_d);
+    }
+    THEN("We can recover the mass fractions on device using lambdas") {
+
+      constexpr size_t ntot = 4 * 4 * 5; // 4x4 grid of 5 phases
+      constexpr size_t bytes = ntot * sizeof(Real);
+
+      std::vector<Real> frac_rt(ntot);
+      std::vector<Real> frac_re(ntot);
+      Real *frac_rt_d = (Real *)PORTABLE_MALLOC(bytes);
+      Real *frac_re_d = (Real *)PORTABLE_MALLOC(bytes);
+
+      portableCopyToDevice(frac_rt_d, frac_rt.data(), bytes);
+      portableCopyToDevice(frac_re_d, frac_re.data(), bytes);
+
+      std::array<Real, 4> rho{1.0, 3.0, 10.0, 30.0};
+      std::array<Real, 4> T{300., 1000., 3000., 1e4};
+      auto eosrt = eosrt_h.GetOnDevice();
+      auto eosre = eosre_h.GetOnDevice();
+      portableFor(
+          "calc mass fractions", 0, 16, PORTABLE_LAMBDA(const int &idx) {
+            const int i = idx % 4;
+            const int j = idx / 4;
+
+            // Properly this should be allocated outside the loop.
+            Real logs_rt[SpinerEOSDependsRhoT::nlambda()];
+            Real logs_re[SpinerEOSDependsRhoSie::nlambda()];
+
+            FlatIndexer<Real *> mem_rt(j, i, 4, 5, frac_rt_d);
+            FlatIndexer<Real *> mem_re(j, i, 4, 5, frac_re_d);
+            MassFracIndexer lam_rt(&mem_rt[0], logs_rt);
+            MassFracIndexer lam_re(&mem_re[0], logs_re);
+            eosrt.MassFractionsFromDensityTemperature(rho[i], T[j], lam_rt);
+            eosre.MassFractionsFromDensityTemperature(rho[i], T[j], lam_re);
+          });
+      PORTABLE_FENCE();
+      portableCopyToHost(frac_rt.data(), frac_rt_d, bytes);
+      portableCopyToHost(frac_re.data(), frac_re_d, bytes);
+
+      // Now check for correctness
+      for (int j = 0; j < 16; j++) {
+        Real sum_rt = 0.0;
+        Real sum_re = 0.0;
+        for (int i = 0; i < 5; i++) {
+          const int idx = i + 5 * j;
+          REQUIRE(frac_rt[idx] >= 0.0);
+          REQUIRE(frac_rt[idx] <= 1.0);
+          sum_rt += frac_rt[idx];
+          REQUIRE(frac_re[idx] >= 0.0);
+          REQUIRE(frac_re[idx] <= 1.0);
+          sum_re += frac_re[idx];
+        }
+        REQUIRE(isClose(sum_re, 1.0));
+        REQUIRE(isClose(sum_rt, 1.0));
+      }
+      PORTABLE_FREE(frac_rt_d);
+      PORTABLE_FREE(frac_re_d);
+    }
   }
 }
 
@@ -336,27 +601,27 @@ SCENARIO("SpinerEOS and EOSPAC Serialization",
         char *air_shared_data = (char *)malloc(air_shared_size);
 
         SpinerEOSDependsRhoT eos_rhoT;
-        std::size_t read_size_rhoT =
-            eos_rhoT.DeSerialize(rhoT_data, SharedMemSettings(rhoT_shared_data, true));
+        std::size_t read_size_rhoT = eos_rhoT.DeSerialize(
+            rhoT_data.get(), SharedMemSettings(rhoT_shared_data, true));
         REQUIRE(read_size_rhoT == rhoT_size);
         REQUIRE(RhoTTricks::DataBoxesPointToDifferentMemory(rhoT_orig, eos_rhoT));
 
         SpinerEOSDependsRhoSie eos_rhoSie;
         std::size_t read_size_rhoSie = eos_rhoSie.DeSerialize(
-            rhoSie_data, SharedMemSettings(rhoSie_shared_data, true));
+            rhoSie_data.get(), SharedMemSettings(rhoSie_shared_data, true));
         REQUIRE(read_size_rhoSie == rhoSie_size);
         REQUIRE(RhoSieTricks::DataBoxesPointToDifferentMemory(rhoSie_orig, eos_rhoSie));
 
         eospac_orig.Finalize();
         EOS eos_eospac = EOSPAC();
         std::size_t read_size_eospac = eos_eospac.DeSerialize(
-            eospac_data, SharedMemSettings(eospac_shared_data, true));
+            eospac_data.get(), SharedMemSettings(eospac_shared_data, true));
         REQUIRE(read_size_eospac == eospac_size);
 
         eospac_air.Finalize();
         EOS eos_air_2 = EOSPAC();
-        std::size_t read_size_air =
-            eos_air_2.DeSerialize(air_data, SharedMemSettings(air_shared_data, true));
+        std::size_t read_size_air = eos_air_2.DeSerialize(
+            air_data.get(), SharedMemSettings(air_shared_data, true));
         REQUIRE(read_size_air == air_size);
 
         AND_THEN("EOS lookups work") {
@@ -391,9 +656,6 @@ SCENARIO("SpinerEOS and EOSPAC Serialization",
         free(rhoSie_shared_data);
         free(eospac_shared_data);
       }
-      free(rhoT_data);
-      free(rhoSie_data);
-      free(eospac_data);
     }
 
     rhoT_orig.Finalize();

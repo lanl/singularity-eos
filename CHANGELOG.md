@@ -3,9 +3,54 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+- [[PR632]](https://github.com/lanl/singularity-eos/pull/632) Added generic constructors to SpinerEOSDependsRhoSie and SpinerEOSDependsRhoT that build tables from any EOS object.
+- [[PR623]](https://github.com/lanl/singularity-eos/pull/623) Expanded the sesame2spiner syntax to support multiple material definitions in one input file.
+- [[PR618]](https://github.com/lanl/singularity-eos/pull/618) Add PTDerivativesFromPreferred for computing derivatives of a mixture  in a cell
+- [[PR630]](https://github.com/lanl/singularity-eos/pull/630) Thread execution spaces through vector API.
+- [[PR638]](https://github.com/lanl/singularity-eos/pull/638) Fix Bugs in Davis Reactants and Products.  Bulk modulus is now isentropic.
+
+### Fixed (Repair bugs, etc)
+- [[PR63]](https://github.com/lanl/singularity-eos/pull/639) Fixed UnitSystem temperature bug. Temperature is now treated in the same as the time, mass, and length unit factors.
+ 
+### Changed (changing behavior/API/variables/...)
+
+### Infrastructure (changes irrelevant to downstream codes)
+- [[PR636]](https://github.com/lanl/singularity-eos/pull/636) Wrap numpy arrays in a simple wrapper to make GPU compilers happy.
+- [[PR633]](https://github.com/lanl/singularity-eos/pull/633) Make robust::sgn handle unsigned properly
+- [[PR629]](https://github.com/lanl/singularity-eos/pull/629) Use macros and eos_base and eos_variant to reduce boiler plate
+- [[PR626]](https://github.com/lanl/singularity-eos/pull/626) Fix C++20 warnings related to lambdas
+
+## Release 1.11.1
+Date: 03/25/2026
+
+### Added (new features/APIs/variables/...)
+- [[PR600]](https://github.com/lanl/singularity-eos/pull/600) Added mass fractions for multiphase tables to sesame2spiner and added MassFractionsFromDensityTemperture/InternalEnergy to the SpinerDependsRhoSIE and SpinerDependsRhoT equations of state.
+- [[PR589]](https://github.com/lanl/singularity-eos/pull/589) InternalEnergyFromDensityPressure
+
+### Fixed (Repair bugs, etc)
+- [[PR616]](https://github.com/lanl/singularity-eos/pull/616/changes) Ensure introspection methods are threaded through modifiers properly
+- [[PR615]](https://github.com/lanl/singularity-eos/pull/615) Clarify expectations on quantities preserved up to machine precision by the PTE solver
+- [[PR609]](https://github.com/lanl/singularity-eos/pull/609) Fix bugs introduced in 607, which did not properly handle initial guesses and had a typo that introduced UB
+- [[PR607]](https://github.com/lanl/singularity-eos/pull/607) Make the PTE solvers a little bit more adaptable to EOS models that prefer pressure as an input
+
+### Changed (changing behavior/API/variables/...)
+- [[PR601]](https://github.com/lanl/singularity-eos/pull/601) Make Serialize() return a smart pointer
+
+### Infrastructure (changes irrelevant to downstream codes)
+- [[PR617]](https://github.com/lanl/singularity-eos/pull/617) Fix issue for findpackage when no library target to find
+- [[PR605]](https://github.com/lanl/singularity-eos/pull/605) Improve HDF5 erorr handling when reading tables
+- [[PR604]](https://github.com/lanl/singularity-eos/pull/604) Update kokkos kernels linalg call after kokkos kernels became more strict
+
+### Removed (removing behavior/API/varaibles/...)
+
+## Release 1.11.0
+Date: 12/25/2025
+
+### Added (new features/APIs/variables/...)
 - [[PR556]](https://github.com/lanl/singularity-eos/pull/556) Add introspection into types available in the variant
 - [[PR560]](https://github.com/lanl/singularity-eos/pull/560) Add Simple MACAW EOS
 - [[PR564]](https://github.com/lanl/singularity-eos/pull/564) Removed Get() function from IndexableTypes since it could have unexpected consequences when a type wasn't present
+- [[PR583]](https://github.com/lanl/singularity-eos/pull/583) Added GenericIndexer class to provide more complex array indirection
 
 ### Fixed (Repair bugs, etc)
 - [[PR567]](https://github.com/lanl/singularity-eos/pull/567) Fixed an OOB array access bug in the Fixed T PTE solver
@@ -13,10 +58,18 @@
 - [[PR563]](https://github.com/lanl/singularity-eos/pull/563) Fixed DensityFromPressureTemperature for the Carnahan-Starling EOS.
 - [[PR564]](https://github.com/lanl/singularity-eos/pull/564) Fix logic for numerical vs type indices by adding safeGet(), safeSet(), safeMustGet(), and safeMustSet() helpers
 - [[PR568]](https://github.com/lanl/singularity-eos/pull/568) Fix bug in FixedT and FixedP PTE solvers when materials have negative energies at the initial guess
+- [[PR583]](https://github.com/lanl/singularity-eos/pull/582) Allow PTE solvers to operate on tables with pressure as a preferred input
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR579]](https://github.com/lanl/singularity-eos/pull/579) Python bindings now support numpy arrays with arbitrary stride. Numpy array length no longer required input.
+- [[PR575]](https://github.com/lanl/singularity-eos/pull/575) Pin variant submodule to the same commit as the spackage
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR590]](https://github.com/lanl/singularity-eos/pull/590) Remove local spack-repo and use PortsOfCall::variant instead of mpark::variant
+- [[PR595]](https://github.com/lanl/singularity-eos/pull/595) A number of robustness fixes/cleanups. Add a warnings build to the CI.
+- [[PR594]](https://github.com/lanl/singularity-eos/pull/594) clean up tests in preparation for ports-of-call variant transition
+- [[PR588]](https://github.com/lanl/singularity-eos/pull/588) Add DensityEnergyFromPressureTemperature in unit system test
+- [[PR576]](https://github.com/lanl/singularity-eos/pull/576) Clean up some header includes to use the C++ versions
 - [[PR559]](https://github.com/lanl/singularity-eos/pull/559) Document the intent of the virtual keyword in solvers
 - [[PR558]](https://github.com/lanl/singularity-eos/pull/558) Make EOSPAC CMake options depend on SINGULARITY_USE_EOSPAC option
 - [[PR573]](https://github.com/lanl/singularity-eos/pull/573) Add CMake option for address sanitizing

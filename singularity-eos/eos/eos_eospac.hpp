@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -33,6 +33,8 @@
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
+
+// This file was made in part with generative AI
 
 namespace singularity {
 
@@ -128,6 +130,74 @@ inline void SetUpOutputScalingOption(EOS_INTEGER options[], EOS_REAL values[],
 
 } // namespace impl_eospac
 
+// These are the same idea as in eos_base and eos_variant. They
+// declare the versions of EOSPAC's methods that we need to manually
+// override. MinInternalEnergyFromDensity shows approximately what
+// these concretize to, although MinInternalEnergyDensity requires one
+// fewer array than the macros.
+//
+// TODO(JMM): Execution spaces are not properly passed through EOSPAC
+// and I'm not sure how to make that work. For now, we just have a
+// disclaimer in the docs. Execution space is ignored.
+#define SG_EOSPAC_VEC_2IN_1OUT(NAME, IN1, IN2, OUT)                                      \
+  template <typename Space, typename RealIndexer, typename ConstRealIndexer,             \
+            typename LambdaIndexer,                                                      \
+            typename EnableIfSpace =                                                     \
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>               \
+  inline void NAME([[maybe_unused]] const Space &s, ConstRealIndexer &&IN1,              \
+                   ConstRealIndexer &&IN2, RealIndexer &&OUT, const int num,             \
+                   LambdaIndexer &&lambdas) const {                                      \
+    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");    \
+    EosBase<EOSPAC>::NAME(                                                               \
+        s, std::forward<ConstRealIndexer>(IN1), std::forward<ConstRealIndexer>(IN2),     \
+        std::forward<RealIndexer>(OUT), num, std::forward<LambdaIndexer>(lambdas));      \
+  }                                                                                      \
+  template <typename Space, typename RealIndexer, typename ConstRealIndexer,             \
+            typename LambdaIndexer,                                                      \
+            typename EnableIfNotRaw =                                                    \
+                std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,             \
+            typename EnableIfSpace =                                                     \
+                std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>               \
+  inline void NAME([[maybe_unused]] const Space &s, ConstRealIndexer &&IN1,              \
+                   ConstRealIndexer &&IN2, RealIndexer &&OUT, Real * /*scratch*/,        \
+                   const int num, LambdaIndexer &&lambdas) const {                       \
+    PORTABLE_WARN(                                                                       \
+        "EOSPAC type mismatch will cause significant performance degradation");          \
+    EosBase<EOSPAC>::NAME(                                                               \
+        s, std::forward<ConstRealIndexer>(IN1), std::forward<ConstRealIndexer>(IN2),     \
+        std::forward<RealIndexer>(OUT), num, std::forward<LambdaIndexer>(lambdas));      \
+  }                                                                                      \
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,     \
+            typename EnableIfIndexed =                                                   \
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>     \
+  inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
+                   const int num, LambdaIndexer &&lambdas) const {                       \
+    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");    \
+    EosBase<EOSPAC>::NAME(                                                               \
+        PortsOfCall::Exec::Host(), std::forward<ConstRealIndexer>(IN1),                  \
+        std::forward<ConstRealIndexer>(IN2), std::forward<RealIndexer>(OUT), num,        \
+        std::forward<LambdaIndexer>(lambdas));                                           \
+  }                                                                                      \
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,     \
+            typename EnableIfIndexed =                                                   \
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>,     \
+            typename EnableIfNotRaw =                                                    \
+                std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>             \
+  inline void NAME(ConstRealIndexer &&IN1, ConstRealIndexer &&IN2, RealIndexer &&OUT,    \
+                   Real *scratch, const int num, LambdaIndexer &&lambdas) const {        \
+    PORTABLE_WARN(                                                                       \
+        "EOSPAC type mismatch will cause significant performance degradation");          \
+    EosBase<EOSPAC>::NAME(                                                               \
+        PortsOfCall::Exec::Host(), std::forward<ConstRealIndexer>(IN1),                  \
+        std::forward<ConstRealIndexer>(IN2), std::forward<RealIndexer>(OUT), scratch,    \
+        num, std::forward<LambdaIndexer>(lambdas));                                      \
+  }
+// Does fromdensitytemperature and fromdensityinternalenergy at once
+#define SG_EOSPAC_VEC_FOR(OUTNAME)                                                       \
+  SG_EOSPAC_VEC_2IN_1OUT(OUTNAME##FromDensityTemperature, rhos, temps, OUTNAME##s)       \
+  SG_EOSPAC_VEC_2IN_1OUT(OUTNAME##FromDensityInternalEnergy, rhos, sies, OUTNAME##s)
+
+// TODO(@adempsey): Add mass fractions + better multiphase support
 class EOSPAC : public EosBase<EOSPAC> {
 
  public:
@@ -230,6 +300,11 @@ class EOSPAC : public EosBase<EOSPAC> {
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Lambda_t>
+  PORTABLE_INLINE_FUNCTION void
+  PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P, const Real T,
+                             Lambda_t &&lambda, Real &dedP_T, Real &drdP_T, Real &dedT_P,
+                             Real &drdT_P) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
@@ -247,263 +322,75 @@ class EOSPAC : public EosBase<EOSPAC> {
 
   // Generic (Scalar)
   using EosBase<EOSPAC>::is_raw_pointer;
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void
-  TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
-                                       RealIndexer &&temperatures, const int num,
-                                       LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
-    EosBase<EOSPAC>::TemperatureFromDensityInternalEnergy(rhos, sies, temperatures, num,
-                                                          lambdas);
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void
-  TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
-                                       RealIndexer &&temperatures, Real * /*scratch*/,
-                                       const int num, LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
-    EosBase<EOSPAC>::TemperatureFromDensityInternalEnergy(rhos, sies, temperatures, num,
-                                                          lambdas);
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                   ConstRealIndexer &&temperatures,
-                                                   RealIndexer &&sies, const int num,
-                                                   LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
-    EosBase<EOSPAC>::InternalEnergyFromDensityTemperature(rhos, temperatures, sies, num,
-                                                          lambdas);
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                   ConstRealIndexer &&temperatures,
-                                                   RealIndexer &&sies, Real * /*scratch*/,
-                                                   const int num,
-                                                   LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
-    EosBase<EOSPAC>::InternalEnergyFromDensityTemperature(rhos, temperatures, sies, num,
-                                                          lambdas);
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
-                                             ConstRealIndexer &&temperatures,
-                                             RealIndexer &&pressures, const int num,
-                                             LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
-    EosBase<EOSPAC>::PressureFromDensityTemperature(rhos, temperatures, pressures, num,
-                                                    lambdas);
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void
-  PressureFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
-                                 RealIndexer &&pressures, Real * /*scratch*/,
-                                 const int num, LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
-    EosBase<EOSPAC>::PressureFromDensityTemperature(rhos, temperatures, pressures, num,
-                                                    lambdas);
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                ConstRealIndexer &&sies,
-                                                RealIndexer &&pressures, const int num,
-                                                LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
-    EosBase<EOSPAC>::PressureFromDensityInternalEnergy(rhos, sies, pressures, num,
-                                                       lambdas);
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+  SG_EOSPAC_VEC_2IN_1OUT(TemperatureFromDensityInternalEnergy, rhos, sies, temperatures)
+  SG_EOSPAC_VEC_2IN_1OUT(InternalEnergyFromDensityTemperature, rhos, temperatures, sies)
+  SG_EOSPAC_VEC_FOR(Pressure)
+
+  template <
+      typename Space, typename RealIndexer, typename ConstRealIndexer,
+      typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void MinInternalEnergyFromDensity([[maybe_unused]] const Space &s,
+                                           ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            const int num, LambdaIndexer &&lambdas) const {
-    EosBase<EOSPAC>::MinInternalEnergyFromDensity(rhos, sies, num, lambdas);
+    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
+    EosBase<EOSPAC>::MinInternalEnergyFromDensity(s, rhos, sies, num, lambdas);
   }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void
-  PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
-                                    RealIndexer &&pressures, Real * /*scratch*/,
-                                    const int num, LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
-    EosBase<EOSPAC>::PressureFromDensityInternalEnergy(rhos, sies, pressures, num,
-                                                       lambdas);
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+  template <
+      typename Space, typename RealIndexer, typename ConstRealIndexer,
+      typename LambdaIndexer,
+      typename EnableIfNotRaw =
+          std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void MinInternalEnergyFromDensity([[maybe_unused]] const Space &s,
+                                           ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            Real * /*scratch*/, const int num,
                                            LambdaIndexer &&lambdas) const {
     PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
-    EosBase<EOSPAC>::MinInternalEnergyFromDensity(rhos, sies, num, lambdas);
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void EntropyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            RealIndexer &&entropies, const int num,
-                                            LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
-    EosBase<EOSPAC>::EntropyFromDensityTemperature(rhos, temperatures, entropies, num,
-                                                   lambdas);
+    EosBase<EOSPAC>::MinInternalEnergyFromDensity(s, rhos, sies, num, lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void
-  EntropyFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
-                                RealIndexer &&entropies, Real * /*scratch*/,
-                                const int num, LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
-    EosBase<EOSPAC>::EntropyFromDensityTemperature(rhos, temperatures, entropies, num,
-                                                   lambdas);
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&sies,
-                                               RealIndexer &&entropies, const int num,
-                                               LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
-    EosBase<EOSPAC>::EntropyFromDensityInternalEnergy(rhos, sies, entropies, num,
-                                                      lambdas);
+            typename EnableIfIndexed =
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           const int num, LambdaIndexer &&lambdas) const {
+    MinInternalEnergyFromDensity(
+        PortsOfCall::Exec::Host(), std::forward<ConstRealIndexer>(rhos),
+        std::forward<RealIndexer>(sies), num, std::forward<LambdaIndexer>(lambdas));
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void
-  EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
-                                   RealIndexer &&entropies, Real * /*scratch*/,
-                                   const int num, LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
-    EosBase<EOSPAC>::EntropyFromDensityInternalEnergy(rhos, sies, entropies, num,
-                                                      lambdas);
+            typename EnableIfNotRaw =
+                std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>,
+            typename EnableIfIndexed =
+                std::enable_if_t<variadic_utils::has_int_index_v<ConstRealIndexer>>>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           Real * /*scratch*/, const int num,
+                                           LambdaIndexer &&lambdas) const {
+    MinInternalEnergyFromDensity(
+        PortsOfCall::Exec::Host(), std::forward<ConstRealIndexer>(rhos),
+        std::forward<RealIndexer>(sies), num, std::forward<LambdaIndexer>(lambdas));
   }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                 ConstRealIndexer &&temperatures,
-                                                 RealIndexer &&cvs, const int num,
-                                                 LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
-    EosBase<EOSPAC>::SpecificHeatFromDensityTemperature(rhos, temperatures, cvs, num,
-                                                        lambdas);
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                 ConstRealIndexer &&temperatures,
-                                                 RealIndexer &&cvs, Real * /*scratch*/,
-                                                 const int num,
-                                                 LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
-    EosBase<EOSPAC>::SpecificHeatFromDensityTemperature(rhos, temperatures, cvs, num,
-                                                        lambdas);
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                    ConstRealIndexer &&sies,
-                                                    RealIndexer &&cvs, const int num,
-                                                    LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
-    EosBase<EOSPAC>::SpecificHeatFromDensityInternalEnergy(rhos, sies, cvs, num, lambdas);
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void
-  SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
-                                        RealIndexer &&cvs, Real * /*scratch*/,
-                                        const int num, LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
-    EosBase<EOSPAC>::SpecificHeatFromDensityInternalEnergy(rhos, sies, cvs, num, lambdas);
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                ConstRealIndexer &&temperatures,
-                                                RealIndexer &&bmods, const int num,
-                                                LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
-    EosBase<EOSPAC>::BulkModulusFromDensityTemperature(rhos, temperatures, bmods, num,
-                                                       lambdas);
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                ConstRealIndexer &&temperatures,
-                                                RealIndexer &&bmods, Real * /*scratch*/,
-                                                const int num,
-                                                LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
-    EosBase<EOSPAC>::BulkModulusFromDensityTemperature(rhos, temperatures, bmods, num,
-                                                       lambdas);
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                   ConstRealIndexer &&sies,
-                                                   RealIndexer &&bmods, const int num,
-                                                   LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
-    EosBase<EOSPAC>::BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, num,
-                                                          lambdas);
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void
-  BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
-                                       RealIndexer &&bmods, Real * /*scratch*/,
-                                       const int num, LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
-    EosBase<EOSPAC>::BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, num,
-                                                          lambdas);
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                   ConstRealIndexer &&temperatures,
-                                                   RealIndexer &&gm1s, const int num,
-                                                   LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
-    EosBase<EOSPAC>::GruneisenParamFromDensityTemperature(rhos, temperatures, gm1s, num,
-                                                          lambdas);
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                   ConstRealIndexer &&temperatures,
-                                                   RealIndexer &&gm1s, Real * /*scratch*/,
-                                                   const int num,
-                                                   LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
-    EosBase<EOSPAC>::GruneisenParamFromDensityTemperature(rhos, temperatures, gm1s, num,
-                                                          lambdas);
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                      ConstRealIndexer &&sies,
-                                                      RealIndexer &&gm1s, const int num,
-                                                      LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
-    EosBase<EOSPAC>::GruneisenParamFromDensityInternalEnergy(rhos, sies, gm1s, num,
-                                                             lambdas);
-  }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                      ConstRealIndexer &&sies,
-                                                      RealIndexer &&gm1s,
-                                                      Real * /*scratch*/, const int num,
-                                                      LambdaIndexer &&lambdas) const {
-    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
-    EosBase<EOSPAC>::GruneisenParamFromDensityInternalEnergy(rhos, sies, gm1s, num,
-                                                             lambdas);
-  }
+
+  SG_EOSPAC_VEC_FOR(Entropy)
+  SG_EOSPAC_VEC_FOR(SpecificHeat)
+  SG_EOSPAC_VEC_FOR(BulkModulus)
+  SG_EOSPAC_VEC_FOR(GruneisenParam)
 
   // TODO(JMM): Add performant Gibbs Free Energy
   using EosBase<EOSPAC>::FillEos;
+  // TODO(JMM): Add a performant internal energy call
+  using EosBase<EOSPAC>::InternalEnergyFromDensityPressure;
 
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(AZbar_)
 
   // EOSPAC vector implementations
-  template <typename LambdaIndexer>
-  inline void
-  TemperatureFromDensityInternalEnergy(const Real *rhos, const Real *sies,
-                                       Real *temperatures, Real *scratch, const int num,
-                                       LambdaIndexer /*lambdas*/,
-                                       Transform &&transform = Transform()) const {
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void TemperatureFromDensityInternalEnergy(
+      [[maybe_unused]] const Space &s, const Real *rhos, const Real *sies,
+      Real *temperatures, Real *scratch, const int num, LambdaIndexer /*lambdas*/,
+      Transform &&transform = Transform()) const {
     using namespace EospacWrapper;
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
     EOS_REAL *E = const_cast<EOS_REAL *>(&sies[0]);
@@ -525,11 +412,24 @@ class EOSPAC : public EosBase<EOSPAC> {
     eosSafeInterpolate(&table, num, R, E, T, dTdr, dTde, "TofRE", Verbosity::Quiet,
                        options, values, nopts);
   }
-
   template <typename LambdaIndexer>
-  inline void PressureFromDensityTemperature(const Real *rhos, const Real *temperatures,
-                                             Real *pressures, Real *scratch,
-                                             const int num, LambdaIndexer /*lambdas*/,
+  inline void
+  TemperatureFromDensityInternalEnergy(const Real *rhos, const Real *sies,
+                                       Real *temperatures, Real *scratch, const int num,
+                                       [[maybe_unused]] LambdaIndexer &&lambdas,
+                                       Transform &&transform = Transform()) const {
+    TemperatureFromDensityInternalEnergy(
+        PortsOfCall::Exec::Host(), rhos, sies, temperatures, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void PressureFromDensityTemperature(const Space &space, const Real *rhos,
+                                             const Real *temperatures, Real *pressures,
+                                             Real *scratch, const int num,
+                                             LambdaIndexer /*lambdas*/,
                                              Transform &&transform = Transform()) const {
     using namespace EospacWrapper;
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
@@ -553,9 +453,22 @@ class EOSPAC : public EosBase<EOSPAC> {
     eosSafeInterpolate(&table, num, R, T, P, dPdr, dPdT, "PofRT", Verbosity::Quiet,
                        options, values, nopts);
   }
-
   template <typename LambdaIndexer>
-  inline void EntropyFromDensityTemperature(const Real *rhos, const Real *temperatures,
+  inline void PressureFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                             Real *pressures, Real *scratch,
+                                             const int num,
+                                             [[maybe_unused]] LambdaIndexer &&lambdas,
+                                             Transform &&transform = Transform()) const {
+    PressureFromDensityTemperature(
+        PortsOfCall::Exec::Host(), rhos, temperatures, pressures, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void EntropyFromDensityTemperature([[maybe_unused]] const Space &space,
+                                            const Real *rhos, const Real *temperatures,
                                             Real *entropies, Real *scratch, const int num,
                                             LambdaIndexer /*lambdas*/,
                                             Transform &&transform = Transform()) const {
@@ -581,11 +494,23 @@ class EOSPAC : public EosBase<EOSPAC> {
     eosSafeInterpolate(&table, num, R, T, S, dSdr, dSdT, "SofRT", Verbosity::Quiet,
                        options, values, nopts);
   }
-
   template <typename LambdaIndexer>
-  inline void FillEos(Real *rhos, Real *temps, Real *energies, Real *presses, Real *cvs,
-                      Real *bmods, Real *scratch, const int num,
-                      const unsigned long output, LambdaIndexer /*lambdas*/) const {
+  inline void EntropyFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                            Real *entropies, Real *scratch, const int num,
+                                            [[maybe_unused]] LambdaIndexer &&lambdas,
+                                            Transform &&transform = Transform()) const {
+    EntropyFromDensityTemperature(
+        PortsOfCall::Exec::Host(), rhos, temperatures, entropies, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void FillEos([[maybe_unused]] const Space &space, Real *rhos, Real *temps,
+                      Real *energies, Real *presses, Real *cvs, Real *bmods,
+                      Real *scratch, const int num, const unsigned long output,
+                      LambdaIndexer /*lambdas*/) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
@@ -690,13 +615,21 @@ class EOSPAC : public EosBase<EOSPAC> {
           });
     }
   }
-
   template <typename LambdaIndexer>
-  inline void
-  InternalEnergyFromDensityTemperature(const Real *rhos, const Real *temperatures,
-                                       Real *sies, Real *scratch, const int num,
-                                       LambdaIndexer /*lambdas*/,
-                                       Transform &&transform = Transform()) const {
+  inline void FillEos(Real *rhos, Real *temps, Real *energies, Real *presses, Real *cvs,
+                      Real *bmods, Real *scratch, const int num,
+                      const unsigned long output, LambdaIndexer &&lambdas) const {
+    FillEos(PortsOfCall::Exec::Host(), rhos, temps, energies, presses, cvs, bmods,
+            scratch, num, output, std::forward<LambdaIndexer>(lambdas));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void InternalEnergyFromDensityTemperature(
+      [[maybe_unused]] const Space &space, const Real *rhos, const Real *temperatures,
+      Real *sies, Real *scratch, const int num, LambdaIndexer /*lambdas*/,
+      Transform &&transform = Transform()) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
@@ -722,11 +655,25 @@ class EOSPAC : public EosBase<EOSPAC> {
     eosSafeInterpolate(&table, num, R, T, E, DEDR, DEDT, "EofRT", Verbosity::Quiet,
                        options, values, nopts);
   }
-
   template <typename LambdaIndexer>
-  inline void PressureFromDensityInternalEnergy(
-      const Real *rhos, const Real *sies, Real *pressures, Real *scratch, const int num,
-      LambdaIndexer /*lambdas*/, Transform &&transform = Transform()) const {
+  inline void
+  InternalEnergyFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                       Real *sies, Real *scratch, const int num,
+                                       [[maybe_unused]] LambdaIndexer &&lambdas,
+                                       Transform &&transform = Transform()) const {
+    InternalEnergyFromDensityTemperature(
+        PortsOfCall::Exec::Host(), rhos, temperatures, sies, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void
+  PressureFromDensityInternalEnergy([[maybe_unused]] const Space &space, const Real *rhos,
+                                    const Real *sies, Real *pressures, Real *scratch,
+                                    const int num, LambdaIndexer /*lambdas*/,
+                                    Transform &&transform = Transform()) const {
     using namespace EospacWrapper;
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
     EOS_REAL *E = const_cast<EOS_REAL *>(&sies[0]);
@@ -749,9 +696,22 @@ class EOSPAC : public EosBase<EOSPAC> {
     eosSafeInterpolate(&table, num, R, E, P, dPdr, dPde, "PofRE", Verbosity::Quiet,
                        options, values, nopts);
   }
-
   template <typename LambdaIndexer>
-  inline void MinInternalEnergyFromDensity(const Real *rhos, Real *sies, Real *scratch,
+  inline void
+  PressureFromDensityInternalEnergy(const Real *rhos, const Real *sies, Real *pressures,
+                                    Real *scratch, const int num,
+                                    [[maybe_unused]] LambdaIndexer &&lambdas,
+                                    Transform &&transform = Transform()) const {
+    PressureFromDensityInternalEnergy(PortsOfCall::Exec::Host(), rhos, sies, pressures,
+                                      scratch, num, std::forward<LambdaIndexer>(lambdas),
+                                      std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void MinInternalEnergyFromDensity([[maybe_unused]] const Space &space,
+                                           const Real *rhos, Real *sies, Real *scratch,
                                            const int num, LambdaIndexer /*lambdas*/,
                                            Transform &&transform = Transform()) const {
     using namespace EospacWrapper;
@@ -774,11 +734,22 @@ class EOSPAC : public EosBase<EOSPAC> {
     eosSafeInterpolate(&table, num, R, R, E, dedr, dedr, "EcofD", Verbosity::Quiet,
                        options, values, nopts);
   }
-
   template <typename LambdaIndexer>
+  inline void MinInternalEnergyFromDensity(const Real *rhos, Real *sies, Real *scratch,
+                                           const int num, LambdaIndexer &&lambdas,
+                                           Transform &&transform = Transform()) const {
+    MinInternalEnergyFromDensity(PortsOfCall::Exec::Host(), rhos, sies, scratch, num,
+                                 std::forward<LambdaIndexer>(lambdas),
+                                 std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void SpecificHeatFromDensityTemperature(
-      const Real *rhos, const Real *temperatures, Real *cvs, Real *scratch, const int num,
-      LambdaIndexer /*lambdas*/, Transform &&transform = Transform()) const {
+      [[maybe_unused]] const Space &space, const Real *rhos, const Real *temperatures,
+      Real *cvs, Real *scratch, const int num, LambdaIndexer /*lambdas*/,
+      Transform &&transform = Transform()) const {
     using namespace EospacWrapper;
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
@@ -811,11 +782,24 @@ class EOSPAC : public EosBase<EOSPAC> {
               cvFromSesame(std::max(DEDT[i], 0.0)); // Here we do something to the data!
         });
   }
-
   template <typename LambdaIndexer>
+  inline void
+  SpecificHeatFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                     Real *cvs, Real *scratch, const int num,
+                                     [[maybe_unused]] LambdaIndexer &&lambdas,
+                                     Transform &&transform = Transform()) const {
+    SpecificHeatFromDensityTemperature(PortsOfCall::Exec::Host(), rhos, temperatures, cvs,
+                                       scratch, num, std::forward<LambdaIndexer>(lambdas),
+                                       std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void SpecificHeatFromDensityInternalEnergy(
-      const Real *rhos, const Real *sies, Real *cvs, Real *scratch, const int num,
-      LambdaIndexer /*lambdas*/, Transform &&transform = Transform()) const {
+      [[maybe_unused]] const Space &space, const Real *rhos, const Real *sies, Real *cvs,
+      Real *scratch, const int num, LambdaIndexer /*lambdas*/,
+      Transform &&transform = Transform()) const {
 
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
@@ -873,12 +857,24 @@ class EOSPAC : public EosBase<EOSPAC> {
                            std::max(DEDT[i], 0.0)); // Here we do something to the data!
         });
   }
-
   template <typename LambdaIndexer>
   inline void
-  BulkModulusFromDensityTemperature(const Real *rhos, const Real *temperatures,
-                                    Real *bmods, Real *scratch, const int num,
-                                    LambdaIndexer /*lambdas*/,
+  SpecificHeatFromDensityInternalEnergy(const Real *rhos, const Real *sies, Real *cvs,
+                                        Real *scratch, const int num,
+                                        [[maybe_unused]] LambdaIndexer &&lambdas,
+                                        Transform &&transform = Transform()) const {
+    SpecificHeatFromDensityInternalEnergy(
+        PortsOfCall::Exec::Host(), rhos, sies, cvs, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void
+  BulkModulusFromDensityTemperature([[maybe_unused]] const Space &space, const Real *rhos,
+                                    const Real *temperatures, Real *bmods, Real *scratch,
+                                    const int num, LambdaIndexer /*lambdas*/,
                                     Transform &&transform = Transform()) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
@@ -943,11 +939,24 @@ class EOSPAC : public EosBase<EOSPAC> {
           bmods[i] = f * bulkModulusFromSesame(std::max(BMOD, 0.0));
         });
   }
-
   template <typename LambdaIndexer>
+  inline void
+  BulkModulusFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                    Real *bmods, Real *scratch, const int num,
+                                    [[maybe_unused]] LambdaIndexer &&lambdas,
+                                    Transform &&transform = Transform()) const {
+    BulkModulusFromDensityTemperature(
+        PortsOfCall::Exec::Host(), rhos, temperatures, bmods, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void BulkModulusFromDensityInternalEnergy(
-      const Real *rhos, const Real *sies, Real *bmods, Real *scratch, const int num,
-      LambdaIndexer /*lambdas*/, Transform &&transform = Transform()) const {
+      [[maybe_unused]] const Space &space, const Real *rhos, const Real *sies,
+      Real *bmods, Real *scratch, const int num, LambdaIndexer /*lambdas*/,
+      Transform &&transform = Transform()) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
@@ -1029,13 +1038,24 @@ class EOSPAC : public EosBase<EOSPAC> {
           bmods[i] = f * bulkModulusFromSesame(std::max(BMOD, 0.0));
         });
   }
-
   template <typename LambdaIndexer>
   inline void
-  GruneisenParamFromDensityTemperature(const Real *rhos, const Real *temperatures,
-                                       Real *gm1s, Real *scratch, const int num,
-                                       LambdaIndexer /*lambdas*/,
+  BulkModulusFromDensityInternalEnergy(const Real *rhos, const Real *sies, Real *bmods,
+                                       Real *scratch, const int num,
+                                       [[maybe_unused]] LambdaIndexer &&lambdas,
                                        Transform &&transform = Transform()) const {
+    BulkModulusFromDensityInternalEnergy(
+        PortsOfCall::Exec::Host(), rhos, sies, bmods, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
+  inline void GruneisenParamFromDensityTemperature(
+      [[maybe_unused]] const Space &space, const Real *rhos, const Real *temperatures,
+      Real *gm1s, Real *scratch, const int num, LambdaIndexer /*lambdas*/,
+      Transform &&transform = Transform()) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
@@ -1075,11 +1095,24 @@ class EOSPAC : public EosBase<EOSPAC> {
           gm1s[i] = f * robust::ratio(pressureFromSesame(sieToSesame(DPDE)), x * R[i]);
         });
   }
-
   template <typename LambdaIndexer>
+  inline void
+  GruneisenParamFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                       Real *gm1s, Real *scratch, const int num,
+                                       [[maybe_unused]] LambdaIndexer &&lambdas,
+                                       Transform &&transform = Transform()) const {
+    GruneisenParamFromDensityTemperature(
+        PortsOfCall::Exec::Host(), rhos, temperatures, gm1s, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <
+      typename Space, typename LambdaIndexer,
+      typename EnableIfSpace = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
   inline void GruneisenParamFromDensityInternalEnergy(
-      const Real *rhos, const Real *sies, Real *gm1s, Real *scratch, const int num,
-      LambdaIndexer /*lambdas*/, Transform &&transform = Transform()) const {
+      [[maybe_unused]] const Space &space, const Real *rhos, const Real *sies, Real *gm1s,
+      Real *scratch, const int num, LambdaIndexer /*lambdas*/,
+      Transform &&transform = Transform()) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
@@ -1137,6 +1170,16 @@ class EOSPAC : public EosBase<EOSPAC> {
           const Real DPDE = DPDT[i] / DEDT[i];
           gm1s[i] = f * robust::ratio(pressureFromSesame(sieToSesame(DPDE)), x * R[i]);
         });
+  }
+  template <typename LambdaIndexer>
+  inline void
+  GruneisenParamFromDensityInternalEnergy(const Real *rhos, const Real *sies, Real *gm1s,
+                                          Real *scratch, const int num,
+                                          [[maybe_unused]] LambdaIndexer &&lambdas,
+                                          Transform &&transform = Transform()) const {
+    GruneisenParamFromDensityInternalEnergy(
+        PortsOfCall::Exec::Host(), rhos, sies, gm1s, scratch, num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
   }
 
   static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
@@ -1707,6 +1750,52 @@ PORTABLE_INLINE_FUNCTION void EOSPAC::DensityEnergyFromPressureTemperature(
 #endif // ON DEVICE
 }
 
+template <typename Lambda_t>
+PORTABLE_INLINE_FUNCTION void
+EOSPAC::PTDerivativesFromPreferred(const Real rho, const Real sie, const Real press,
+                                   const Real temp, Lambda_t &&lambda, Real &dedP_T,
+                                   Real &drdP_T, Real &dedT_P, Real &drdT_P) const {
+#if SINGULARITY_ON_DEVICE
+  PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
+#else
+  PORTABLE_REQUIRE(split_ == TableSplit::Total,
+                   "Density of pressure and temperature only supported for total "
+                   "tables at this time");
+  using namespace EospacWrapper;
+  EOS_REAL P[1] = {pressureToSesame(press)};
+  EOS_REAL T[1] = {temperatureToSesame(temp)};
+  EOS_REAL R[1] = {rho};
+  EOS_REAL E[1] = {sieToSesame(sie)};
+  EOS_REAL z[1], dx[1], dy[1];
+  EOS_INTEGER nxypairs = 1;
+  EOS_INTEGER table;
+
+  table = EofRT_table_;
+  eosSafeInterpolate(&table, nxypairs, R, T, z, dx, dy, "EofRT", Verbosity::Quiet);
+  const Real dedr_T = sieFromSesame(dx[0]);
+  const Real dedT_r = sieFromSesame(temperatureToSesame(dy[0]));
+
+  table = PofRT_table_;
+  eosSafeInterpolate(&table, nxypairs, R, T, z, dx, dy, "PofRT", Verbosity::Quiet);
+  const Real dPdr_T = pressureFromSesame(dx[0]);
+  const Real dPdT_r = pressureFromSesame(temperatureToSesame(dy[0]));
+
+  dedP_T = robust::ratio(dedr_T, dPdr_T);
+  dedT_P = dedT_r - robust::ratio(dedr_T * dPdT_r, dPdr_T);
+  drdP_T = robust::ratio(1., dPdr_T);
+  drdT_P = -robust::ratio(dPdT_r, dPdr_T);
+  /*
+  // Alternative approach
+  table = RofPT_table_;
+  eosSafeInterpolate(&table, nxypairs, P, T, z, dx, dy, "RofPT", Verbosity::Quiet);
+  drdP_T = pressureToSesame(dx[0]);
+  drdT_P = temperatureToSesame(dy[0]);
+  dedP_T = dedr_T * drdP_T;
+  dedT_P = dedT_r + dedr_T * drdT_P;
+  */
+#endif // ON DEVICE
+}
+
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void
 EOSPAC::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
@@ -1728,6 +1817,9 @@ EOSPAC::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Re
 }
 
 } // namespace singularity
+
+#undef SG_EOSPAC_VEC_FOR
+#undef SG_EOSPAC_VEC_2IN_1OUT
 
 #endif // SINGULARITY_USE_EOSPAC
 #endif // _SINGULARITY_EOS_EOS_EOS_EOSPAC_HPP_

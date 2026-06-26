@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -547,7 +547,7 @@ int main(int argc, char *argv[]) {
             Real diff = tempSpiner_h(j, i) - t_true;
             tempDiff_h(j, i) = diff;
             const Real mean_t = 0.5 * diff + t_true;
-            if (isnan(diff)) {
+            if (std::isnan(diff)) {
               std::cout << "NAN! " << j << ", " << i << ", " << tempSpiner_h(j, i) << ", "
                         << tempEOSPAC(j, i) << ", " << mean_t << ", " << diff
                         << std::endl;

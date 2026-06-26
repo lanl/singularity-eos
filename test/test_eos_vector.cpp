@@ -13,6 +13,7 @@
 //------------------------------------------------------------------------------
 
 #include <array>
+#include <vector>
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
@@ -21,6 +22,7 @@
 
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE
+#include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #endif
 
@@ -28,6 +30,67 @@
 
 using singularity::IdealGas;
 using EOS = singularity::Variant<IdealGas>;
+
+namespace {
+template <typename EosType>
+void CheckHostExecVectorApi(const EosType &eos) {
+  constexpr Real Cv = 5.0;
+  constexpr Real gm1 = 0.4;
+  constexpr int num = 3;
+
+  std::vector<Real> density{1.0, 2.0, 5.0};
+  std::vector<Real> energy{5.0, 10.0, 15.0};
+  std::vector<Real> temperature(num, -1.0);
+  std::vector<Real> pressure(num, -1.0);
+  std::vector<Real> min_energy(num, -1.0);
+  std::vector<Real> fill_temperature(num, -1.0);
+  std::vector<Real> fill_pressure(num, -1.0);
+  std::vector<Real> fill_cv(num, -1.0);
+  std::vector<Real> fill_bmod(num, -1.0);
+  std::vector<Real> scratch(num, -1.0);
+  singularity::NullIndexer lambdas{};
+
+  constexpr std::array<Real, num> temperature_true{1.0, 2.0, 3.0};
+  constexpr std::array<Real, num> pressure_true{2.0, 8.0, 30.0};
+  constexpr std::array<Real, num> min_energy_true{0.0, 0.0, 0.0};
+  constexpr std::array<Real, num> cv_true{Cv, Cv, Cv};
+  constexpr std::array<Real, num> bmod_true{2.8, 11.2, 42.0};
+
+  eos.TemperatureFromDensityInternalEnergy(PortsOfCall::Exec::Host(), density.data(),
+                                           energy.data(), temperature.data(),
+                                           scratch.data(), num, lambdas);
+  eos.PressureFromDensityInternalEnergy(PortsOfCall::Exec::Host(), density.data(),
+                                        energy.data(), pressure.data(), scratch.data(),
+                                        num, lambdas);
+  eos.MinInternalEnergyFromDensity(PortsOfCall::Exec::Host(), density.data(),
+                                   min_energy.data(), scratch.data(), num, lambdas);
+  eos.FillEos(PortsOfCall::Exec::Host(), density.data(), fill_temperature.data(),
+              energy.data(), fill_pressure.data(), fill_cv.data(), fill_bmod.data(), num,
+              singularity::thermalqs::temperature | singularity::thermalqs::pressure |
+                  singularity::thermalqs::specific_heat |
+                  singularity::thermalqs::bulk_modulus,
+              lambdas);
+
+  for (int i = 0; i < num; ++i) {
+    REQUIRE(temperature[i] == Catch::Approx(temperature_true[i]));
+    REQUIRE(pressure[i] == Catch::Approx(pressure_true[i]));
+    REQUIRE(min_energy[i] == Catch::Approx(min_energy_true[i]));
+    REQUIRE(fill_temperature[i] == Catch::Approx(temperature_true[i]));
+    REQUIRE(fill_pressure[i] == Catch::Approx(pressure_true[i]));
+    REQUIRE(fill_cv[i] == Catch::Approx(cv_true[i]));
+    REQUIRE(fill_bmod[i] == Catch::Approx(bmod_true[i]));
+  }
+
+  const Real expected_pressure_from_temperature = gm1 * density[1] * Cv * 4.0;
+  std::vector<Real> host_temperature{2.0, 4.0, 6.0};
+  std::vector<Real> pressure_from_temperature(num, -1.0);
+  eos.PressureFromDensityTemperature(
+      PortsOfCall::Exec::Host(), density.data(), host_temperature.data(),
+      pressure_from_temperature.data(), scratch.data(), num, lambdas);
+  REQUIRE(pressure_from_temperature[1] ==
+          Catch::Approx(expected_pressure_from_temperature));
+}
+} // namespace
 
 SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
 
@@ -376,6 +439,29 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           array_compare(num, density, temperature, h_gruneisen, gruneisen_true, "Density",
                         "Temperature");
         }
+      }
+    }
+  }
+}
+
+SCENARIO("Vector EOS host execution space", "[VectorEOS][IdealGas][HostExec]") {
+  constexpr Real Cv = 5.0;
+  constexpr Real gm1 = 0.4;
+
+  GIVEN("An ideal gas concrete EOS") {
+    IdealGas eos(gm1, Cv);
+    WHEN("The vector API is called with PortsOfCall::Exec::Host()") {
+      THEN("The concrete EOS host path should return the expected answers") {
+        CheckHostExecVectorApi(eos);
+      }
+    }
+  }
+
+  GIVEN("An ideal gas wrapped in a variant") {
+    EOS eos = IdealGas(gm1, Cv);
+    WHEN("The vector API is called with PortsOfCall::Exec::Host()") {
+      THEN("The variant host path should return the expected answers") {
+        CheckHostExecVectorApi(eos);
       }
     }
   }

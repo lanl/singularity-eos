@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -113,9 +113,9 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
 
     // Setup lambda function for finding rho.
     // The equation has been rewritten to avoid division by zero (polynomial equation).
-    auto f = [=](const Real x /* density */) {
+    auto f = [temperature, press, this](const Real x /* density */) {
       const Real eta = _bb * x;
-      const Real term1 = x * (1. + eta + eta * eta - eta * eta * eta);
+      const Real term1 = x * (1. + eta * (1 + eta * (1 - eta)));
       const Real term2 =
           robust::ratio(press * math_utils::pow<3>(1. - eta), _Cv * _gm1 * temperature);
       return term1 - term2;

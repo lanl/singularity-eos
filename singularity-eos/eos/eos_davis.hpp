@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -24,6 +24,14 @@
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
+
+/* Implements the equation of state from
+   Wescott, Stewart, and Davis, 2005
+   https://doi.org/10.1063/1.2035310
+
+   The expansion branch of the EOS is described by Aslam, 2018
+   https://doi.org/10.1063/1.5020172
+ */
 
 namespace singularity {
 
@@ -183,6 +191,8 @@ class DavisReactants : public EosBase<DavisReactants> {
   void inline Finalize() {}
   static std::string EosType() { return std::string("DavisReactants"); }
   static std::string EosPyType() { return EosType(); }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumDensity() const { return robust::EPS(); }
 
  private:
   static constexpr Real onethird = 1.0 / 3.0;
@@ -330,6 +340,8 @@ class DavisProducts : public EosBase<DavisProducts> {
   inline void Finalize() {}
   static std::string EosType() { return std::string("DavisProducts"); }
   static std::string EosPyType() { return EosType(); }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumDensity() const { return robust::EPS(); }
 
  private:
   static constexpr Real onethird = 1.0 / 3.0;
@@ -389,6 +401,7 @@ PORTABLE_FORCEINLINE_FUNCTION Real DavisReactants::DimlessEdiff(const Real rho,
 
 PORTABLE_INLINE_FUNCTION Real DavisReactants::Ps(const Real rho) const {
   using namespace math_utils;
+  if (rho <= 0) return 0;
   const Real y = 1.0 - robust::ratio(_rho0, std::max(rho, 0.));
   const Real phat = 0.25 * _A2oB * _rho0;
   const Real b4y = 4.0 * _B * y;
@@ -403,6 +416,7 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::Ps(const Real rho) const {
   }
 }
 PORTABLE_INLINE_FUNCTION Real DavisReactants::Es(const Real rho) const {
+  if (rho <= 0) return 0;
   const Real y = 1 - robust::ratio(_rho0, std::max(rho, 0.));
   const Real phat = 0.25 * _A2oB * _rho0;
   const Real b4y = 4 * _B * y;
@@ -419,6 +433,7 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::Es(const Real rho) const {
          phat * _spvol0 * e_s;
 }
 PORTABLE_INLINE_FUNCTION Real DavisReactants::Ts(const Real rho) const {
+  if (rho <= 0) return _T0;
   const Real rho0overrho = robust::ratio(_rho0, std::max(rho, 0.));
   const Real y = 1 - rho0overrho;
   return _T0 * std::exp(-_Z * y) * std::pow(rho0overrho, -_G0 - _Z);
@@ -448,11 +463,14 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::BulkModulusFromDensityInternalEner
                  3 * robust::ratio(y, pow<4>(1 - y)) +
                  4 * robust::ratio(pow<2>(y), pow<5>(1 - y)))
           : -phat * 4 * _B * _rho0 * std::exp(b4y);
-  const Real gammav = (rho >= _rho0) ? _Z * _rho0 : 0.0;
+  const Real gammav = (rho >= _rho0) ? -_Z * _rho0 : 0.0;
+  const Real es = Es(rho);
   const Real numerator =
-      -(psv + (sie - Es(rho)) * std::max(rho, 0.) * (gammav - gamma * std::max(rho, 0.)) -
+      -(psv + (sie - es) * std::max(rho, 0.) * (gammav - gamma * std::max(rho, 0.)) -
         gamma * std::max(rho, 0.) * esv);
-  return robust::ratio(numerator, std::max(rho, 0.));
+  const Real ke = robust::ratio(numerator, std::max(rho, 0.));
+  const Real p = -esv + rho * gamma * (sie - es);
+  return ke + gamma * p;
 }
 
 template <typename Indexer_t>
@@ -520,7 +538,7 @@ PORTABLE_INLINE_FUNCTION Real DavisProducts::BulkModulusFromDensityInternalEnerg
   }
   const Real vvc = robust::ratio(1.0, rho * _vc);
   const Real Fx =
-      -4 * _a *
+      -4 * _a * _n *
       robust::ratio(std::pow(vvc, 2 * _n - 1), pow<2>(1 + std::pow(vvc, 2 * _n)));
   const Real tmp =
       robust::ratio(std::pow(0.5 * (std::pow(vvc, _n) + std::pow(vvc, -_n)), _aon),
@@ -536,9 +554,12 @@ PORTABLE_INLINE_FUNCTION Real DavisProducts::BulkModulusFromDensityInternalEnerg
   // const Real esv = _pc*_vc/(_k-1+_a)*(tmp+vvc*tmp_x)/_vc;
   const Real esv = robust::ratio(_pc, _k - 1 + _a) * (tmp + vvc * tmp_x);
   const Real gamma = Gamma(rho);
-  const Real gammav = (1 - _b) * Fx * _vc;
-  return -robust::ratio(
-      psv + (sie - Es(rho)) * rho * (gammav - gamma * rho) - gamma * rho * esv, rho);
+  const Real es = Es(rho);
+  const Real gammav = (1 - _b) * Fx / _vc;
+  const Real ke = -robust::ratio(
+      psv + (sie - es) * rho * (gammav - gamma * rho) - gamma * rho * esv, rho);
+  const Real p = Ps(rho) + rho * gamma * (sie - es);
+  return ke + gamma * p;
 }
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void DavisProducts::DensityEnergyFromPressureTemperature(

@@ -1,0 +1,47 @@
+# ======================================================================
+#  © 2026. Triad National Security, LLC. All rights reserved.  This
+#  program was produced under U.S. Government contract 89233218CNA000001
+#  for Los Alamos National Laboratory (LANL), which is operated by Triad
+#  National Security, LLC for the U.S.  Department of Energy/National
+#  Nuclear Security Administration. All rights in the program are
+#  reserved by Triad National Security, LLC, and the U.S. Department of
+#  Energy/National Nuclear Security Administration. The Government is
+#  granted for itself and others acting on its behalf a nonexclusive,
+#  paid-up, irrevocable worldwide license in this material to reproduce,
+#  prepare derivative works, distribute copies to the public, perform
+#  publicly and display publicly, and to permit others to do so.
+# ======================================================================
+
+# First material doesn't need <name>
+matid = 5030
+name = air
+# These set the number of grid points per decade
+# for each variable. The default is 50 points
+# per decade.
+numrho/decade = 40
+numT/decade = 40
+numSie/decade = 40
+
+<aluminum>
+matid=3720
+name=aluminum # define it again to test
+rhomin = 1e-5
+Tmin = 1
+
+<helium>
+matid = 5762
+
+<steel>
+matid = 4272
+rhomin = 1e-5
+Tmin = 1
+
+
+<titanium>
+matid = 2961
+# These set the number of grid points per decade
+# for each variable. The default is 50 points
+# per decade.
+numrho/decade = 30
+numT/decade = 25
+numSie/decade = 15

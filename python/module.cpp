@@ -146,6 +146,9 @@ PYBIND11_MODULE(singularity_eos, m) {
   thermalqs.attr("specific_heat") = pybind11::int_(thermalqs::specific_heat);
   thermalqs.attr("bulk_modulus") = pybind11::int_(thermalqs::bulk_modulus);
   thermalqs.attr("do_lambda") = pybind11::int_(thermalqs::do_lambda);
+  thermalqs.attr("mass_fractions") = pybind11::int_(thermalqs::mass_fractions);
+  thermalqs.attr("volume_fractions") = pybind11::int_(thermalqs::volume_fractions);  
+  thermalqs.attr("internal_energy_densities") = pybind11::int_(thermalqs::internal_energy_densities);  
   thermalqs.attr("all_values") = pybind11::int_(thermalqs::all_values);
 
   py::module eos_units = m.def_submodule("eos_units");

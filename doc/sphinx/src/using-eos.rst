@@ -81,10 +81,19 @@ The function
 fills the ``dst`` pointer with the memory required for serialization
 and returns the number of bytes written to ``dst``. The function
 
-.. cpp:function:: std::pair<std::size_t, char*> EOS::Serialize();
+.. cpp:function:: std::pair<std::size_t, std::shared_ptr<char[]>> EOS::Serialize();
 
-allocates a ``char*`` pointer to contain serialized data and fills
+allocates a ``std::shared_ptr<char[]>`` to contain serialized data and fills
 it.
+
+.. note::
+
+  Note that ``Serialize()`` uses a smart pointer while most other
+  ``singularity-eos`` machinery works with unmanaged pointers. This
+  means the pointer returned by ``Serialize()`` does not need to be
+  freed. However it is the responsiblity of the host code to manage
+  the memory for other pointers that the serialization machinery may
+  utilize or interact with.
 
 .. warning::
 
@@ -141,7 +150,9 @@ For example you might call ``DeSerialize`` as
   would call ``eos.Finalize()``. If the ``SharedMemSettings`` are
   utilized to request data be written to a shared memory pointer,
   however, you can free the ``src`` pointer, so long as you don't free
-  the shared memory pointer.
+  the shared memory pointer. This means you must manage these pointers
+  externally and not let them go out of scope, especially if you use
+  smart pointers.
 
 Putting everything together, a full sequence with MPI might look like this:
 
@@ -464,6 +475,23 @@ The vector API is templated to accept accessors. We do note, however,
 that vectorization may suffer if your underlying data structure is not
 contiguous in memory.
 
+Execution spaces for the vector API
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``singularity-eos`` borrows from the `Kokkos`_ notion of an *execution
+space*. Each vector API call accepts an execution space as an optional
+first argument, telling ``singularity-eos`` where to launch work,
+either on CPU or GPU (for example). These are implemented via
+`ports-of-call`_. By default, the two execution spaces available are
+``PortsOfCall::Exec::Host`` and ``PortsOfCall::Exec::Device``. If you
+build with the serial backend, these are equivalent. If you build with
+``Kokkos`` enabled, you may also pass in any valid ``Kokkos``
+execution space.
+
+.. _Kokkos: https://kokkos.org/kokkos-core-wiki/
+
+.. _ports-of-call: https://lanl.github.io/ports-of-call/main/index.html
+
 .. _eospac_vector:
 
 EOSPAC Vector Functions
@@ -494,6 +522,12 @@ available member function.
    // call EOSPAC eos vector function with scratch buffer
    eos.TemperatureFromDensityInternalEnergy(density.data(), energy.data(), temperature.data(),
                                             scratch.data(), density.size());
+
+.. warning::
+
+  EOSPAC does **not** support selection of execution spaces. You will
+  get whatever execution space (likely host) that the EOSPAC backend
+  has been configured for.
 
 The Evaluate Methods
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -683,7 +717,29 @@ The available types currently supported by default are:
   struct singularity::IndexableTypes::MeanAtomicNumber;
   struct singularity::IndexableTypes::ElectronFraction;
 
-However if you are not limited to these types. Any type will do and
+Additionally, indexable types may be "vector" quantities. The type
+
+.. code-block:: cpp
+
+  struct singularity::IndexableTypes::MassFractions;
+
+must be constructed with an index, e.g.,
+
+.. code-block:: cpp
+
+  eos.MassFractionsFromDensityTemperature(rho, T, lambda);
+  x0 = lambda[MassFractions(0)];
+
+and the default constructor is not supported. Finally, the structs
+
+.. code-block:: cpp
+
+  struct singularity::RootStatus;
+  struct singularity::TableStatus;
+  
+are mostly used for internal/debugging purposes.
+
+However you are not limited to these types. Any type will do and
 you can define your own as you like. For example:
 
 .. code-block::
@@ -725,10 +781,37 @@ which might be used as
 
 where ``MeanIonizationState`` is shorthand for index 2, since you
 defined that overload. Note that the ``operator[]`` must be marked
-``const``. To more easily enable mixing and matching integer-based
+``const``. "Vectorized" types such as ``MassFractions`` are expected
+to expose a public member field named ``n``, which can be utilized by a
+custom indexer class. For example:
+
+.. code-block:: cpp
+
+  class MyLambda_t {
+   public:
+    constexpr static bool is_type_indexable = true;
+    MyLambda_t() = default;
+    PORTABLE_FORCEINLINE_FUNCTION
+    Real &operator[](const MeanIonizationState &zbar) const {
+      return data_[0];
+    }
+    // x.n used as on offset within the underlying container
+    PORTABLE_FORCEINLINE_FUNCTION
+    Real &operator[](const MassFractions &x) const {
+      return data_[1 + x.n];
+    }
+   private:
+    std::array<Real, 3> data_;
+  };
+
+To more easily enable mixing and matching integer-based
 indexing with type-based indexing, the functions
 
 .. code-block:: cpp
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
+  bool SafeGet(Indexer_t const &lambda, const T &t, std::size_t const idx, Real &out);
 
   template <typename T, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION
@@ -738,19 +821,31 @@ indexing with type-based indexing, the functions
 
   template <typename T, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION
+  bool SafeGet(Indexer_t const &lambda, const T &t, Real &out);
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
   bool SafeGet(Indexer_t const &lambda, Real &out);
 
 .. code-block:: cpp
 
   template <typename T, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION
-  Real SafeMustGet(Indexer_t const &lambda, std::size_t const idx)
+  Real SafeMustGet(Indexer_t const &lambda, const T &t, std::size_t const idx);
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real SafeMustGet(Indexer_t const &lambda, std::size_t const idx);
 
 .. code-block:: cpp
 
   template <typename T, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION
-  Real SafeMustGet(Indexer_t const &lambda)
+  Real SafeMustGet(Indexer_t const &lambda, const T &t);
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real SafeMustGet(Indexer_t const &lambda);
 
 will update the value of ``out`` with the value at either the appropriate
 type-based index, ``T``, or the numerical index, ``idx``, if the ``Indexer_t``
@@ -779,9 +874,17 @@ Similarly, the functions
 
   template <typename T, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION
+  inline bool SafeSet(Indexer_t &lambda, const T &t, std::size_t const idx, Real const in);
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
   inline bool SafeSet(Indexer_t &lambda, std::size_t const idx, Real const in);
 
 .. code-block:: cpp
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
+  inline bool SafeSet(Indexer_t &lambda, const T &t, Real const in)
 
   template <typename T, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION
@@ -791,9 +894,17 @@ Similarly, the functions
 
   template <typename T, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION
+  inline bool SafeMustSet(Indexer_t &lambda, const T &t, std::size_t const idx, Real const in);
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
   inline bool SafeMustSet(Indexer_t &lambda, std::size_t const idx, Real const in);
 
 .. code-block:: cpp
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
+  inline bool SafeMustSet(Indexer_t &lambda, const T &t, Real const in)
 
   template <typename T, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION
@@ -846,7 +957,7 @@ provides some internal transformation on inputs and outputs. For
 example the ``ShiftedEOS`` modifier changes the reference energy of a
 given EOS model by shifting all energies up or down. Modifiers can be
 used to, for example, production-harden a model. Only certain
-combinations of ``EOS`` and ``modifier`` are permitted by the defualt
+combinations of ``EOS`` and ``modifier`` are permitted by the default
 ``Variant``. For example, only ``IdealGas``, ``SpinerEOS``, and
 ``StellarCollapse`` support the ``RelativisticEOS`` and ``UnitSystem``
 modifiers. All models support the ``ShiftedEOS`` and ``ScaledEOS``
@@ -899,7 +1010,7 @@ unmodified EOS model, call
 
 The return value here will be either the type of the ``EOS`` variant
 type or the unmodified model (for example ``IdealGas``), depending
-on whether this method was callled within a variant or on a standalone
+on whether this method was called within a variant or on a standalone
 model outside a variant.
 
 If you have chained modifiers, e.g.,
@@ -923,7 +1034,7 @@ required by the modifier is appended to the end of the lambda
 indexer. For example, the ``StellarCollapse`` EOS model requires
 ``nlambda=2``. The ``ZSplitI`` modifier rquires
 ``nlambda=1``. Together, ``ZSplitI<StellarCollapse>`` requires a
-lambda indexer of length 3, an the ordering is two parameters for
+lambda indexer of length 3, and the ordering is two parameters for
 ``StellarCollapse`` first, and then the parameter required by
 ``ZSplitI``.
 
@@ -1144,7 +1255,7 @@ Note that for relativistic models,
 
    c_s^2 = \frac{B_S}{w}
 
-where :math:`w = \rho h` for specific entalpy :math:`h` is the
+where :math:`w = \rho h` for specific enthalpy :math:`h` is the
 enthalpy by volume. The sound speed may also differ for, e.g., porous
 models, where the pressure is less directly correlated with the
 density.
@@ -1180,6 +1291,25 @@ given density in :math:`g/cm^3` and temperature in Kelvin.
 
 returns the unitless Gruneisen parameter given density in
 :math:`g/cm^3` and specific internal energy in :math:`erg/g`.
+
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real InternalEnergyFromDensityPressure(const Real rho, const Real P, 
+                                          Indexer_t &&lambda = nullptr) const;
+
+returns the specific internal energy in :math:`erg/g` given a density
+in :math:`g/cm^3` and a pressure in Barye. This call is often a root
+find, and thus an alternative signature allows an initial guess to be
+passed in by reference:
+
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   void InternalEnergyFromDensityPressure(const Real rho, const Real P, Real &sie,
+                                          Indexer_t &&lambda = nullptr) const;
+
+In this case, the guess will be set to the new value by the function.
 
 .. code-block:: cpp
 
@@ -1224,6 +1354,31 @@ specific internal energy in :math:`erg/g`.
   energy. These are coupled, however, so if one is provided, the other
   will be too. If you call an entropy for a model that does not
   provide it, ``singularity-eos`` will return an error.
+
+The function
+
+.. code-block:: cpp
+
+  template <typename Lambda_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P, const Real T,
+                             Lambda_t &&lambda, Real &dedP_T, Real &drdP_T, Real &dedT_P,
+                             Real &drdT_P) const;
+
+computes the partial derivatives of density and specific internal
+energy with respect to pressure and temperature, with either pressure
+or temperature fixed. Each EOS model expects consistent density, 
+energy, pressure and temperature values to be provided so that it
+can perform this calculation performantly. The intended
+use of this method is to compute the cell-averaged thermodynamic
+derivatives in a mixed cell in pressure-temperature equilibrium.
+
+.. warning::
+
+  Not all equations of state provide implementations of
+  ``PTDerivativesFromPreferred``, when an implementation is not
+  available, ``singularity-eos`` uses a finite differences
+  approximation.
 
 The function
 
@@ -1316,19 +1471,19 @@ The function
                 const unsigned long output,
                 Indexer_t &&lambda = nullptr) const;
 
-is a a bit of a special case. ``output`` is a bitfield represented as
+is a bit of a special case. ``output`` is a bitfield represented as
 an unsigned 64 bit number. Quantities such ``pressure`` and
 ``specific_internal_energy`` can be represented in the ``output``
 field by flipping the appropriate bits. There is one bit per
 quantity. ``FillEos`` sets all parameters (passed in by reference)
-requested in the ``output`` field utilizing all paramters not
+requested in the ``output`` field utilizing all parameters not
 requested in the ``output`` flag, which are assumed to be input.
 
 The ``output`` variable uses the same ``thermalqs`` flags as the
 ``PreferredInput`` method. If an insufficient number of variables are
 passed in as input, or if the input is not a combination supported by
 a given model, the function is expected to raise an error. The exact
-combinations of inputs and ouptuts supported is model
+combinations of inputs and outputs supported is model
 dependent. However, the user will always be able to use density and
 temperature or internal energy as inputs and get all other
 quantities as outputs.

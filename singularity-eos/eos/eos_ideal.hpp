@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -148,6 +148,25 @@ class IdealGas : public EosBase<IdealGas> {
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return _gm1;
   }
+
+  template <typename Lambda_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P, const Real T,
+                             Lambda_t &&lambda, Real &dedP_T, Real &drdP_T, Real &dedT_P,
+                             Real &drdT_P) const {
+    // P = (gm1) rho cv T = (gm1) rho sie
+
+    dedP_T = 0;
+    dedT_P = _Cv;
+
+    // => rho(P, T) = P / (gm1 cv T) = P / (gm1 sie)
+    drdP_T = robust::ratio(1.0, _gm1 * sie);
+
+    // rho(P, T) = (P / (gm1 cv)) T^{-1}
+    // => drdT_P = -1 (P / (gm1 cv)) T^{-2}
+    drdT_P = -robust::ratio(P, _gm1 * _Cv * T * T);
+  }
+
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
@@ -186,6 +205,14 @@ class IdealGas : public EosBase<IdealGas> {
     sie = MYMAX(0.0, _Cv * temp);
     rho = MYMAX(0.0, press / (_gm1 * sie));
   }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void InternalEnergyFromDensityPressure(
+      const Real rho, const Real P, Real &sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    // P = gm1 rho sie
+    sie = P / (_gm1 * rho);
+  }
+
   inline void Finalize() {}
   static std::string EosType() { return std::string("IdealGas"); }
   static std::string EosPyType() { return EosType(); }
@@ -198,7 +225,8 @@ class IdealGas : public EosBase<IdealGas> {
   static constexpr const Real _P0 = ATMOSPHERIC_PRESSURE;
   // static constexpr const char _eos_type[] = {"IdealGas"};
   static constexpr const unsigned long _preferred_input =
-      thermalqs::density | thermalqs::specific_internal_energy;
+      thermalqs::density | thermalqs::specific_internal_energy | thermalqs::temperature |
+      thermalqs::pressure;
   // optional entropy reference state variables
   Real _EntropyT0, _EntropyRho0;
   // optional mean atomic mass and number

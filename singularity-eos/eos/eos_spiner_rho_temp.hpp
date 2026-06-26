@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -37,7 +37,9 @@
 
 // base
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/eos_concepts.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
+#include <singularity-eos/base/finite_diff.hpp>
 #include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
@@ -46,6 +48,7 @@
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 #include <singularity-eos/eos/eos_spiner_common.hpp>
+#include <singularity-eos/eos/eos_spiner_construction.hpp>
 
 // spiner
 #include <spiner/databox.hpp>
@@ -56,6 +59,9 @@
 namespace singularity {
 
 using namespace eos_base;
+
+// Import grid parameters from shared construction utilities
+using spiner_table_builder::SpinerTableGridParams;
 
 /*
   Tables all have indep. variables log10(rho), log10(T)
@@ -102,7 +108,12 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
                              reproducibility_mode, pmin_vapor_dome) {}
   PORTABLE_INLINE_FUNCTION
   SpinerEOSDependsRhoT()
-      : memoryStatus_(DataStatus::Deallocated), split_(TableSplit::Total) {}
+      : split_(TableSplit::Total), memoryStatus_(DataStatus::Deallocated) {}
+
+  // Constructor from generic EOS
+  template <typename EOS>
+  inline SpinerEOSDependsRhoT(const EOS &source_eos, const SpinerTableGridParams &params,
+                              bool reproducibility_mode = false);
 
   inline SpinerEOSDependsRhoT GetOnDevice();
 
@@ -177,9 +188,33 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void MassFractionsFromDensityTemperature(
+      const Real rho, const Real temperature, Real *mass_fracs,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void MassFractionsFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  MassFractionsFromDensityInternalEnergy(const Real rho, const Real sie, Real *mass_fracs,
+                                         Indexer_t &&lambda) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  MassFractionsFromDensityInternalEnergy(const Real rho, const Real sie,
+                                         Indexer_t &&lambda) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                        Indexer_t &&lambda, Real &rho, Real &sie) const;
+  /*
+  // TODO(JMM): For now using FD. Fix this.
+  template <typename Lambda_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  PTDerivativesFromPreferred(const Real rho, const Real sie, const Real P, const Real T,
+                             Lambda_t &&lambda, Real &dedP_T, Real &drdP_T, Real &dedT_P,
+                             Real &drdT_P) const;
+  */
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
@@ -221,7 +256,13 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumPressure() const { return PMin_; }
 
+  PORTABLE_FORCEINLINE_FUNCTION int GetNumberofPhases() const { return numphases; }
+  const char *GetPhaseNames() const { return phase_names; }
+
+  // TODO(JMM): Should nlambda be made non-static so it can report the
+  // number of phases too?
   constexpr static inline int nlambda() noexcept { return _n_lambda; }
+
   template <typename T>
   static inline constexpr bool NeedsLambda() {
     using namespace IndexableTypes;
@@ -234,7 +275,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 
  private:
   herr_t loadDataboxes_(const std::string &matid_str, hid_t file, hid_t lTGroup,
-                        hid_t coldGroup);
+                        hid_t coldGroup, hid_t mfGroup);
   inline void fixBulkModulus_();
   inline void setlTColdCrit_();
 
@@ -294,7 +335,8 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 
   // TODO(JMM): Could unify declarations and macro below by using
   // reference_wrapper instead of pointers... worth it?
-  DataBox P_, sie_, bMod_, dPdRho_, dPdE_, dTdRho_, dTdE_, dEdRho_, dEdT_;
+
+  DataBox P_, sie_, bMod_, dPdRho_, dPdE_, dTdRho_, dTdE_, dEdRho_, dEdT_, mF_;
   DataBox PMax_, sielTMax_, dEdTMax_, gm1Max_;
   DataBox lTColdCrit_;
   DataBox PCold_, sieCold_, bModCold_;
@@ -303,9 +345,10 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 
   // TODO(JMM): Pointers here? or reference_wrapper? IMO the pointers are more clear
 #define DBLIST                                                                           \
-  &P_, &sie_, &bMod_, &dPdRho_, &dPdE_, &dTdRho_, &dTdE_, &dEdRho_, &dEdT_, &PMax_,      \
-      &sielTMax_, &dEdTMax_, &gm1Max_, &lTColdCrit_, &PCold_, &sieCold_, &bModCold_,     \
-      &dPdRhoCold_, &dPdECold_, &dTdRhoCold_, &dTdECold_, &dEdTCold_, &rho_at_pmin_
+  &P_, &sie_, &bMod_, &dPdRho_, &dPdE_, &dTdRho_, &dTdE_, &dEdRho_, &dEdT_, &mF_,        \
+      &PMax_, &sielTMax_, &dEdTMax_, &gm1Max_, &lTColdCrit_, &PCold_, &sieCold_,         \
+      &bModCold_, &dPdRhoCold_, &dPdECold_, &dTdRhoCold_, &dTdECold_, &dEdTCold_,        \
+      &rho_at_pmin_
   auto GetDataBoxPointers_() const { return std::vector<const DataBox *>{DBLIST}; }
   auto GetDataBoxPointers_() { return std::vector<DataBox *>{DBLIST}; }
 #undef DBLIST
@@ -322,6 +365,13 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   TableSplit split_;
   bool reproducible_ = false;
   bool pmin_vapor_dome_ = false;
+  bool has_mf = false;
+  // Need to hold the phase names for multiphase EOS
+  // This isn't great, but the class needs to be trivially copyable
+  char *phase_names = nullptr;
+  std::size_t len_phase_names = 0;
+  DataStatus phase_names_status = DataStatus::Deallocated;
+  int numphases = 1;
   static constexpr const Real ROOT_THRESH = 1e-14;
   static constexpr const Real SOFT_THRESH = 1e-8;
   // only used to exclude vapor dome
@@ -339,21 +389,19 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, i
       pmin_vapor_dome_(pmin_vapor_dome), memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str = std::to_string(matid);
-  hid_t file, matGroup, lTGroup, coldGroup;
-  herr_t status = H5_SUCCESS;
 
   H5Eset_auto(H5E_DEFAULT, spiner_common::aborting_error_handler, NULL);
 
-  file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+  hid_t file =
+      spiner_common::h5_safe_fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   int log_type = FastMath::LogType::NQT1;
-  if (H5LTfind_attribute(file, SP5::logType)) {
-    H5LTget_attribute_int(file, "/", SP5::logType, &log_type);
-  }
+  spiner_common::h5_safe_get_attribute<int>(file, "/", SP5::logType, &log_type, true);
+
   PORTABLE_ALWAYS_REQUIRE(
       log_type == FastMath::Settings::log_type,
       "Log mode used at runtime must be identical to the one used to generate the file!");
 
-  matGroup = H5Gopen(file, matid_str.c_str(), H5P_DEFAULT);
+  hid_t matGroup = spiner_common::h5_safe_gopen(file, matid_str.c_str(), H5P_DEFAULT);
 
   std::string lTGroupName = SP5::Depends::logRhoLogT;
   if (split == TableSplit::ElectronOnly) {
@@ -361,19 +409,27 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, i
   } else if (split == TableSplit::IonCold) {
     lTGroupName += (std::string("/") + SP5::SubTable::ionCold);
   }
-  lTGroup = H5Gopen(matGroup, lTGroupName.c_str(), H5P_DEFAULT);
-  coldGroup = H5Gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);
+  hid_t lTGroup =
+      spiner_common::h5_safe_gopen(matGroup, lTGroupName.c_str(), H5P_DEFAULT);
+  hid_t coldGroup =
+      spiner_common::h5_safe_gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);
 
-  status += loadDataboxes_(matid_str, file, lTGroup, coldGroup);
-
-  status += H5Gclose(lTGroup);
-  status += H5Gclose(coldGroup);
-  status += H5Gclose(matGroup);
-  status += H5Fclose(file);
-
-  if (status != H5_SUCCESS) {
-    EOS_ERROR("SpinerDependsRhoT: HDF5 error\n"); // TODO: make this better
+  // mass fractions
+  has_mf = H5Lexists(matGroup, SP5::Depends::massFrac, H5P_DEFAULT);
+  hid_t mfGroup = -1;
+  if (has_mf) {
+    mfGroup = spiner_common::h5_safe_gopen(matGroup, SP5::Depends::massFrac, H5P_DEFAULT);
   }
+
+  loadDataboxes_(matid_str, file, lTGroup, coldGroup, mfGroup);
+
+  if (has_mf) {
+    spiner_common::h5_safe_gclose(mfGroup);
+  }
+  spiner_common::h5_safe_gclose(lTGroup);
+  spiner_common::h5_safe_gclose(coldGroup);
+  spiner_common::h5_safe_gclose(matGroup);
+  spiner_common::h5_safe_fclose(file);
 
   CheckParams();
 }
@@ -387,13 +443,12 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
       pmin_vapor_dome_(pmin_vapor_dome), memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str;
-  hid_t file, matGroup, lTGroup, coldGroup;
-  herr_t status = H5_SUCCESS;
 
   H5Eset_auto(H5E_DEFAULT, spiner_common::aborting_error_handler, NULL);
 
-  file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-  matGroup = H5Gopen(file, materialName.c_str(), H5P_DEFAULT);
+  hid_t file =
+      spiner_common::h5_safe_fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+  hid_t matGroup = spiner_common::h5_safe_gopen(file, materialName.c_str(), H5P_DEFAULT);
 
   std::string lTGroupName = SP5::Depends::logRhoLogT;
   if (split == TableSplit::ElectronOnly) {
@@ -401,68 +456,125 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
   } else if (split == TableSplit::IonCold) {
     lTGroupName += (std::string("/") + SP5::SubTable::ionCold);
   }
-  lTGroup = H5Gopen(matGroup, lTGroupName.c_str(), H5P_DEFAULT);
-  coldGroup = H5Gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);
 
-  status +=
-      H5LTget_attribute_int(file, materialName.c_str(), SP5::Material::matid, &matid_);
+  hid_t lTGroup =
+      spiner_common::h5_safe_gopen(matGroup, lTGroupName.c_str(), H5P_DEFAULT);
+  hid_t coldGroup =
+      spiner_common::h5_safe_gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);
+
+  spiner_common::h5_safe_get_attribute<int>(file, materialName.c_str(),
+                                            SP5::Material::matid, &matid_);
   matid_str = std::to_string(matid_);
 
-  status += loadDataboxes_(matid_str, file, lTGroup, coldGroup);
-
-  status += H5Gclose(lTGroup);
-  status += H5Gclose(coldGroup);
-  status += H5Gclose(matGroup);
-  status += H5Fclose(file);
-
-  if (status != H5_SUCCESS) {
-    EOS_ERROR("SpinerDependsRhoT: HDF5 error\n");
+  // mass fractions
+  has_mf = H5Lexists(matGroup, SP5::Depends::massFrac, H5P_DEFAULT);
+  hid_t mfGroup = -1;
+  if (has_mf) {
+    mfGroup = spiner_common::h5_safe_gopen(matGroup, SP5::Depends::massFrac, H5P_DEFAULT);
   }
+
+  loadDataboxes_(matid_str, file, lTGroup, coldGroup, mfGroup);
+
+  if (has_mf) {
+    spiner_common::h5_safe_gclose(mfGroup);
+  }
+  spiner_common::h5_safe_gclose(lTGroup);
+  spiner_common::h5_safe_gclose(coldGroup);
+  spiner_common::h5_safe_gclose(matGroup);
+  spiner_common::h5_safe_fclose(file);
 
   CheckParams();
 }
 
 inline SpinerEOSDependsRhoT SpinerEOSDependsRhoT::GetOnDevice() {
-  return SpinerTricks::GetOnDevice(this);
+  auto eos_d = SpinerTricks::GetOnDevice(this);
+  if (len_phase_names > 0) {
+    PORTABLE_ALWAYS_REQUIRE(phase_names != nullptr, "phase_names NULL but len > 0");
+
+    char *dev = (char *)(PORTABLE_MALLOC(len_phase_names));
+    portableCopyToDevice<char>(dev, phase_names, len_phase_names);
+
+    eos_d.phase_names = dev;
+    eos_d.len_phase_names = len_phase_names;
+    eos_d.phase_names_status = DataStatus::OnDevice;
+  } else {
+    eos_d.phase_names = nullptr;
+    eos_d.len_phase_names = 0;
+    eos_d.phase_names_status = DataStatus::Deallocated;
+  }
+  return eos_d;
 }
 
-void SpinerEOSDependsRhoT::Finalize() { SpinerTricks::Finalize(this); }
+void SpinerEOSDependsRhoT::Finalize() {
+  SpinerTricks::Finalize(this);
+
+  if ((phase_names_status != DataStatus::UnManaged) && (phase_names != nullptr)) {
+    if (phase_names_status == DataStatus::OnHost) {
+      free(phase_names);
+    } else if (phase_names_status == DataStatus::OnDevice) {
+      PORTABLE_FREE(phase_names);
+    }
+  }
+  phase_names = nullptr;
+  len_phase_names = 0;
+  phase_names_status = DataStatus::Deallocated;
+}
 
 inline std::size_t SpinerEOSDependsRhoT::DynamicMemorySizeInBytes() const {
-  return SpinerTricks::DynamicMemorySizeInBytes(this);
+  return SpinerTricks::DynamicMemorySizeInBytes(this) + len_phase_names;
 }
 
 inline std::size_t SpinerEOSDependsRhoT::DumpDynamicMemory(char *dst) {
-  return SpinerTricks::DumpDynamicMemory(dst, this);
+  std::size_t offst = SpinerTricks::DumpDynamicMemory(dst, this);
+
+  if (len_phase_names > 0) {
+    PORTABLE_ALWAYS_REQUIRE(phase_names != nullptr,
+                            "phase_names null but len_phase_names > 0");
+    std::memcpy(dst + offst, phase_names, len_phase_names);
+    offst += len_phase_names;
+  }
+  return offst;
 }
 
 inline std::size_t
 SpinerEOSDependsRhoT::SetDynamicMemory(char *src, const SharedMemSettings &stngs) {
-  return SpinerTricks::SetDynamicMemory((stngs.data == nullptr) ? src : stngs.data, this);
+  char *base = (stngs.data == nullptr) ? src : stngs.data;
+  std::size_t offst = SpinerTricks::SetDynamicMemory(base, this);
+
+  if (len_phase_names > 0) {
+    phase_names = base + offst;
+    phase_names_status = DataStatus::UnManaged;
+    offst += len_phase_names;
+  } else {
+    phase_names = nullptr;
+    len_phase_names = 0;
+    phase_names_status = DataStatus::Deallocated;
+  }
+  return offst;
 }
 
 inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
                                                    hid_t file, hid_t lTGroup,
-                                                   hid_t coldGroup) {
+                                                   hid_t coldGroup, hid_t mfGroup) {
   using namespace spiner_common;
   herr_t status = H5_SUCCESS;
 
   // offsets
-  status +=
-      H5LTget_attribute_double(file, matid_str.c_str(), SP5::Offsets::rho, &lRhoOffset_);
-  status +=
-      H5LTget_attribute_double(file, matid_str.c_str(), SP5::Offsets::T, &lTOffset_);
+  spiner_common::h5_safe_get_attribute<double>(file, matid_str.c_str(), SP5::Offsets::rho,
+                                               &lRhoOffset_);
+  spiner_common::h5_safe_get_attribute<double>(file, matid_str.c_str(), SP5::Offsets::T,
+                                               &lTOffset_);
   lRhoOffset_ = std::abs(lRhoOffset_);
   lTOffset_ = std::abs(lTOffset_);
   // normal density
-  status += H5LTget_attribute_double(file, matid_str.c_str(),
-                                     SP5::Material::normalDensity, &rhoNormal_);
+  spiner_common::h5_safe_get_attribute<double>(file, matid_str.c_str(),
+                                               SP5::Material::normalDensity, &rhoNormal_);
   rhoNormal_ = std::abs(rhoNormal_);
   // Mean atomic mass and mean atomic number
-  status += H5LTget_attribute_double(file, matid_str.c_str(),
-                                     SP5::Material::meanAtomicMass, &(AZbar_.Abar));
-  status += H5LTget_attribute_double(file, matid_str.c_str(),
-                                     SP5::Material::meanAtomicNumber, &(AZbar_.Zbar));
+  spiner_common::h5_safe_get_attribute<double>(
+      file, matid_str.c_str(), SP5::Material::meanAtomicMass, &(AZbar_.Abar));
+  spiner_common::h5_safe_get_attribute<double>(
+      file, matid_str.c_str(), SP5::Material::meanAtomicNumber, &(AZbar_.Zbar));
 
   // tables
   status += P_.loadHDF(lTGroup, SP5::Fields::P);
@@ -481,6 +593,24 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
   status += bModCold_.loadHDF(coldGroup, SP5::Fields::bMod);
   status += dPdRhoCold_.loadHDF(coldGroup, SP5::Fields::dPdRho);
 
+  // mass fractions
+  if (mfGroup != -1) {
+    status += mF_.loadHDF(mfGroup, SP5::Fields::massFrac);
+    spiner_common::h5_safe_get_attribute<int>(mfGroup, ".", "numphases", &numphases);
+    if (phase_names != nullptr) {
+      if (phase_names_status == DataStatus::OnHost) {
+        free(phase_names);
+      } else if (phase_names_status == DataStatus::OnDevice) {
+        PORTABLE_FREE(phase_names);
+      }
+    }
+    phase_names = spiner_common::h5_safe_read_attr_string(mfGroup, ".", "phase names",
+                                                          len_phase_names);
+    if ((phase_names != nullptr) && (len_phase_names > 0)) {
+      phase_names_status = DataStatus::OnHost;
+    }
+  }
+
   numRho_ = bMod_.dim(2);
   numT_ = bMod_.dim(1);
 
@@ -491,8 +621,6 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
   lTMin_ = P_.range(0).min();
   lTMax_ = P_.range(0).max();
   TMax_ = from_log(lTMax_, lTOffset_);
-
-  Real rhoMin = from_log(lRhoMin_, lRhoOffset_);
 
   // bulk modulus can be wrong in the tables. Use FLAG's approach to
   // fix the table.
@@ -522,7 +650,6 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
   for (int j = 0; j < numRho_; j++) {
     Real lRho = bModCold_.range(0).x(j);
     Real lT = lTColdCrit_(j);
-    Real rho = rho_(lRho);
     bModCold_(j) = bMod_.interpToReal(lRho, lT);
     dPdECold_(j) = dPdE_.interpToReal(lRho, lT);
     dTdRhoCold_(j) = dTdRho_.interpToReal(lRho, lT);
@@ -792,7 +919,7 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::BulkModulusFromDensityIntern
     const Real gm1 = gm1Max_.interpToReal(lRho);
     bMod = (gm1 + 1) * gm1 * rho * sie;
   } else { // on table
-    bMod = bMod_.interpToReal(rho, sie);
+    bMod = bMod_.interpToReal(lRho, lT);
   }
   return bMod;
 }
@@ -817,7 +944,75 @@ SpinerEOSDependsRhoT::GruneisenParamFromDensityInternalEnergy(const Real rho,
   }
   return gm1;
 }
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void SpinerEOSDependsRhoT::MassFractionsFromDensityTemperature(
+    const Real rho, const Real temp, Real *mass_fracs, Indexer_t &&lambda) const {
+  if (!has_mf) {
+    *mass_fracs = 1.0;
+    return;
+  }
 
+  Real lRho, lT;
+  getLogsRhoT_(rho, temp, lRho, lT, lambda);
+
+  DataBox mf1d(mass_fracs, numphases);
+  mf1d.interpFromDB(mF_, lRho, lT);
+}
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+SpinerEOSDependsRhoT::MassFractionsFromDensityTemperature(const Real rho, const Real temp,
+                                                          Indexer_t &&lambda) const {
+  if (!has_mf) {
+    // TODO(JMM): Should mass fraction be a required element of
+    // lambda? I don't love that...
+    IndexerUtils::SafeSet(lambda, IndexableTypes::MassFractions(0), _n_lambda, 1.0);
+    return;
+  }
+  Real lRho, lT;
+  getLogsRhoT_(rho, temp, lRho, lT, lambda);
+
+  for (int n = 0; n < numphases; n++) {
+    IndexerUtils::SafeSet(lambda, IndexableTypes::MassFractions(n), _n_lambda + n,
+                          mF_.interpToReal(lRho, lT, n));
+  }
+}
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+SpinerEOSDependsRhoT::MassFractionsFromDensityInternalEnergy(const Real rho,
+                                                             const Real sie,
+                                                             Real *mass_fracs,
+                                                             Indexer_t &&lambda) const {
+  if (!has_mf) {
+    *mass_fracs = 1.0;
+    return;
+  }
+  TableStatus whereAmI;
+  const Real lRho = lRho_(rho);
+  const Real lT = lTFromlRhoSie_(lRho, sie, whereAmI, lambda);
+
+  DataBox mf1d(mass_fracs, numphases);
+  mf1d.interpFromDB(mF_, lRho, lT);
+}
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+SpinerEOSDependsRhoT::MassFractionsFromDensityInternalEnergy(const Real rho,
+                                                             const Real sie,
+                                                             Indexer_t &&lambda) const {
+  if (!has_mf) {
+    // TODO(JMM): Should mass fraction be a required element of
+    // lambda? I don't love that...
+    IndexerUtils::SafeSet(lambda, IndexableTypes::MassFractions(0), _n_lambda, 1.0);
+    return;
+  }
+  TableStatus whereAmI;
+  const Real lRho = lRho_(rho);
+  const Real lT = lTFromlRhoSie_(lRho, sie, whereAmI, lambda);
+
+  for (int n = 0; n < numphases; n++) {
+    IndexerUtils::SafeSet(lambda, IndexableTypes::MassFractions(n), _n_lambda + n,
+                          mF_.interpToReal(lRho, lT, n));
+  }
+}
 // TODO(JMM): This would be faster with hand-tuned code
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void SpinerEOSDependsRhoT::DensityEnergyFromPressureTemperature(
@@ -828,6 +1023,42 @@ PORTABLE_INLINE_FUNCTION void SpinerEOSDependsRhoT::DensityEnergyFromPressureTem
   rho = rho_(lRho);
   sie = InternalEnergyFromDensityTemperature(rho, temp, lambda);
 }
+
+/*
+// TODO(JMM): I would like to use this, but shockingly we don't have
+// dPdT stored. So need to add that to sesame2spiner first. Possibly
+// should be a different MR.
+template <typename Lambda_t>
+PORTABLE_INLINE_FUNCTION void SpinerEOSDependsRhoT::PTDerivativesFromPreferred(
+    const Real rho, const Real sie, const Real P, const Real T, Lambda_t &&lambda,
+    Real &dedP_T, Real &drdP_T, Real &dedT_P, Real &drdT_P) const {
+  const Real lT = lT_(T);
+  const Real lRho = lRho_(rho);
+  const TableStatus whereAmI = getLocDependsRhoT_(lRho, lT);
+
+  if (whereAmI == TableStatus::OffBottom) {
+    dedP_T = robust::ratio(1., dPdECold_.interpToReal(lRho));
+    drdP_T = robust::ratio(1., dPdRhoCold_.interpToReal(lRho));
+    dedT_P = dEdTCold_.interpToReal(lRho);
+    drdT_P = 0;                                 // TODO(JMM) is this right?
+  } else if (whereAmI == TableStatus::OffTop) { // idela gas
+    const Real gm1 = gm1Max_.interpToReal(lRho);
+    const Real Cv = dEdTMax_.interpToReal(lRho);
+    dedP_T = 0;
+    dedT_P = Cv;
+    drdP_T = robust::ratio(1.0, gm1 * sie);
+    drdT_P = -robust::ratio(P, gm1 * Cv * T * T);
+  } else {
+    dedP_T = robust::ratio(1., dPdE_.interpToReal(lRho, lT));
+    drdP_T = robust::ratio(1., dPdRho_.interpToReal(lRho, lT));
+    dedT_P = dEdT_.interpToReal(lRho, lT);
+    // dP = (dP/dr)_T dr + (dP/dT)_r dT
+    // dP = 0
+    // => 0 = (dP/dr)_T dr + (dP/dT)_r dT
+    drdT_P = -robust::ratio(dPdT_.interpToReal(lRho, lT), dPdRho_.interpToReal(lRho, lT));
+  }
+}
+*/
 
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void
@@ -1181,6 +1412,245 @@ SpinerEOSDependsRhoT::getLocDependsRhoT_(const Real lRho, const Real lT) const {
   else
     whereAmI = TableStatus::OnTable;
   return whereAmI;
+}
+
+// Generic constructor: build SpinerEOSDependsRhoT from any EOS
+template <typename EOS>
+inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const EOS &source_eos,
+                                                  const SpinerTableGridParams &params,
+                                                  bool reproducibility_mode)
+    : matid_(params.matid), split_(TableSplit::Total),
+      reproducible_(reproducibility_mode), pmin_vapor_dome_(false),
+      memoryStatus_(DataStatus::OnHost) {
+
+  using namespace spiner_table_builder;
+
+  // Construct grids from parameters
+  Bounds lRhoBounds, lTBounds;
+  constructRhoBounds(params, lRhoBounds);
+  constructTBounds(params, lTBounds);
+
+  // Grid dimensions
+  numRho_ = lRhoBounds.grid.nPoints();
+  numT_ = lTBounds.grid.nPoints();
+
+  // Store offsets
+  lRhoOffset_ = lRhoBounds.offset;
+  lTOffset_ = lTBounds.offset;
+
+  // Store grid bounds
+  lRhoMin_ = lRhoBounds.grid.min();
+  lRhoMax_ = lRhoBounds.grid.max();
+  rhoMax_ = from_log(lRhoMax_, lRhoOffset_);
+  lTMin_ = lTBounds.grid.min();
+  lTMax_ = lTBounds.grid.max();
+  TMax_ = from_log(lTMax_, lTOffset_);
+
+  // Get actual min values (after offset)
+  Real rhoMin = from_log(lRhoMin_, lRhoOffset_);
+  Real TMin = from_log(lTMin_, lTOffset_);
+  Real TMax = TMax_;
+
+  // Anchor for piecewise grids
+  Real rhoAnchor = std::sqrt(rhoMin * rhoMax_);
+
+  // Allocate and initialize (rho, T) tables
+  // NOTE: Spiner convention is dimension 0 = T, dimension 1 = rho
+  P_.resize(numRho_, numT_);
+  P_.setRange(1, lRhoBounds.grid);
+  P_.setRange(0, lTBounds.grid);
+
+  sie_.resize(numRho_, numT_);
+  sie_.setRange(1, lRhoBounds.grid);
+  sie_.setRange(0, lTBounds.grid);
+
+  bMod_.resize(numRho_, numT_);
+  bMod_.setRange(1, lRhoBounds.grid);
+  bMod_.setRange(0, lTBounds.grid);
+
+  dPdRho_.resize(numRho_, numT_);
+  dPdRho_.setRange(1, lRhoBounds.grid);
+  dPdRho_.setRange(0, lTBounds.grid);
+
+  dPdE_.resize(numRho_, numT_);
+  dPdE_.setRange(1, lRhoBounds.grid);
+  dPdE_.setRange(0, lTBounds.grid);
+
+  dTdRho_.resize(numRho_, numT_);
+  dTdRho_.setRange(1, lRhoBounds.grid);
+  dTdRho_.setRange(0, lTBounds.grid);
+
+  dTdE_.resize(numRho_, numT_);
+  dTdE_.setRange(1, lRhoBounds.grid);
+  dTdE_.setRange(0, lTBounds.grid);
+
+  dEdRho_.resize(numRho_, numT_);
+  dEdRho_.setRange(1, lRhoBounds.grid);
+  dEdRho_.setRange(0, lTBounds.grid);
+
+  dEdT_.resize(numRho_, numT_);
+  dEdT_.setRange(1, lRhoBounds.grid);
+  dEdT_.setRange(0, lTBounds.grid);
+
+  // Populate (rho, T) tables using shared construction utility
+  // sieMin/sieMax are used for root finding bounds if needed
+  Real sieMin = 0.0;  // Will be overridden if source EOS provides bounds
+  Real sieMax = 1e99; // Will be overridden if source EOS provides bounds
+
+  spiner_table_builder::populateDependsRhoT<EOS>(
+      source_eos, lRhoBounds, lTBounds, lRhoOffset_, lTOffset_, rhoMin, rhoMax_, TMin,
+      TMax, sieMin, sieMax, [this](int j, int i, Real v) { sie_(j, i) = v; },
+      [this](int j, int i, Real v) { P_(j, i) = v; },
+      [this](int j, int i, Real v) { bMod_(j, i) = v; },
+      [this](int j, int i, Real v) { dPdRho_(j, i) = v; },
+      [this](int j, int i, Real v) { dPdE_(j, i) = v; },
+      [this](int j, int i, Real v) { dTdRho_(j, i) = v; },
+      [this](int j, int i, Real v) { dTdE_(j, i) = v; },
+      [this](int j, int i, Real v) { dEdRho_(j, i) = v; },
+      [this](int j, int i, Real v) { dEdT_(j, i) = v; });
+
+  // Compute isentropic bulk modulus from derivatives
+  // B_S = rho * (dP/drho)_E + (dP/dE)_rho * (P/rho)
+  fixBulkModulus_();
+
+  // Compute cold curves at minimum temperature
+  computeColdCurves(source_eos, lRhoBounds, TMin, lRhoOffset_, PCold_, sieCold_,
+                    bModCold_, dPdRhoCold_);
+
+  // Additional cold curve derivatives
+  dPdECold_.resize(numRho_);
+  dPdECold_.setRange(0, lRhoBounds.grid);
+  dTdRhoCold_.resize(numRho_);
+  dTdRhoCold_.setRange(0, lRhoBounds.grid);
+  dTdECold_.resize(numRho_);
+  dTdECold_.setRange(0, lRhoBounds.grid);
+  dEdTCold_.resize(numRho_);
+  dEdTCold_.setRange(0, lRhoBounds.grid);
+
+  for (int j = 0; j < numRho_; ++j) {
+    Real lRho = lRhoBounds.grid.x(j);
+    Real rho = from_log(lRho, lRhoOffset_);
+
+    // dPdE at cold curve
+    if constexpr (eos_concepts::has_gamma_rho_T_v<EOS>) {
+      Real gamma = source_eos.GruneisenParamFromDensityTemperature(rho, TMin);
+      dPdECold_(j) = rho * gamma;
+    } else {
+      auto PofT = [&source_eos, rho](Real T_p) {
+        return source_eos.PressureFromDensityTemperature(rho, T_p);
+      };
+      Real dPdT = finite_diff::centralDifference(PofT, TMin);
+      auto EofT = [&source_eos, rho](Real T_e) {
+        return source_eos.InternalEnergyFromDensityTemperature(rho, T_e);
+      };
+      Real dEdT_cold = finite_diff::centralDifference(EofT, TMin);
+      dPdECold_(j) = robust::ratio(dPdT, dEdT_cold);
+      dEdTCold_(j) = dEdT_cold;
+    }
+
+    // dTdE at cold curve
+    if constexpr (eos_concepts::has_cv_rho_T_v<EOS>) {
+      Real cv = source_eos.SpecificHeatFromDensityTemperature(rho, TMin);
+      dTdECold_(j) = robust::ratio(1.0, cv);
+    } else {
+      dTdECold_(j) = robust::ratio(1.0, dEdTCold_(j));
+    }
+
+    // dTdRho at cold curve
+    auto EofR = [&source_eos, TMin](Real r) {
+      return source_eos.InternalEnergyFromDensityTemperature(r, TMin);
+    };
+    Real dEdRho_cold = finite_diff::centralDifference(EofR, rho);
+    dTdRhoCold_(j) = -dEdRho_cold * dTdECold_(j);
+
+    // Recompute bModCold with correct isentropic formula
+    // B_S = rho * (dP/drho)_E + (dP/dE) * (P/rho)
+    // Note: GruneisenParam returns Gamma = (gamma - 1), not heat capacity ratio gamma
+    // For ideal gas: B_S = (Gamma + 1) * P
+    if constexpr (eos_concepts::has_gamma_rho_T_v<EOS>) {
+      Real Gamma = source_eos.GruneisenParamFromDensityTemperature(rho, TMin);
+      bModCold_(j) = (Gamma + 1.0) * PCold_(j);
+    } else {
+      // Use the isentropic formula from derivatives
+      Real DPDR_T = dPdRhoCold_(j);
+      Real DPDE = dPdECold_(j);
+      // Convert (dP/drho)_T to (dP/drho)_E: need dEdRho_cold
+      Real DEDR_T = dEdRho_cold;
+      Real DEDT = dEdTCold_(j);
+      Real DPDR_E = DPDR_T - (dPdECold_(j) / DEDT) * DEDR_T;
+      bModCold_(j) = rho * DPDR_E + DPDE * (PCold_(j) / rho);
+    }
+  }
+
+  // Compute extrapolation data at maximum temperature
+  PMax_.resize(numRho_);
+  PMax_.setRange(0, lRhoBounds.grid);
+  sielTMax_.resize(numRho_);
+  sielTMax_.setRange(0, lRhoBounds.grid);
+  dEdTMax_.resize(numRho_);
+  dEdTMax_.setRange(0, lRhoBounds.grid);
+  gm1Max_.resize(numRho_);
+  gm1Max_.setRange(0, lRhoBounds.grid);
+
+  for (int j = 0; j < numRho_; ++j) {
+    Real lRho = lRhoBounds.grid.x(j);
+    Real rho = from_log(lRho, lRhoOffset_);
+
+    PMax_(j) = source_eos.PressureFromDensityTemperature(rho, TMax);
+    sielTMax_(j) = source_eos.InternalEnergyFromDensityTemperature(rho, TMax);
+
+    auto EofT = [&source_eos, rho](Real T_e) {
+      return source_eos.InternalEnergyFromDensityTemperature(rho, T_e);
+    };
+    dEdTMax_(j) = finite_diff::centralDifference(EofT, TMax);
+
+    if constexpr (eos_concepts::has_gamma_rho_T_v<EOS>) {
+      gm1Max_(j) = source_eos.GruneisenParamFromDensityTemperature(rho, TMax);
+    } else {
+      gm1Max_(j) = robust::ratio(PMax_(j), rho * sielTMax_(j));
+    }
+  }
+
+  // Critical temperature curve - just use TMax for now
+  lTColdCrit_.resize(numRho_);
+  lTColdCrit_.setRange(0, lRhoBounds.grid);
+  for (int j = 0; j < numRho_; ++j) {
+    lTColdCrit_(j) = lTMax_;
+  }
+
+  // Compute rho_at_pmin
+  PMin_ = spiner_common::SetRhoPMin(P_, rho_at_pmin_, pmin_vapor_dome_, VAPOR_DPDR_THRESH,
+                                    lRhoOffset_);
+
+  // No mass fractions from generic constructor
+  has_mf = false;
+
+  // Material properties
+  AZbar_.Abar = extractAbar(source_eos, params);
+  AZbar_.Zbar = extractZbar(source_eos, params);
+
+  // Reference state
+  rhoNormal_ = rhoAnchor;
+  Real lRhoNormal = to_log(rhoNormal_, lRhoOffset_);
+  if (!(lRhoMin_ < lRhoNormal && lRhoNormal < lRhoMax_)) {
+    lRhoNormal = 0.5 * (lRhoMin_ + lRhoMax_);
+    rhoNormal_ = from_log(lRhoNormal, lRhoOffset_);
+  }
+
+  TNormal_ = ROOM_TEMPERATURE;
+  Real lTNormal = to_log(TNormal_, lTOffset_);
+  if (!(lTMin_ < lTNormal && lTNormal < lTMax_)) {
+    lTNormal = 0.5 * (lTMin_ + lTMax_);
+    TNormal_ = from_log(lTNormal, lTOffset_);
+  }
+
+  sieNormal_ = sie_.interpToReal(lRhoNormal, lTNormal);
+  PNormal_ = P_.interpToReal(lRhoNormal, lTNormal);
+  CvNormal_ = robust::ratio(1.0, dTdE_.interpToReal(lRhoNormal, lTNormal));
+  bModNormal_ = bMod_.interpToReal(lRhoNormal, lTNormal);
+  dPdENormal_ = dPdE_.interpToReal(lRhoNormal, lTNormal);
+  Real dPdR = dPdRho_.interpToReal(lRhoNormal, lTNormal);
+  dVdTNormal_ = robust::ratio(dPdENormal_ * CvNormal_, rhoNormal_ * rhoNormal_ * dPdR);
 }
 
 } // namespace singularity

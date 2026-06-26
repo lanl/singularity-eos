@@ -8,7 +8,7 @@ Kinetic Phase Transition Framework
 ==================================
 
 A step in adapting to more realistic calculations is to 
-get away from that phase transitions are instantanious and the 
+get away from the idea that phase transitions are instantaneous and the 
 system is in, at least, local thermal equilibrium (LTE) all the time.
 Allowing for superheated (the material is hotter than the equilibrium state) 
 and supercooled (the material is cooler than the equilibrium state) materials is
@@ -22,7 +22,7 @@ Gibbs free energy. If the material is heated or cooled from this equilibrium sta
 phase emerges to have a lower Gibbs free energy, a phase transition occurs and the system eventually transform
 to this new phase. However, all phase transitions need some type of *nucleation event* to get started.
 For the liquid raindrop cooling down while falling to the ground through very cold air, the hit against the
-asphalt is the nucleation event, and the supercooled liquid in the drop instantaniously transform to the equilibrium ice phase. 
+asphalt is the nucleation event, and the supercooled liquid in the drop instantaneously transform to the equilibrium ice phase. 
 For the very hot coffee, the spoon insertion is the "nucleation" event when the very hot liquid coffee 
 instantaneously transforms into its equilibrium phase, gas. 
 
@@ -201,10 +201,10 @@ that ``gibbs[gibbsorder[0]]`` is the highest Gibbs free energy and ``gibbs[gibbs
 The time step
 '''''''''''''
 
-If a timestep would be truely infinitesimal, :math:`R_{ij} dt \leq 1` would always hold, since however big the 
+If a timestep were truely infinitesimal, :math:`R_{ij} dt \leq 1` would always hold, since however big the 
 rate :math:`R_{ij}` is, :math:`dt < \frac{1}{R_{ij}}`. This means that the new
 mass fractions would always obey :math:`0 \leq \mu_i \leq 1`. However, with a discretized time step, :math:`R_{ij} \Delta t` can become larger than :math:`1`, and it can be that even
-if the master equation holds, it results in some phase mass fractions becomming negative and some being above :math:`1`, which is unphysical. 
+if the master equation holds, it results in some phase mass fractions becoming negative and some being above :math:`1`, which is unphysical. 
 
 One way of dealing with this is to use a time step, :math:`\Delta t`, that is smaller than the inverse of the largest rate from an active phase. A routine 
 suggesting a maximum timestep is available in ``singularity-eos``:  
@@ -250,8 +250,8 @@ the phase transition indices :math:`jk` is
 
 as can be verified by hand in the figure above.
 
-Note that this method depleats phases in order of mass transfer to the lowest Gibbs free energy first, then the next lowest, and so on (see figure above), 
-but stops once the originating phase is depleated. If this is reflecting the physical reality, is up to the user to decide. The size of the time step 
-problem is taken care of by never transfering more that the existing mass in a phase to any other phase.
+Note that this method depletes phases in order of mass transfer to the lowest Gibbs free energy first, then the next lowest, and so on (see figure above), 
+but stops once the originating phase is depleted. If this is reflecting the physical reality, is up to the user to decide. The size of the time step 
+problem is taken care of by never transferring more that the existing mass in a phase to any other phase.
 
 
