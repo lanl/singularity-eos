@@ -3,6 +3,7 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+- [[PR634]](https://github.com/lanl/singularity-eos/pull/643) Fixed `find_package(singularity-eos)` failures when built without closure variant. The CMake config now automatically detects which components were built and only requires those that exist, enabling header-only usage without the compiled library.
 - [[PR632]](https://github.com/lanl/singularity-eos/pull/632) Added generic constructors to SpinerEOSDependsRhoSie and SpinerEOSDependsRhoT that build tables from any EOS object.
 - [[PR623]](https://github.com/lanl/singularity-eos/pull/623) Expanded the sesame2spiner syntax to support multiple material definitions in one input file.
 - [[PR618]](https://github.com/lanl/singularity-eos/pull/618) Add PTDerivativesFromPreferred for computing derivatives of a mixture  in a cell
