@@ -160,8 +160,7 @@ int main(int argc, char *argv[]) {
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     using RView = Kokkos::View<Real *>;
     RView pressSpinerDView("pressSpinerDevice", nFineRho * nFineT);
-    typename RView::HostMirror pressSpinerHView =
-        Kokkos::create_mirror_view(pressSpinerDView);
+    auto pressSpinerHView = Kokkos::create_mirror_view(pressSpinerDView);
     DataBox pressSpiner_d(pressSpinerDView.data(), nFineRho, nFineT);
     DataBox pressSpiner_hm(pressSpinerHView.data(), nFineRho, nFineT);
 #else
@@ -181,8 +180,8 @@ int main(int argc, char *argv[]) {
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     RView tempSpinerDView("tempSpinerDevice", nFineRho * nFineT);
     RView tempSpinerDViewE("tempSpinerSieDevice", nFineRho * nFineT);
-    RView::HostMirror tempSpinerHView = Kokkos::create_mirror_view(tempSpinerDView);
-    RView::HostMirror tempSpinerHViewE = Kokkos::create_mirror_view(tempSpinerDViewE);
+    auto tempSpinerHView = Kokkos::create_mirror_view(tempSpinerDView);
+    auto tempSpinerHViewE = Kokkos::create_mirror_view(tempSpinerDViewE);
     DataBox tempSpiner_d(tempSpinerDView.data(), nFineRho, nFineT);
     DataBox tempSpiner_hm(tempSpinerHView.data(), nFineRho, nFineT);
     DataBox tempSpinerE_d(tempSpinerDViewE.data(), nFineRho, nFineT);

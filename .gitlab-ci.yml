@@ -204,6 +204,17 @@ rocinante_craympich_gcc:
     SUBMIT_ON_ERROR: false          # Compute nodes don't have network access, don't try to send from compute node
     SUBMIT_AFTER: "${ENABLE_CDASH}" # after_script runs on a network connected system
 
+venadito_craympich_cuda_gracehopper_gcc:
+  extends: [.ascgit_job, .venadito_job, .venadito_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
+  variables:
+    SPACK_ENV_NAME: craympich-cuda-gracehopper-gcc
+    SUBMIT_TO_CDASH: false
+    BUILD_WITH_CTEST: "${ENABLE_CDASH}"
+    SUBMIT_ON_ERROR: false          # Compute nodes don't have network access, don't try to send from compute node
+    SUBMIT_AFTER: "${ENABLE_CDASH}" # after_script runs on a network connected system
+
 rocinante_craympich_fortran_gcc:
   extends: [.ascgit_job, .rocinante_job, .rocinante_regular_job, .build_and_test]
   needs:
@@ -215,23 +226,23 @@ rocinante_craympich_fortran_gcc:
     SUBMIT_ON_ERROR: false          # Compute nodes don't have network access, don't try to send from compute node
     SUBMIT_AFTER: "${ENABLE_CDASH}" # after_script runs on a network connected system
 
-rzvernal_craympich_rocm_mi250_cce:
+rzvernal_craympich_rocm_mi250_rocmcc:
   extends: [.ascgit_job, .rzvernal_job, .rzvernal_regular_job, .build_and_test]
   needs:
    - prereq_offline_deps
   variables:
-    SPACK_ENV_NAME: craympich-rocm-gfx90a-cce
+    SPACK_ENV_NAME: craympich-rocm-gfx90a-rocmcc
     SUBMIT_TO_CDASH: false
     BUILD_WITH_CTEST: "${ENABLE_CDASH}"
     SUBMIT_ON_ERROR: false          # Compute nodes don't have network access, don't try to send from compute node
     SUBMIT_AFTER: "${ENABLE_CDASH}" # after_script runs on a network connected system
 
-rzadams_craympich_rocm_mi300_cce:
+rzadams_craympich_rocm_mi300_rocmcc:
   extends: [.ascgit_job, .rzadams_job, .rzadams_regular_job, .build_and_test]
   needs:
    - prereq_offline_deps
   variables:
-    SPACK_ENV_NAME: craympich-rocm-gfx942-cce
+    SPACK_ENV_NAME: craympich-rocm-gfx942-rocmcc
     SUBMIT_TO_CDASH: false
     BUILD_WITH_CTEST: "${ENABLE_CDASH}"
     SUBMIT_ON_ERROR: false          # Compute nodes don't have network access, don't try to send from compute node

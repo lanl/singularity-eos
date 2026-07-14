@@ -55,7 +55,7 @@ using Spiner::RegularGrid1D;
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 using RView = Kokkos::View<Real *>;
-using RMirror = typename RView::HostMirror;
+using RMirror = typename RView::host_mirror_type;
 #endif
 
 struct Data {

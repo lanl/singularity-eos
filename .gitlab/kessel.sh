@@ -27,7 +27,7 @@ fi
 _KESSEL_WORKFLOW_DEPLOYMENT="$KESSEL_WORKFLOW_DEPLOYMENT"
 export KESSEL_WORKFLOW_DEPLOYMENT="${KESSEL_WORKFLOW_DEPLOYMENT:-${TMPDIR:-/tmp}/$USER-ci-envs}"
 
-if [ "$SYSTEM_NAME" == "darwin" ] || [ "$SYSTEM_NAME" == "rocinante" ]; then
+if [ "$SYSTEM_NAME" == "darwin" ] || [ "$SYSTEM_NAME" == "rocinante" ] || [ "$SYSTEM_NAME" == "venadito" ]; then
   export KESSEL_DEPLOYMENT=${KESSEL_DEPLOYMENT:-/usr/projects/xcap/oss/deployments/$DEPLOYMENT_VERSION/$SYSTEM_NAME}
 elif [ "$SYSTEM_NAME" == "rzadams" ] || [ "$SYSTEM_NAME" == "rzvernal" ] || [ "$SYSTEM_NAME" == "elcapitan" ] || [ "$SYSTEM_NAME" == "tuolumne" ]; then
   export KESSEL_DEPLOYMENT=${KESSEL_DEPLOYMENT:-/usr/workspace/xcap/oss/deployments/$DEPLOYMENT_VERSION/$SYSTEM_NAME}
