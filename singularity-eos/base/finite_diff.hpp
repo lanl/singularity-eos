@@ -16,7 +16,7 @@
 #ifndef _SINGULARITY_EOS_BASE_FINITE_DIFF_HPP_
 #define _SINGULARITY_EOS_BASE_FINITE_DIFF_HPP_
 #include <optional>
-#include <singularity-eos/base/robust_utils.hpp>
+#include <singularity-utils/robust_utils.hpp>
 
 namespace singularity {
 
