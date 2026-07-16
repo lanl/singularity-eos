@@ -12,6 +12,21 @@
 ! publicly and display publicly, and to permit others to do so.
 !------------------------------------------------------------------------------
 
+#if defined(ALLOW_DEPRECATED)
+! Disable warnings if explicit override flag is passed
+#define DEPRECATED_MODULE
+
+#elif defined(__flang__) || defined(__GNUC__)
+#define DEPRECATED_MODULE __attribute__((deprecated("The singularity-eos module is deprecated.")))
+
+#elif defined(__INTEL_COMPILER)
+#define DEPRECATED_MODULE __declspec(deprecated)
+
+#else
+#define DEPRECATED_MODULE
+#endif
+
+
 module singularity_eos_types
   use, intrinsic :: iso_c_binding
   implicit none
