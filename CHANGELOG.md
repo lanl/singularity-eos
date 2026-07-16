@@ -14,8 +14,10 @@
 - [[PR63]](https://github.com/lanl/singularity-eos/pull/639) Fixed UnitSystem temperature bug. Temperature is now treated in the same as the time, mass, and length unit factors.
  
 ### Changed (changing behavior/API/variables/...)
+- [[PR641]](https://github.com/lanl/singularity-eos/pull/641) The location of some header files located in `<singularity-eos/base>` have moved to `<singularity-utils>`.
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR641]](https://github.com/lanl/singularity-eos/pull/641) `sesame2spiner` is now linked into `singularity-eos`. Some shared headers have been pulled out into a new `singularity-utils` library.
 - [[PR636]](https://github.com/lanl/singularity-eos/pull/636) Wrap numpy arrays in a simple wrapper to make GPU compilers happy.
 - [[PR633]](https://github.com/lanl/singularity-eos/pull/633) Make robust::sgn handle unsigned properly
 - [[PR629]](https://github.com/lanl/singularity-eos/pull/629) Use macros and eos_base and eos_variant to reduce boiler plate
