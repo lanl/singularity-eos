@@ -11,6 +11,7 @@
 - [[PR638]](https://github.com/lanl/singularity-eos/pull/638) Fix Bugs in Davis Reactants and Products.  Bulk modulus is now isentropic.
 
 ### Fixed (Repair bugs, etc)
+- [[PR645]](https://github.com/lanl/singularity-eos/pull/645) Fix internal energy from density and pressure for JWL
 - [[PR63]](https://github.com/lanl/singularity-eos/pull/639) Fixed UnitSystem temperature bug. Temperature is now treated in the same as the time, mass, and length unit factors.
  
 ### Changed (changing behavior/API/variables/...)
