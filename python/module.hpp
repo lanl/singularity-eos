@@ -11,11 +11,15 @@
 // prepare derivative works, distribute copies to the public, perform
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
+
+// This file was made in part with generative AI.
+
 // clang-format off
 #include <cmath>
 #include <limits>
 #include <map>
 #include <ostream>
+#include <stdexcept>
 #include <string>
 #include <sstream>
 
@@ -100,6 +104,59 @@ private:
   const std::size_t stride_;
 };
 
+class SingularityContext {
+public:
+  SingularityContext(const SingularityContext&) = delete;
+  SingularityContext& operator=(const SingularityContext&) = delete;
+
+  SingularityContext(SingularityContext&&) = delete;
+  SingularityContext& operator=(SingularityContext&&) = delete;
+
+  static SingularityContext &Instance() {
+    static SingularityContext context;
+    return context;
+  }
+
+  void Initialize() {
+#if defined(PORTABILITY_STRATEGY_KOKKOS)
+    if (Kokkos::is_finalized()) {
+      throw std::runtime_error("Kokkos has already been finalized "
+                               "and cannot be initialized again.");
+    }
+
+    if (!Kokkos::is_initialized()) {
+      Kokkos::initialize();
+      owns_kokkos_ = true;
+    }
+#endif // defined(PORTABILITY_STRATEGY_KOKKOS)
+  }
+
+  void Finalize() {
+#if defined(PORTABILITY_STRATEGY_KOKKOS)
+    if (owns_kokkos_ && Kokkos::is_initialized() && !Kokkos::is_finalized()) {
+      Kokkos::finalize();
+    }
+#endif // defined(PORTABILITY_STRATEGY_KOKKOS)
+    owns_kokkos_ = false;
+  }
+
+  ~SingularityContext() {
+    Finalize();
+  }
+
+private:
+  SingularityContext() = default;
+
+  bool owns_kokkos_ = false;
+};
+
+inline void InitializeSingularity() {
+  SingularityContext::Instance().Initialize();
+}
+
+inline void FinalizeSingularity() {
+  SingularityContext::Instance().Finalize();
+}
 
 // so far didn't find a good way of working with template member function pointers
 // to generalize this without the preprocessor.

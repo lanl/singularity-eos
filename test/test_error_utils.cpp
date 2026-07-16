@@ -69,21 +69,34 @@ void CheckNormalOrZeroClassificationOnDevice(const char *type_name) {
       "Check error_utils::is_normal_or_zero on device", 0, 1,
       PORTABLE_LAMBDA(const int /*i*/, int &nw) {
         nw += !condition(T{0});
+        printf("0: %d\n", !condition(T{0}));
         nw += !condition(-T{0});
+        printf("-0: %d\n", !condition(-T{0}));
         nw += !condition(static_cast<T>(1.382884838243760e+06));
+        printf("afloat: %d\n", !condition(static_cast<T>(1.382884838243760e+06)));
         nw += !condition(limits::min());
+        printf("min: %d\n", !condition(limits::min()));
         nw += !condition(-limits::min());
+        printf("-min: %d\n", !condition(-limits::min()));
+        
 
         if constexpr (limits::has_denorm != std::denorm_absent) {
           nw += condition(limits::denorm_min());
+          printf("denorm_min: %d\n", condition(limits::denorm_min()));
           nw += condition(-limits::denorm_min());
+          printf("-denorm_min: %d\n", condition(-limits::denorm_min()));
         }
 
         nw += condition(limits::quiet_NaN());
+        printf("quiet_nan: %d\n", condition(limits::quiet_NaN()));
         nw += condition(limits::infinity());
+        printf("infinity: %d\n", condition(limits::infinity()));
         nw += condition(-limits::infinity());
+        printf("-infinity: %d\n", condition(-limits::infinity()));
         nw += !condition((limits::max() / factor) * T{0.5});
+        printf("maxfac: %d\n", !condition((limits::max() / factor) * T{0.5}));
         nw += condition((limits::max() / factor) * T{2.0});
+        printf("maxfac: %d\n", condition((limits::max() / factor) * T{2.0}));
       },
       nwrong);
 
