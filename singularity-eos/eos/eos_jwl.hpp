@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -29,6 +29,8 @@
 #include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
+
+// This file was made in part with generative AI.
 
 namespace singularity {
 
@@ -72,6 +74,18 @@ class JWL : public EosBase<JWL> {
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void InternalEnergyFromDensityPressure(
+      const Real rho, const Real press, Real &sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityPressure(
+      const Real rho, const Real press,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    Real sie;
+    InternalEnergyFromDensityPressure(rho, press, sie, lambda);
+    return sie;
+  }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
   EntropyFromDensityTemperature(const Real rho, const Real temperature,
@@ -161,6 +175,12 @@ template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real JWL::PressureFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
   return ReferencePressure(rho) + _w * rho * (sie - ReferenceEnergy(rho));
+}
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+JWL::InternalEnergyFromDensityPressure(const Real rho, const Real press, Real &sie,
+                                       Indexer_t &&lambda) const {
+  sie = ReferenceEnergy(rho) + robust::ratio(press - ReferencePressure(rho), _w * rho);
 }
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real JWL::EntropyFromDensityInternalEnergy(
