@@ -161,3 +161,42 @@ SCENARIO("JWL isentropic bulk modulus agrees with finite differences",
     eos_host.Finalize();
   }
 }
+
+SCENARIO("JWL internal energy from density and pressure", "[JWL][SieFromRhoP]") {
+  GIVEN("A state from Lee et al. (2013). 10.1016/j.jcp.2013.03.046") {
+    // The source uses g, cm, and microseconds, so pressures in Mbar and specific
+    // energies in (cm/us)^2 both acquire a factor of 1e12 when converted to cgs.
+    constexpr Real paper_units_to_cgs = 1e12;
+    constexpr Real A = 632.1 * paper_units_to_cgs;
+    constexpr Real B = -0.04472 * paper_units_to_cgs;
+    constexpr Real R1 = 11.3;
+    constexpr Real R2 = 1.13;
+    constexpr Real w = 0.8938;
+    constexpr Real rho0 = 1.905;
+    constexpr Real Cv = 0.00003888 * paper_units_to_cgs;
+    constexpr Real rho = 3.810;
+    constexpr Real press = 2.0 * paper_units_to_cgs;
+    constexpr Real sie_true = 0.0333355 * paper_units_to_cgs;
+
+    EOS eos_host = JWL(A, B, R1, R2, w, rho0, Cv);
+    auto eos = eos_host.GetOnDevice();
+
+    WHEN("Internal energy is computed from density and pressure") {
+      Real sie = 0.0;
+      portableReduce(
+          "Compute JWL internal energy from density and pressure", 0, 1,
+          PORTABLE_LAMBDA(const int, Real &result) {
+            eos.InternalEnergyFromDensityPressure(rho, press, result);
+          },
+          sie);
+
+      THEN("It agrees with the published state") {
+        INFO("Computed sie: " << sie << ", expected sie: " << sie_true);
+        REQUIRE(isClose(sie, sie_true, 1e-6));
+      }
+    }
+
+    eos.Finalize();
+    eos_host.Finalize();
+  }
+}
