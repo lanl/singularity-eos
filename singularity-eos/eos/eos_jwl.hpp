@@ -83,7 +83,7 @@ class JWL : public EosBase<JWL> {
       const Real rho, const Real press,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     Real sie;
-    INternalEnergyFromDensityPressure(rho, press, sie, lambda);
+    InternalEnergyFromDensityPressure(rho, press, sie, lambda);
     return sie;
   }
   template <typename Indexer_t = Real *>
