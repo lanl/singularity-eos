@@ -50,9 +50,6 @@ namespace thermalqs = singularity::thermalqs;
 using singularity::variadic_utils::np;
 
 const std::string eosName = "../materials.sp5";
-const std::string airName = "air";
-const std::string steelName = "stainless steel 347";
-const std::string tinName = "tin";
 
 #ifdef SPINER_USE_HDF
 #ifdef SINGULARITY_TEST_SESAME

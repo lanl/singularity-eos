@@ -95,7 +95,7 @@ using variadic_utils::transform_variadic_list;
 
 static constexpr const auto full_eos_list = tl<IdealGas>{};
 // modifiers that get applied to all eos's
-static constexpr const auto apply_to_all = al<ScaledEOS, ShiftedEOS>{};
+// static constexpr const auto apply_to_all = al<ScaledEOS, ShiftedEOS>{};
 // variadic list of eos's with shifted or scaled modifiers
 static constexpr const auto shifted =
     transform_variadic_list(full_eos_list, al<ShiftedEOS>{});
