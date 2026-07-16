@@ -21,7 +21,7 @@
 - [[PR629]](https://github.com/lanl/singularity-eos/pull/629) Use macros and eos_base and eos_variant to reduce boiler plate
 - [[PR626]](https://github.com/lanl/singularity-eos/pull/626) Fix C++20 warnings related to lambdas
 
-### Removed (removing behavior/API/variables/...)
+### Deprecated (soon to be removed behavior/API/variables/...)
 - [[PR644]](https://github.com/lanl/singularity-eos/pull/644) The Fortran interface has been deprecated and will be removed on the next release.
 
 ## Release 1.11.1
