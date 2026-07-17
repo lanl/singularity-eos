@@ -175,21 +175,21 @@ openmpi_fortran_kokkos_static_openmp_clang:
     SPACK_ENV_NAME: openmpi-fortran-kokkos-static-openmp-clang
     SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
-openmpi_rocm_gcc:
+openmpi_rocm_rocmcc:
   extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
   needs:
    - prereq_offline_deps
   variables:
-    SPACK_ENV_NAME: openmpi-rocm-gcc
+    SPACK_ENV_NAME: openmpi-rocm-rocmcc
     SCHEDULER_PARAMETERS: "-n 1 --qos=debug -p shared-gpu-amd-mi250"
     SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
-openmpi_fortran_rocm_gcc:
+openmpi_fortran_rocm_rocmcc:
   extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
   needs:
    - prereq_offline_deps
   variables:
-    SPACK_ENV_NAME: openmpi-fortran-rocm-gcc
+    SPACK_ENV_NAME: openmpi-fortran-rocm-rocmcc
     SCHEDULER_PARAMETERS: "-n 1 --qos=debug -p shared-gpu-amd-mi250"
     SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
