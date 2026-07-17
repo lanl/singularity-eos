@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef SINGULARITY_EOS_BASE_ROBUST_UTILS_HPP_
-#define SINGULARITY_EOS_BASE_ROBUST_UTILS_HPP_
+#ifndef SINGULARITY_UTILS_ROBUST_UTILS_HPP_
+#define SINGULARITY_UTILS_ROBUST_UTILS_HPP_
 
 #include <cmath>
 #include <limits>
@@ -77,4 +77,4 @@ PORTABLE_FORCEINLINE_FUNCTION T safe_arg_exp(const T &x) {
 } // namespace robust
 } // namespace singularity
 
-#endif // SINGULARITY_EOS_BASE_ROBUST_UTILS_HPP_
+#endif // SINGULARITY_UTILS_ROBUST_UTILS_HPP_

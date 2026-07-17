@@ -24,9 +24,9 @@
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
 
-#include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/modifiers/floored_energy.hpp>
+#include <singularity-utils/robust_utils.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
 using singularity::DavisReactants;

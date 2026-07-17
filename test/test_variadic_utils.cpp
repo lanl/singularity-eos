@@ -12,10 +12,10 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_builder.hpp>
 #include <singularity-eos/eos/eos_variant.hpp>
+#include <singularity-utils/variadic_utils.hpp>
 
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE

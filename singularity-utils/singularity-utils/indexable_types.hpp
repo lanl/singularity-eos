@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2025. Triad National Security, LLC. All rights reserved.  This
+// © 2025-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef SINGULARITY_EOS_BASE_INDEXABLE_TYPES_
-#define SINGULARITY_EOS_BASE_INDEXABLE_TYPES_
+#ifndef SINGULARITY_UTILS_INDEXABLE_TYPES_
+#define SINGULARITY_UTILS_INDEXABLE_TYPES_
 
 #include <array>
 #include <type_traits>
@@ -21,7 +21,7 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
-#include <singularity-eos/base/variadic_utils.hpp>
+#include <singularity-utils/variadic_utils.hpp>
 
 namespace singularity {
 namespace IndexerUtils {
@@ -352,4 +352,4 @@ struct MassFractions {
 };
 } // namespace IndexableTypes
 } // namespace singularity
-#endif // SINGULARITY_EOS_BASE_INDEXABLE_TYPES_
+#endif // SINGULARITY_UTILS_INDEXABLE_TYPES_

@@ -22,8 +22,9 @@
 #include <string>
 #include <vector>
 
-#include "io_eospac.hpp"
 #include "parse_cli.hpp"
+#include <sesame2spiner/io_eospac.hpp>
+#include <sesame2spiner/parser.hpp>
 
 void parseCLI(int argc, char *argv[], std::string &savename,
               std::vector<std::string> &filenames, bool &printMetadata,
@@ -46,7 +47,7 @@ void parseCLI(int argc, char *argv[], std::string &savename,
              << "\t-h:  print this message\n"
              << "\n"
              << "Several example input files:\n"
-             << EXAMPLESTRING << "\n"
+             << sesame2spiner::EXAMPLESTRING << "\n"
              << std::endl;
   helpMessage = helpStream.str();
 

@@ -23,8 +23,8 @@
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
 #include <ports-of-call/portable_errors.hpp>
-#include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/eos/eos.hpp>
+#include <singularity-utils/indexable_types.hpp>
 
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE

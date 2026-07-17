@@ -25,10 +25,10 @@
 #endif
 
 #include <ports-of-call/portability.hpp>
-#include <singularity-eos/base/indexable_types.hpp>
-#include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <singularity-eos/eos/eos.hpp>
+#include <singularity-utils/indexable_types.hpp>
+#include <singularity-utils/robust_utils.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
 #ifdef SINGULARITY_TEST_SESAME

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -20,6 +20,49 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+namespace sesame2spiner {
+const std::string EXAMPLESTRING = R"(
+# air.dat
+# These are comments. 
+# The "#" character must be at the beginning of a line.
+# only matid is required. All others override defaults.
+matid = 5030
+name = air
+# rho is in g/cm^3
+rhomin = 1e-2
+rhomax = 10
+numrho = 64
+# T is in Kelvin
+Tmin = 252
+Tmax = 1e4
+numT = 32
+# sie is in erg/g
+siemin = 1e12
+siemax = 1e16
+numsie = 32
+
+
+# titanium.dat
+matid = 2961
+name = titanium
+# These set the number of grid poitns per decade
+# for each variable. The default is 50 points.
+numrho/decade = 30
+numT/decade = 25
+numSie/decade = 15
+
+
+# steel.dat
+matid=4272
+rhomin = 1e-2
+Tmin = 1
+# These shrink lograithm of bounds
+# by a fraction of the total interval <= 1
+shrinklRhoBounds = 0.15
+shrinklTBounds = 0.15
+shrinkleBounds = 0.5
+)";
 
 // Parse a simple parameter file with
 // "#" denoting comments.
@@ -49,4 +92,5 @@ class Params {
 void AddMaterials(std::vector<Params> &params, std::vector<int> &matids,
                   const std::string &input_file);
 
+} // namespace sesame2spiner
 #endif // SESAME2SPINER_PARSER_HPP_

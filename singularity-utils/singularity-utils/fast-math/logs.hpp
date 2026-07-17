@@ -1,5 +1,5 @@
 //======================================================================
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //======================================================================
 
-#ifndef _SINGULARITY_EOS_UTILS_FAST_MATH_LOGS_
-#define _SINGULARITY_EOS_UTILS_FAST_MATH_LOGS_
+#ifndef _SINGULARITY_UTILS_FAST_MATH_LOGS_
+#define _SINGULARITY_UTILS_FAST_MATH_LOGS_
 #include <cassert>
 #include <cmath>
 #include <cstdint>
@@ -294,4 +294,4 @@ double pow10(const double x) {
 } // namespace FastMath
 } // namespace singularity
 
-#endif //  _SINGULARITY_EOS_UTILS_FAST_MATH_LOGS_
+#endif //  _SINGULARITY_UTILS_FAST_MATH_LOGS_

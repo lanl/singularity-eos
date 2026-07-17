@@ -38,17 +38,17 @@
 // base
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_concepts.hpp>
-#include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/finite_diff.hpp>
-#include <singularity-eos/base/indexable_types.hpp>
-#include <singularity-eos/base/robust_utils.hpp>
-#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
-#include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
 #include <singularity-eos/base/spiner_table_utils.hpp>
-#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 #include <singularity-eos/eos/eos_spiner_common.hpp>
 #include <singularity-eos/eos/eos_spiner_construction.hpp>
+#include <singularity-utils/fast-math/logs.hpp>
+#include <singularity-utils/indexable_types.hpp>
+#include <singularity-utils/robust_utils.hpp>
+#include <singularity-utils/root-finding-1d/root_finding.hpp>
+#include <singularity-utils/sp5/singularity_eos_sp5.hpp>
+#include <singularity-utils/variadic_utils.hpp>
 
 // spiner
 #include <spiner/databox.hpp>

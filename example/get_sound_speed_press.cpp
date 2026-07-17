@@ -17,7 +17,7 @@
 #include <iostream>
 
 // This contains useful tools for preventing things like divide by zero
-#include <singularity-eos/base/robust_utils.hpp>
+#include <singularity-utils/robust_utils.hpp>
 // Needed to import the eos models
 #include <singularity-eos/eos/eos.hpp>
 // One way of initializing models with modifiers

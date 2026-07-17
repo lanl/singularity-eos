@@ -23,8 +23,8 @@
 #endif
 
 #include <singularity-eos/base/constants.hpp>
-#include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
+#include <singularity-utils/robust_utils.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
 using singularity::CarnahanStarling;

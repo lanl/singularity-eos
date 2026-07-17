@@ -25,7 +25,7 @@
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
 
-#include <singularity-eos/base/variadic_utils.hpp>
+#include <singularity-utils/variadic_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
 namespace py = pybind11;

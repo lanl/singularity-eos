@@ -23,9 +23,9 @@
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
-#include <singularity-eos/base/robust_utils.hpp>
-#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
-#include <singularity-eos/base/variadic_utils.hpp>
+#include <singularity-utils/robust_utils.hpp>
+#include <singularity-utils/root-finding-1d/root_finding.hpp>
+#include <singularity-utils/variadic_utils.hpp>
 
 // This file was generated in part with the assistance of generative AI
 

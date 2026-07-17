@@ -23,9 +23,9 @@
 #include <ports-of-call/portable_arrays.hpp>
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
-#include <singularity-eos/base/indexable_types.hpp>
-#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
+#include <singularity-utils/indexable_types.hpp>
+#include <singularity-utils/variadic_utils.hpp>
 
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE

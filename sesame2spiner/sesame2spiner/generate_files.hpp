@@ -24,13 +24,15 @@
 #include <hdf5_hl.h>
 
 #include <eospac-wrapper/eospac_wrapper.hpp>
-#include <singularity-eos/eos/eos_spiner_construction.hpp>
+#include <singularity-utils/spiner_params.hpp>
 
 #include "io_eospac.hpp"
 #include "parser.hpp"
 
 using namespace EospacWrapper;
-using singularity::spiner_table_builder::SpinerTableGridParams;
+using singularity::table_utils::SpinerTableGridParams;
+
+namespace sesame2spiner {
 
 constexpr int PPD_DEFAULT_RHO = 350;
 constexpr int PPD_DEFAULT_T = 100;
@@ -76,5 +78,6 @@ bool checkValInMatBounds(int matid, const std::string &name, Real val, Real vmin
                          Real vmax);
 
 int getNumPointsFromPPD(Real min, Real max, int ppd);
+} // namespace sesame2spiner
 
 #endif // _SESAME2SPINER_GENERATE_FILES_HPP_

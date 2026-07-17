@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef SINGULARITY_EOS_BASE_ERROR_UTILS_HPP_
-#define SINGULARITY_EOS_BASE_ERROR_UTILS_HPP_
+#ifndef SINGULARITY_UTILS_ERROR_UTILS_HPP_
+#define SINGULARITY_UTILS_ERROR_UTILS_HPP_
 
 #include <cmath>
 #include <type_traits>
@@ -85,4 +85,4 @@ PORTABLE_FORCEINLINE_FUNCTION bool negative_value(valT &&value, nameT &&var_name
 } // namespace error_utils
 } // namespace singularity
 
-#endif // #ifndef SINGULARITY_EOS_BASE_ERROR_UTILS_HPP_
+#endif // #ifndef SINGULARITY_UTILS_ERROR_UTILS_HPP_

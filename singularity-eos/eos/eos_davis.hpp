@@ -20,10 +20,10 @@
 
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
-#include <singularity-eos/base/math_utils.hpp>
-#include <singularity-eos/base/robust_utils.hpp>
-#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
+#include <singularity-utils/math_utils.hpp>
+#include <singularity-utils/robust_utils.hpp>
+#include <singularity-utils/root-finding-1d/root_finding.hpp>
 
 /* Implements the equation of state from
    Wescott, Stewart, and Davis, 2005

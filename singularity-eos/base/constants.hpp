@@ -16,6 +16,7 @@
 #define SINGULARITY_EOS_BASE_CONSTANTS_HPP_
 
 #include <ports-of-call/portability.hpp>
+#include <singularity-utils/constants.hpp> // TableSplit
 
 namespace singularity {
 
@@ -37,7 +38,6 @@ constexpr unsigned long all_values = (1 << 10) - 1;
 constexpr size_t MAX_NUM_LAMBDAS = 3;
 enum class DataStatus { Deallocated = 0, OnDevice = 1, OnHost = 2, UnManaged = 3 };
 enum class TableStatus { OnTable = 0, OffBottom = 1, OffTop = 2 };
-enum class TableSplit { Total = 0, ElectronOnly = 1, IonCold = 2 };
 constexpr Real ROOM_TEMPERATURE = 293; // K
 constexpr Real ATMOSPHERIC_PRESSURE = 1e6;
 

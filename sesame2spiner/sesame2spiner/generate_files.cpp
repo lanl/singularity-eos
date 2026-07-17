@@ -22,30 +22,32 @@
 #include <unordered_set>
 #include <vector>
 
+#ifdef SPINER_USE_HDF
 #include <hdf5.h>
 #include <hdf5_hl.h>
-
-#ifndef SPINER_USE_HDF
+#else
 #error "HDF5 must be enabled"
 #endif // SPINER_USE_HDF
 
 #include <eospac-wrapper/eospac_wrapper.hpp>
 #include <ports-of-call/portability.hpp>
-#include <singularity-eos/base/fast-math/logs.hpp>
-#include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
+#include <singularity-utils/fast-math/logs.hpp>
+#include <singularity-utils/sp5/singularity_eos_sp5.hpp>
+#include <singularity-utils/spiner_params.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
 #include <spiner/sp5.hpp>
 
 #include "generate_files.hpp"
 #include "io_eospac.hpp"
-#include "parse_cli.hpp"
 #include "parser.hpp"
 
 using namespace EospacWrapper;
-using singularity::spiner_table_builder::constructRhoBounds;
-using singularity::spiner_table_builder::constructTBounds;
-using singularity::spiner_table_builder::SpinerTableGridParams;
+using singularity::table_utils::constructRhoBounds;
+using singularity::table_utils::constructTBounds;
+using singularity::table_utils::SpinerTableGridParams;
+
+namespace sesame2spiner {
 
 herr_t saveMaterial(hid_t loc, const SesameMetadata &metadata, const Bounds &lRhoBounds,
                     const Bounds &lTBounds, const Bounds &leBounds,
@@ -187,7 +189,7 @@ herr_t saveAllMaterials(const std::string &savename,
   file = H5Fcreate(savename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
   // singularity version
-  H5LTset_attribute_string(file, "/", "singularity_version", SINGULARITY_VERSION);
+  H5LTset_attribute_string(file, "/", "singularity_version", SESAME2SPINER_VERSION);
   // log type. 0 for true, 1 for NQT1, 2 for NQT2, -1 for single precision true
   int log_type = singularity::FastMath::Settings::log_type;
   H5LTset_attribute_int(file, "/", SP5::logType, &log_type, 1);
@@ -476,3 +478,4 @@ bool checkValInMatBounds(int matid, const std::string &name, Real val, Real vmin
   }
   return true;
 }
+} // namespace sesame2spiner

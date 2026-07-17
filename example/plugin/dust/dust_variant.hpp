@@ -30,7 +30,7 @@
 // Base stuff
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
-#include <singularity-eos/base/variadic_utils.hpp>
+#include <singularity-utils/variadic_utils.hpp>
 
 // EOS models
 #include <singularity-eos/eos/eos_models.hpp>

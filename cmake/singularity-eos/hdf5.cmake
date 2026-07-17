@@ -40,7 +40,9 @@ macro(singularity_enable_hdf5 target)
   # If we're doing an in-tree cray build, skip all this stuff.  Fixes
   # in-tree builds on Roci + Chicoma This is if (NOT (IN_TREE AND
   # CRAY_THING)), but no composite expressions in cmake
-  if(NOT HDF5_C_COMPILER_EXECUTABLE_NO_INTERROGATE OR NOT SINGULARITY_FORCE_SUBMODULE_MODE)
+  # Check both HDF5_C_COMPILER_NO_INTERROGATE and HDF5_C_COMPILER_EXECUTABLE_NO_INTERROGATE
+  # as the variable name may differ across CMake/HDF5 versions
+  if(NOT ((HDF5_C_COMPILER_NO_INTERROGATE OR HDF5_C_COMPILER_EXECUTABLE_NO_INTERROGATE) AND SINGULARITY_FORCE_SUBMODULE_MODE))
 
     # I'm bailing out here if these arn't filled in. I don't know if this is
     # correct for every downstream use, but right now we need to enforce some kind

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2022. Triad National Security, LLC. All rights reserved.  This
+// © 2022-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef SINGULARITY_EOS_BASE_MATH_UTILS_HPP_
-#define SINGULARITY_EOS_BASE_MATH_UTILS_HPP_
+#ifndef SINGULARITY_UTILS_MATH_UTILS_HPP_
+#define SINGULARITY_UTILS_MATH_UTILS_HPP_
 
 #include <ports-of-call/portability.hpp>
 
@@ -61,4 +61,4 @@ PORTABLE_FORCEINLINE_FUNCTION auto pow10(const Real x) {
 } // namespace math_utils
 } // namespace singularity
 
-#endif // SINGULARITY_EOS_BASE_MATH_UTILS_HPP_
+#endif // SINGULARITY_UTILS_MATH_UTILS_HPP_

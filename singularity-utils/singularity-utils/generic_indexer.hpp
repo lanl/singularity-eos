@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef SINGULARITY_EOS_BASE_GENERIC_INDEXER_HPP_
-#define SINGULARITY_EOS_BASE_GENERIC_INDEXER_HPP_
+#ifndef SINGULARITY_UTILS_GENERIC_INDEXER_HPP_
+#define SINGULARITY_UTILS_GENERIC_INDEXER_HPP_
 
 #include <utility>
 
@@ -59,4 +59,4 @@ GenericIndexer(ArrT_ &&, MapT_ &&) -> GenericIndexer<ArrT_, MapT_>;
 
 } // namespace singularity
 
-#endif // #ifndef SINGULARITY_EOS_BASE_GENERIC_INDEXER_HPP_
+#endif // #ifndef SINGULARITY_UTILS_GENERIC_INDEXER_HPP_
