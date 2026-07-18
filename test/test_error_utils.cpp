@@ -18,7 +18,7 @@
 #include <limits>
 
 #include <ports-of-call/portability.hpp>
-#include <singularity-eos/base/error_utils.hpp>
+#include <singularity-utils/error_utils.hpp>
 
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE
