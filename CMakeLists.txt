@@ -247,12 +247,12 @@ if(SINGULARITY_BUILD_PYTHON)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
-# require at least C++17, but allow newer versions to become a client requirement if
+# require at least C++20, but allow newer versions to become a client requirement if
 # explicitly set at build time (needed for building with newer Kokkos)
 if(CMAKE_CXX_STANDARD)
   target_compile_features(singularity-eos_Interface INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
 else()
-  target_compile_features(singularity-eos_Interface INTERFACE cxx_std_17)
+  target_compile_features(singularity-eos_Interface INTERFACE cxx_std_20)
 endif()
 
 # checks if this is our build, or we've been imported via `add_subdirectory` NB:
@@ -650,9 +650,6 @@ target_compile_options(
          # `-Wclass-memaccess now default with -Wall but we explicitly
          # manage this ourselves in our serialization routines.
          $<$<AND:$<CXX_COMPILER_ID:GNU>,$<COMPILE_LANGUAGE:CXX>>:-Wno-class-memaccess>
-         # Intel compilers enable -ffast-math even in Debug builds. This disables finite-math-only in 
-         # Debug builds to allow NaN/Inf checks without pages of warnings
-         $<$<AND:$<CONFIG:Debug>,$<OR:$<CXX_COMPILER_ID:IntelLLVM>,$<CXX_COMPILER_ID:Intel>>>:-fno-finite-math-only>
 )
 if (SINGULARITY_STRICT_WARNINGS)
   target_compile_options(singularity-eos_Interface INTERFACE
