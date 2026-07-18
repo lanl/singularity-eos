@@ -13,8 +13,10 @@
 ### Fixed (Repair bugs, etc)
 - [[PR645]](https://github.com/lanl/singularity-eos/pull/645) Fix internal energy from density and pressure for JWL
 - [[PR63]](https://github.com/lanl/singularity-eos/pull/639) Fixed UnitSystem temperature bug. Temperature is now treated in the same as the time, mass, and length unit factors.
- 
+- [[PR637]](https://github.com/lanl/singularity-eos/pull/637) Fix is_normal 
+
 ### Changed (changing behavior/API/variables/...)
+- [[PR637]](https://github.com/lanl/singularity-eos/pull/637) For Kokkos 5/C++20, Python bindings now require context manager if run standalone
 - [[PR641]](https://github.com/lanl/singularity-eos/pull/641) The location of some header files located in `<singularity-eos/base>` have moved to `<singularity-utils>`.
 
 ### Infrastructure (changes irrelevant to downstream codes)

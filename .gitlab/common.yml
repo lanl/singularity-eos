@@ -74,30 +74,22 @@ default:
     - if: $ENABLED_CLUSTERS =~ /rocinante/ && $CI_PIPELINE_SOURCE == "web"
     - if: $ENABLED_CLUSTERS =~ /rocinante/ && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
-.venado_job:
+.venadito_job:
   variables:
-    CLUSTER: venado
-    SCHEDULER_PARAMETERS: "-N 1 -A asc-ci_g -p ci_g --qos ci_g --reservation ci_g --time=02:00:00"
+    CLUSTER: venadito
+    SCHEDULER_PARAMETERS: "-N 1 -A vt-ci_g --reservation ci_g --time=02:00:00"
   tags:
-    - venado
+    - venadito
     - batch
 
-.venado_shell_gpu_job:
-  variables:
-    CLUSTER: venado
-  tags:
-    - venado
-    - shell
-    - gpu
-
-.venado_regular_job:
+.venadito_regular_job:
   variables:
     CTEST_MODE: Continuous
   rules:
-    - if: $ENABLED_CLUSTERS =~ /venado/ && $GITLAB_USER_LOGIN =~ $VENADO_USERS && $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $ENABLED_CLUSTERS =~ /venado/ && $GITLAB_USER_LOGIN =~ $VENADO_USERS && $CI_PIPELINE_SOURCE == "schedule"
-    - if: $ENABLED_CLUSTERS =~ /venado/ && $GITLAB_USER_LOGIN =~ $VENADO_USERS && $CI_PIPELINE_SOURCE == "web"
-    - if: $ENABLED_CLUSTERS =~ /venado/ && $GITLAB_USER_LOGIN =~ $VENADO_USERS && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $ENABLED_CLUSTERS =~ /venadito/ && $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $ENABLED_CLUSTERS =~ /venadito/ && $CI_PIPELINE_SOURCE == "schedule"
+    - if: $ENABLED_CLUSTERS =~ /venadito/ && $CI_PIPELINE_SOURCE == "web"
+    - if: $ENABLED_CLUSTERS =~ /venadito/ && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 .rzansel_job:
   tags:

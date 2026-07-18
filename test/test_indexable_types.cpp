@@ -34,10 +34,15 @@ class ManualLambda_t {
  public:
   constexpr static size_t length = 3;
   ManualLambda_t() = default;
+  PORTABLE_FORCEINLINE_FUNCTION
   const Real &operator[](const std::size_t idx) const { return data_[idx]; }
+  PORTABLE_FORCEINLINE_FUNCTION
   Real &operator[](const std::size_t idx) { return data_[idx]; }
+  PORTABLE_FORCEINLINE_FUNCTION
   Real &operator[](const MeanIonizationState &zbar) { return data_[0]; }
+  PORTABLE_FORCEINLINE_FUNCTION
   Real &operator[](const ElectronFraction &Ye) { return data_[1]; }
+  PORTABLE_FORCEINLINE_FUNCTION
   Real &operator[](const LogDensity &lRho) { return data_[2]; }
 
  private:

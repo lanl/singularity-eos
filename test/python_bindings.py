@@ -11,11 +11,17 @@
 # prepare derivative works, distribute copies to the public, perform
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------
+
+# This file was made in part with generative AI.
+
 import math
 import unittest
 import singularity_eos
 import numpy as np
 from numpy.testing import assert_allclose
+
+def setUpModule():
+    singularity_eos.initialize()
 
 class EOSTestBase(object):
     def assertIsClose(self, a, b, eps=5e-2):
@@ -53,6 +59,12 @@ class EOSTestBase(object):
         self.assertIsClose(test_e.MinimumTemperature(), ref_e.MinimumTemperature(), 1.e-15)
 
 class EOS(unittest.TestCase):
+    def testContextSingleton(self):
+        context = singularity_eos.context()
+        self.assertIs(context, singularity_eos.context())
+        with context as entered_context:
+            self.assertIs(entered_context, context)
+
     def testConstants(self):
         from singularity_eos import thermalqs
         self.assertEqual(thermalqs.all_values, thermalqs.none |
@@ -693,4 +705,5 @@ class AluminumGruneisenEOS_SoundSpeedAndPressureComp(unittest.TestCase, EOSTestB
         self.assertIsClose(pres, true_pres, 1e-12)
 
 if __name__ == "__main__":
-    unittest.main()
+    with singularity_eos.context():
+        unittest.main()

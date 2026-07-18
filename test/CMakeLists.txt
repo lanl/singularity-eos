@@ -38,6 +38,7 @@ add_executable(
   test_eos_modifiers_minimal.cpp
   test_eos_vector.cpp
   test_math_utils.cpp
+  test_error_utils.cpp
   test_robust_utils.cpp
   test_modifier_floored_energy.cpp
   test_variadic_utils.cpp
@@ -45,6 +46,12 @@ add_executable(
   test_indexable_types.cpp
   test_generic_indxer.cpp
   )
+
+# We want to test things like quiet NaN so finite math/fast-math needs to be disabled.
+target_compile_options(eos_infrastructure_tests PRIVATE
+  $<$<COMPILE_LANGUAGE:CXX>:-fno-fast-math;-fno-finite-math-only>
+  $<$<COMPILE_LANGUAGE:CUDA>:--ftz=false;--prec-div=true;--prec-sqrt=true>
+)
 
 add_executable(
   eos_tabulated_unit_tests

@@ -11,10 +11,58 @@
 // prepare derivative works, distribute copies to the public, perform
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
+
+// This file was made in part with generative AI.
+
 // clang-format off
 #include "module.hpp"
 
 PYBIND11_MODULE(singularity_eos, m) {
+  py::class_<SingularityContext>(
+      m, "SingularityContext",
+      "Module-owned context manager for the Singularity EOS runtime.\n\n"
+      "Use the singleton returned by ``singularity_eos.context()`` rather than "
+      "constructing this type directly. Entering the context initializes the "
+      "runtime, but leaving it does not finalize the runtime.")
+    .def("__enter__",
+         [](SingularityContext &self) -> SingularityContext & {
+           InitializeSingularity();
+           return self;
+         },
+         py::return_value_policy::reference_internal,
+         "Initialize the shared runtime and return this context."
+         )
+    .def("__exit__",
+         [](SingularityContext &self,
+            py::object,
+            py::object,
+            py::object) {
+           (void)self;
+           return false; // do not suppress exceptions
+         },
+         "Leave the context without finalizing the shared runtime."
+         );
+
+  m.def("context",
+        []() -> SingularityContext & {
+          return SingularityContext::Instance();
+        },
+        py::return_value_policy::reference,
+        "Return the module-owned Singularity EOS runtime context.\n\n"
+        "The same context is returned on every call. Entering it initializes "
+        "the runtime; leaving it does not finalize the runtime.");
+  m.def("initialize", &InitializeSingularity,
+        "Initialize the Singularity EOS runtime if necessary.\n\n"
+        "When built with Kokkos, this starts Kokkos only if it is not already "
+        "initialized. Calls are idempotent while Kokkos remains active. If "
+        "another component initialized Kokkos first, Singularity EOS does not "
+        "take ownership of its lifetime.");
+  m.def("finalize", &FinalizeSingularity,
+        "Finalize the Singularity EOS runtime when owned by this module.\n\n"
+        "When built with Kokkos, this finalizes Kokkos only if "
+        "singularity_eos.initialize() or singularity_eos.context() originally "
+        "started it. Kokkos cannot be initialized again after finalization.");
+
   py::class_<EOSState>(m, "EOSState")
     .def(py::init())
     .def_readwrite("density", &EOSState::density)
@@ -157,5 +205,5 @@ PYBIND11_MODULE(singularity_eos, m) {
   eos_units.attr("ThermalUnits") = eos_units_init::thermal_units_init_tag;
   eos_units.attr("LengthTimeUnits") = eos_units_init::length_time_units_init_tag;
 
-  m.doc() = "Singularity EOS Python Bindings";
+  m.doc() = "Python bindings for Singularity EOS.";
 }

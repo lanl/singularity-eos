@@ -175,21 +175,21 @@ openmpi_fortran_kokkos_static_openmp_clang:
     SPACK_ENV_NAME: openmpi-fortran-kokkos-static-openmp-clang
     SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
-openmpi_rocm_gcc:
+openmpi_rocm_rocmcc:
   extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
   needs:
    - prereq_offline_deps
   variables:
-    SPACK_ENV_NAME: openmpi-rocm-gcc
+    SPACK_ENV_NAME: openmpi-rocm-rocmcc
     SCHEDULER_PARAMETERS: "-n 1 --qos=debug -p shared-gpu-amd-mi250"
     SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
-openmpi_fortran_rocm_gcc:
+openmpi_fortran_rocm_rocmcc:
   extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
   needs:
    - prereq_offline_deps
   variables:
-    SPACK_ENV_NAME: openmpi-fortran-rocm-gcc
+    SPACK_ENV_NAME: openmpi-fortran-rocm-rocmcc
     SCHEDULER_PARAMETERS: "-n 1 --qos=debug -p shared-gpu-amd-mi250"
     SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
@@ -199,6 +199,17 @@ rocinante_craympich_gcc:
    - prereq_offline_deps
   variables:
     SPACK_ENV_NAME: craympich-gcc
+    SUBMIT_TO_CDASH: false
+    BUILD_WITH_CTEST: "${ENABLE_CDASH}"
+    SUBMIT_ON_ERROR: false          # Compute nodes don't have network access, don't try to send from compute node
+    SUBMIT_AFTER: "${ENABLE_CDASH}" # after_script runs on a network connected system
+
+venadito_craympich_cuda_gracehopper_gcc:
+  extends: [.ascgit_job, .venadito_job, .venadito_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
+  variables:
+    SPACK_ENV_NAME: craympich-cuda-gracehopper-gcc
     SUBMIT_TO_CDASH: false
     BUILD_WITH_CTEST: "${ENABLE_CDASH}"
     SUBMIT_ON_ERROR: false          # Compute nodes don't have network access, don't try to send from compute node
@@ -215,23 +226,23 @@ rocinante_craympich_fortran_gcc:
     SUBMIT_ON_ERROR: false          # Compute nodes don't have network access, don't try to send from compute node
     SUBMIT_AFTER: "${ENABLE_CDASH}" # after_script runs on a network connected system
 
-rzvernal_craympich_rocm_mi250_cce:
+rzvernal_craympich_rocm_mi250_rocmcc:
   extends: [.ascgit_job, .rzvernal_job, .rzvernal_regular_job, .build_and_test]
   needs:
    - prereq_offline_deps
   variables:
-    SPACK_ENV_NAME: craympich-rocm-gfx90a-cce
+    SPACK_ENV_NAME: craympich-rocm-gfx90a-rocmcc
     SUBMIT_TO_CDASH: false
     BUILD_WITH_CTEST: "${ENABLE_CDASH}"
     SUBMIT_ON_ERROR: false          # Compute nodes don't have network access, don't try to send from compute node
     SUBMIT_AFTER: "${ENABLE_CDASH}" # after_script runs on a network connected system
 
-rzadams_craympich_rocm_mi300_cce:
+rzadams_craympich_rocm_mi300_rocmcc:
   extends: [.ascgit_job, .rzadams_job, .rzadams_regular_job, .build_and_test]
   needs:
    - prereq_offline_deps
   variables:
-    SPACK_ENV_NAME: craympich-rocm-gfx942-cce
+    SPACK_ENV_NAME: craympich-rocm-gfx942-rocmcc
     SUBMIT_TO_CDASH: false
     BUILD_WITH_CTEST: "${ENABLE_CDASH}"
     SUBMIT_ON_ERROR: false          # Compute nodes don't have network access, don't try to send from compute node

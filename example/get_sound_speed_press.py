@@ -12,11 +12,17 @@
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------
 
-from singularity_eos import IdealGas, thermalqs
+# This file was made in part with generative AI.
+
+from singularity_eos import IdealGas, finalize, initialize, thermalqs
 import numpy as np
 import math
 
 SMALL = 1e-20 # to avoid dividing by zero
+
+# Initialize the shared runtime before making EOS calls. This is idempotent and
+# does not take ownership of Kokkos if another component initialized it first.
+initialize()
 
 def PressureSoundSpeedFromDensityEnergyDensity(rho, uu, eos, # inputs
                                                P, cs, Ncells # outputs
@@ -123,3 +129,6 @@ print_results()
 # This usually only does anything if you're on device, but for GPU-data it
 # will call the appropriate destructor.
 eos1.Finalize()
+
+# Shut down the shared runtime if this module initialized it.
+finalize()

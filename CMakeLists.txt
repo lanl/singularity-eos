@@ -247,6 +247,31 @@ if(SINGULARITY_BUILD_PYTHON)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
+# require at least C++20, but allow newer versions to become a client requirement if
+# explicitly set at build time (needed for building with newer Kokkos)
+if(CMAKE_CXX_STANDARD)
+  target_compile_features(singularity-eos_Interface INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
+else()
+  target_compile_features(singularity-eos_Interface INTERFACE cxx_std_20)
+endif()
+
+# checks if this is our build, or we've been imported via `add_subdirectory` NB:
+# this should make the `option(SINGULARITY_SUBMODULE_MODE ...)` unnecessary
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+  set(CMAKE_CXX_EXTENSIONS OFF)
+else()
+  message(
+    STATUS
+      "Detected that `singularity-eos` is a subproject, will configure build in submodule mode"
+  )
+  set(SINGULARITY_SUBMODULE_MODE ON)
+endif()
+
+if(SINGULARITY_FORCE_SUBMODULE_MODE)
+  message(STATUS "Building as though project was a submodule.")
+  set(SINGULARITY_SUBMODULE_MODE ON)
+endif()
+
 # Use to determine if Eigen is used or not
 set(SINGULARITY_USE_EIGEN
     OFF
@@ -625,8 +650,6 @@ target_compile_options(
          # `-Wclass-memaccess now default with -Wall but we explicitly
          # manage this ourselves in our serialization routines.
          $<$<AND:$<CXX_COMPILER_ID:GNU>,$<COMPILE_LANGUAGE:CXX>>:-Wno-class-memaccess>
-         # Disable finite-math-only in Debug builds to allow NaN/Inf checks (Intel compilers)
-         $<$<AND:$<CONFIG:Debug>,$<OR:$<CXX_COMPILER_ID:IntelLLVM>,$<CXX_COMPILER_ID:Intel>>>:-fno-finite-math-only>
 )
 if (SINGULARITY_STRICT_WARNINGS)
   target_compile_options(singularity-eos_Interface INTERFACE
