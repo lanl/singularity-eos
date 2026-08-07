@@ -28,6 +28,8 @@ register_headers(
     base/spiner_table_utils.hpp
     base/constants.hpp
     base/eos_error.hpp
+    base/eos_concepts.hpp
+    base/finite_diff.hpp
     eos/default_variant.hpp
     eos/eos_variant.hpp
     eos/eos_stellar_collapse.hpp
@@ -39,6 +41,7 @@ register_headers(
     eos/eos_spiner_rho_sie.hpp
     eos/eos_spiner_rho_temp.hpp
     eos/eos_spiner_common.hpp
+    eos/eos_spiner_constructor.hpp
     eos/eos_spiner_sie_transforms.hpp
     eos/eos_davis.hpp
     eos/eos_gruneisen.hpp
