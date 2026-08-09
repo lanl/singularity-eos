@@ -9,6 +9,7 @@
 ### Changed (changing behavior/API/variables/...)
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR649]](https://github.com/lanl/singularity-eos/pull/649) Add checks that all header files are installed properly.
 
 ### Deprecated (soon to be removed behavior/API/variables/...)
 
