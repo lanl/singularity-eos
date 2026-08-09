@@ -5,7 +5,7 @@
 ### Added (new features/APIs/variables/...)
 
 ### Fixed (Repair bugs, etc)
-
+- [[PR647]](https://github.com/lanl/singularity-eos/pull/647) Add missing headers to the registration in singularity-eos/CMakeLists.txt
 ### Changed (changing behavior/API/variables/...)
 
 ### Infrastructure (changes irrelevant to downstream codes)
