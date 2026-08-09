@@ -1,3 +1,4 @@
+
 //======================================================================
 // © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
@@ -115,7 +116,7 @@ constexpr std::int64_t one = 1;
 // as_int(1.0) == 2^62 - 2^52
 constexpr std::int64_t one_as_int = (one << 62) - (one << 52);
 // 1./static_cast<double>(as_int(2.0) - as_int(1.0)) == 2^-52
-constexpr double scale_down = 2.22044604925031e-16;
+constexpr double scale_down = 2.220446049250313e-16;
 // as_int(2.0) - as_int(1.0) = 2^52, but note the type
 constexpr double scale_up = (one << 52);
 // 2^52 - 1

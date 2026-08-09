@@ -37,3 +37,5 @@ jobs:
             make -j4
             make install
             ctest --output-on-failure
+            cd ..
+            bash ./utils/scripts/check_installs.sh
