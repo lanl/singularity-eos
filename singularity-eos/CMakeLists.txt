@@ -75,6 +75,7 @@ if (SINGULARITY_BUILD_CLOSURE)
     closure/kinetic_phasetransition_models.hpp
     closure/kinetic_phasetransition_utils.hpp
     closure/kinetic_phasetransition_methods.hpp
+    closure/multiphase_material.hpp
   )
   if (SINGULARITY_BUILD_FORTRAN_BACKEND OR SINGULARITY_BUILD_TESTS)
     # while these are C++ files, they
