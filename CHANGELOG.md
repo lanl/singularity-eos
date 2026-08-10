@@ -5,12 +5,19 @@
 ### Added (new features/APIs/variables/...)
 
 ### Fixed (Repair bugs, etc)
-- [[PR647]](https://github.com/lanl/singularity-eos/pull/647) Add missing headers to the registration in singularity-eos/CMakeLists.txt
+
 ### Changed (changing behavior/API/variables/...)
 
 ### Infrastructure (changes irrelevant to downstream codes)
 
 ### Deprecated (soon to be removed behavior/API/variables/...)
+
+## Release 1.12.1
+Date: 08/10/2026
+
+### Fixed (Repair bugs, etc)
+- [[PR647]](https://github.com/lanl/singularity-eos/pull/647) Add missing headers to the registration in singularity-eos/CMakeLists.txt
+
 
 ## Release 1.12.0
 Date: 07/20/2026
