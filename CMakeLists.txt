@@ -639,9 +639,6 @@ target_compile_options(
          > # better_flags
          > # debug
          > # cxx
-         $<${build_release}:
-         -use_fast_math
-         > # release
          > # cuda
 
          # Suppresses annoying ABI notes. See:
