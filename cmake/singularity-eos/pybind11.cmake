@@ -1,0 +1,11 @@
+macro(singularity_import_pybind11)
+  if(NOT TARGET pybind11::headers)
+    message(STATUS "Using pybind11 submodule")
+    add_subdirectory(utils/pybind11)
+  endif()
+endmacro()
+
+macro(singularity_find_pybind11)
+  message(STATUS "Searching for system pybind11")
+  find_package(pybind11 REQUIRED)
+endmacro()
