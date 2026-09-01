@@ -183,6 +183,7 @@ include(singularity-eos/hdf5)
 include(singularity-eos/kokkos)
 include(singularity-eos/spiner)
 include(singularity-eos/ports-of-call)
+include(singularity-eos/pybind11)
 
 add_library(singularity-eos INTERFACE)
 add_library(singularity-eos::singularity-eos ALIAS singularity-eos)
@@ -294,6 +295,10 @@ endif()
 # Must happen before building singularity-utils (which needs ports-of-call and spiner)
 # Dependency order: Kokkos -> ports-of-call -> spiner -> singularity-utils
 
+if (SINGULARITY_BUILD_PYTHON)
+  find_package(Python COMPONENTS Interpreter Development REQUIRED)
+endif()
+
 if(SINGULARITY_SUBMODULE_MODE)
   # add all submodules
   message(STATUS "singularity-eos configuring in submodule mode.")
@@ -318,6 +323,11 @@ if(SINGULARITY_SUBMODULE_MODE)
   if(SINGULARITY_USE_EIGEN)
     singularity_import_eigen()
   endif()
+
+  # And pybind11 (if needed)
+  if (SINGULARITY_BUILD_PYTHON)
+    singularity_import_pybind11()
+  endif()
 else()
   # use system packages
 
@@ -340,6 +350,11 @@ else()
   # Eigen (if needed)
   if(SINGULARITY_USE_EIGEN)
     singularity_find_eigen()
+  endif()
+
+  # And pybind11 (if needed)
+  if (SINGULARITY_BUILD_PYTHON)
+    singularity_find_pybind11()
   endif()
 endif()
 

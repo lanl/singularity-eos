@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------#
-# © 2022-2026. Triad National Security, LLC. All rights reserved.  This program
+# © 2026. Triad National Security, LLC. All rights reserved.  This program
 # was produced under U.S. Government contract 89233218CNA000001 for Los Alamos
 # National Laboratory (LANL), which is operated by Triad National Security, LLC
 # for the U.S.  Department of Energy/National Nuclear Security Administration.
@@ -11,18 +11,14 @@
 # publicly and display publicly, and to permit others to do so.
 # ------------------------------------------------------------------------------#
 
-pybind11_add_module(singularity_eos
-  module.cpp
-  modifier_shifted.cpp
-  modifier_scaled.cpp
-  modifier_bilinear_ramp.cpp
-)
-target_link_libraries(singularity_eos PRIVATE singularity-eos_Interface)
+macro(singularity_import_pybind11)
+  if(NOT TARGET pybind11::headers)
+    message(STATUS "Using pybind11 submodule")
+    add_subdirectory(utils/pybind11)
+  endif()
+endmacro()
 
-include(GNUInstallDirs)
-
-set(PYTHON_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages")
-
-install(TARGETS singularity_eos
-  COMPONENT python
-  LIBRARY DESTINATION "${PYTHON_INSTALL_DIR}")
+macro(singularity_find_pybind11)
+  message(STATUS "Searching for system pybind11")
+  find_package(pybind11 REQUIRED)
+endmacro()

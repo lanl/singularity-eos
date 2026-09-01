@@ -9,6 +9,7 @@
 ### Changed (changing behavior/API/variables/...)
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR653]](https://github.com/lanl/singularity-eos/pull/653) Move pybind11 to a submodule rather than fetching it via cmake fetchcontent
 
 ### Deprecated (soon to be removed behavior/API/variables/...)
 

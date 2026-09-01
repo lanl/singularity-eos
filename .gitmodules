@@ -13,3 +13,6 @@
 [submodule "utils/kokkos-kernels"]
 	path = utils/kokkos-kernels
 	url = https://github.com/kokkos/kokkos-kernels.git
+[submodule "utils/pybind11"]
+	path = utils/pybind11
+	url = https://github.com/pybind/pybind11.git
