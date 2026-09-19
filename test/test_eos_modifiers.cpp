@@ -80,6 +80,13 @@ class BoundedGas : public IdealGas {
 
   PORTABLE_INLINE_FUNCTION
   Real RhoPmin(const Real /*temp*/) const { return MinimumDensity(); }
+
+  // Table-style bounds accessors, as provided by, e.g., SpinerEOS. These
+  // are not part of the EosBase contract.
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real sieMin() const { return 1e-4; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real sieMax() const { return 1e12; }
 };
 
 #ifndef SINGULARITY_BUILD_CLOSURE
@@ -331,6 +338,8 @@ SCENARIO("Modifiers propagate introspection bounds correctly", "[Modifiers]") {
     const Real base_min_pres = bg.MinimumPressure();
     const Real base_max_pres = bg.MaximumPressureAtTemperature(0.0);
     const Real base_rho_pmin = bg.RhoPmin(0.0);
+    const Real base_min_sie = bg.sieMin();
+    const Real base_max_sie = bg.sieMax();
 
     AND_GIVEN("A shifted, scaled EOS") {
       auto eos = ScaledEOS<ShiftedEOS<BoundedGas>>(
@@ -378,9 +387,20 @@ SCENARIO("Modifiers propagate introspection bounds correctly", "[Modifiers]") {
                         EPS));
         REQUIRE(isClose(us.RhoPmin(0.0), base_rho_pmin / rho_unit, EPS));
       }
+
+      THEN("The unit system converts the table energy bounds") {
+        REQUIRE(isClose(us.sieMin(), base_min_sie / sie_unit, EPS));
+        REQUIRE(isClose(us.sieMax(), base_max_sie / sie_unit, EPS));
+        AND_THEN("Multiplying by the energy unit recovers the base bounds") {
+          REQUIRE(isClose(us.sieMin() * sie_unit, base_min_sie, EPS));
+          REQUIRE(isClose(us.sieMax() * sie_unit, base_max_sie, EPS));
+        }
+      }
     }
   }
 }
+// IdealGas provides no sieMin/sieMax, so this scenario also guards that
+// UnitSystem<T> is still usable for a T without the table bounds accessors.
 SCENARIO("UnitSystem  modifier converts units correctly",
          "[Modifiers][Units][IdealGas]") {
   GIVEN("An IdealGas EOS in non-cgs units") {

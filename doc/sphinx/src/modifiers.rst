@@ -189,6 +189,34 @@ internal energy, and temperature. On the other hand,
 specifies the unit system by specifying units for time, mass, length,
 and temperature.
 
+In addition to the bounds introspection methods described in the
+:ref:`EOS API section<using-eos>`, which are converted to the new unit
+system, ``UnitSystem`` also forwards the table bounds accessors
+
+.. cpp:function:: Real sieMin() const;
+
+and
+
+.. cpp:function:: Real sieMax() const;
+
+converting them to the new unit system. These accessors are not part of
+the general EOS API; they are provided only by some tabulated models,
+such as ``SpinerEOSDependsRhoSie`` and ``StellarCollapse``. Calling them
+on a ``UnitSystem`` wrapping a model that does not provide them is a
+compile-time error, but merely instantiating such a ``UnitSystem`` is
+not. This means one no longer needs to call ``GetUnmodifiedObject`` to
+retrieve energy bounds, which would return them in the unmodified (cgs)
+unit system:
+
+.. code-block:: cpp
+
+  using namespace singularity;
+  using EOS = UnitSystem<SpinerEOSDependsRhoSie>;
+  EOS my_eos = /* ... */;
+  // bounds in the new unit system
+  Real sie_min = my_eos.sieMin();
+  Real sie_max = my_eos.sieMax();
+
 Z-Split EOS
 -------------
 
