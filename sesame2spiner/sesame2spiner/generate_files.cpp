@@ -18,8 +18,6 @@
 #include <cstdlib>
 #include <limits>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #ifdef SPINER_USE_HDF
@@ -170,64 +168,111 @@ herr_t saveMaterial(hid_t loc, const SesameMetadata &metadata, const Bounds &lRh
   return status;
 }
 
-herr_t saveAllMaterials(const std::string &savename,
-                        const std::vector<std::string> &filenames, bool printMetadata,
-                        Verbosity eospacWarn) {
-  std::vector<Params> params;
-  std::vector<int> matids;
-  std::unordered_map<std::string, int> used_names;
-  std::unordered_set<int> used_matids;
-  SesameMetadata metadata;
-  hid_t file;
+herr_t writeSP5RootAttributes(hid_t file) {
   herr_t status = H5_SUCCESS;
 
-  for (auto const &filename : filenames) {
-    AddMaterials(params, matids, filename);
-  }
-
-  std::cout << "Saving to file " << savename << std::endl;
-  file = H5Fcreate(savename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-
   // singularity version
-  H5LTset_attribute_string(file, "/", "singularity_version", SESAME2SPINER_VERSION);
+  if (H5LTset_attribute_string(file, "/", "singularity_version", SESAME2SPINER_VERSION) !=
+      H5_SUCCESS) {
+    status = -1;
+  }
   // log type. 0 for true, 1 for NQT1, 2 for NQT2, -1 for single precision true
   int log_type = singularity::FastMath::Settings::log_type;
-  H5LTset_attribute_int(file, "/", SP5::logType, &log_type, 1);
+  if (H5LTset_attribute_int(file, "/", SP5::logType, &log_type, 1) != H5_SUCCESS) {
+    status = -1;
+  }
+
+  if (status != H5_SUCCESS) {
+    std::cerr << "ERROR: unable to write sp5 root attributes." << std::endl;
+  }
+  return status;
+}
+
+herr_t checkSP5RootAttributes(hid_t file) {
+  const int log_type = singularity::FastMath::Settings::log_type;
+
+  int file_log_type = 0;
+  if (H5LTget_attribute_int(file, "/", SP5::logType, &file_log_type) != H5_SUCCESS) {
+    std::cerr << "ERROR: sp5 file has no \"" << SP5::logType << "\" root attribute. "
+              << "Call writeSP5RootAttributes() on a newly created file before "
+              << "adding materials to it." << std::endl;
+    return -1;
+  }
+
+  if (file_log_type != log_type) {
+    std::cerr << "ERROR: sp5 file was written with log type " << file_log_type
+              << " but this build of singularity-eos uses log type " << log_type << ". "
+              << "Adding materials would produce a file whose materials disagree "
+              << "with its \"" << SP5::logType << "\" attribute. Refusing." << std::endl;
+    return -1;
+  }
+
+  return H5_SUCCESS;
+}
+
+herr_t saveAllMaterials(hid_t file, const std::vector<int> &matids,
+                        const std::vector<Params> &params, bool printMetadata,
+                        Verbosity eospacWarn) {
+  if (file < 0) {
+    std::cerr << "ERROR: invalid sp5 file handle." << std::endl;
+    return -1;
+  }
+  if (matids.size() != params.size()) {
+    std::cerr << "ERROR: matids and params must be the same length. Got " << matids.size()
+              << " and " << params.size() << "." << std::endl;
+    return -1;
+  }
+  if (checkSP5RootAttributes(file) != H5_SUCCESS) {
+    return -1;
+  }
+
+  SesameMetadata metadata;
+  int num_failed = 0;
 
   std::cout << "Processing " << matids.size() << " materials..." << std::endl;
 
-  for (size_t i = 0; i < matids.size(); i++) {
-    int matid = matids[i];
-    if (used_matids.count(matid) > 0) {
+  for (std::size_t i = 0; i < matids.size(); i++) {
+    const int matid = matids[i];
+    const std::string sMatid = std::to_string(matid);
+
+    // Duplicate detection queries the file rather than tracking local state, so
+    // that repeated calls building a file up incrementally behave the same as a
+    // single call that saves everything at once.
+    if (H5Lexists(file, sMatid.c_str(), H5P_DEFAULT) > 0) {
       std::cerr << "...Duplicate matid " << matid << " detected. Skipping." << std::endl;
       continue;
     }
-    used_matids.insert(matid);
 
     std::cout << "..." << matid << std::endl;
 
-    eosGetMetadata(matid, metadata, Verbosity::Debug);
+    eosGetMetadata(matid, metadata, eospacWarn);
     if (printMetadata) std::cout << metadata << std::endl;
+
+    if (!checkMetadataValid(matid, metadata)) {
+      num_failed += 1;
+      continue;
+    }
 
     std::string name = params[i].Get("name", metadata.name);
     if (name == "-1" || name == "") {
-      std::string new_name = "material_" + std::to_string(i);
+      std::string new_name = "material_" + sMatid;
       std::cerr << "...WARNING: no reasonable name found. "
                 << "Using a default name: " << new_name << std::endl;
       name = new_name;
     }
-    if (used_names.count(name) > 0) {
-      used_names[name] += 1;
-      std::string new_name = name + "_" + std::to_string(used_names[name]);
+    if (H5Lexists(file, name.c_str(), H5P_DEFAULT) > 0) {
+      std::string new_name;
+      int suffix = 2;
+      do {
+        new_name = name + "_" + std::to_string(suffix++);
+      } while (H5Lexists(file, new_name.c_str(), H5P_DEFAULT) > 0);
       std::cerr << "...WARNING: Name " << name << " already used. "
                 << "Using name: " << new_name << std::endl;
       name = new_name;
-    } else {
-      used_names[name] = 1;
     }
 
     Bounds lRhoBounds, lTBounds, leBounds;
-    getMatBounds(i, matid, metadata, params[i], lRhoBounds, lTBounds, leBounds);
+    getMatBounds(matid, metadata, params[i], lRhoBounds, lTBounds, leBounds);
 
     if (eospacWarn == Verbosity::Debug) {
       std::cout << "bounds for log(rho), log(T), log(sie) are:\n"
@@ -240,19 +285,74 @@ herr_t saveAllMaterials(const std::string &savename,
                 << std::endl;
     }
 
-    status += saveMaterial(file, metadata, lRhoBounds, lTBounds, leBounds, name,
-                           add_subtables, eospacWarn);
-    if (status != H5_SUCCESS) {
-      std::cerr << "WARNING: problem with HDf5" << std::endl;
+    // Track status per material so that one failure does not get reported against
+    // every material that follows it.
+    const herr_t mat_status = saveMaterial(file, metadata, lRhoBounds, lTBounds, leBounds,
+                                           name, add_subtables, eospacWarn);
+    if (mat_status != H5_SUCCESS) {
+      std::cerr << "ERROR [" << matid << "]: problem with HDF5 while saving material."
+                << std::endl;
+      num_failed += 1;
     }
   }
 
+  if (num_failed > 0) {
+    std::cerr << "WARNING: " << num_failed << " of " << matids.size()
+              << " materials could not be saved." << std::endl;
+  }
+  // Count failures rather than summing herr_t values, which can cancel out and
+  // report success.
+  return (num_failed == 0) ? H5_SUCCESS : -1;
+}
+
+herr_t saveAllMaterials(const std::string &savename, const std::vector<int> &matids,
+                        const std::vector<Params> &params, bool printMetadata,
+                        Verbosity eospacWarn) {
+  if (matids.size() != params.size()) {
+    std::cerr << "ERROR: matids and params must be the same length. Got " << matids.size()
+              << " and " << params.size() << "." << std::endl;
+    return -1;
+  }
+
+  std::cout << "Saving to file " << savename << std::endl;
+  hid_t file = H5Fcreate(savename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+  if (file < 0) {
+    std::cerr << "ERROR: unable to create file " << savename << std::endl;
+    return -1;
+  }
+
+  herr_t status = writeSP5RootAttributes(file);
+  if (saveAllMaterials(file, matids, params, printMetadata, eospacWarn) != H5_SUCCESS) {
+    status = -1;
+  }
+
   std::cout << "Cleaning up." << std::endl;
-  status += H5Fclose(file);
-  if (status != H5_SUCCESS) {
-    std::cerr << "WARNING: problem with HDf5" << std::endl;
+  if (H5Fclose(file) != H5_SUCCESS) {
+    std::cerr << "WARNING: problem with HDF5 while closing " << savename << std::endl;
+    status = -1;
   }
   return status;
+}
+
+herr_t saveAllMaterials(const std::string &savename, const std::vector<int> &matids,
+                        bool printMetadata, Verbosity eospacWarn) {
+  // A default-constructed Params supplies no overrides, and every lookup in the
+  // material loop falls back to a default, so this is exactly "standard defaults".
+  return saveAllMaterials(savename, matids, std::vector<Params>(matids.size()),
+                          printMetadata, eospacWarn);
+}
+
+herr_t saveAllMaterials(const std::string &savename,
+                        const std::vector<std::string> &filenames, bool printMetadata,
+                        Verbosity eospacWarn) {
+  std::vector<Params> params;
+  std::vector<int> matids;
+
+  for (auto const &filename : filenames) {
+    AddMaterials(params, matids, filename);
+  }
+
+  return saveAllMaterials(savename, matids, params, printMetadata, eospacWarn);
 }
 
 herr_t saveTablesRhoSie(hid_t loc, int matid, TableSplit split, const Bounds &lRhoBounds,
@@ -401,7 +501,7 @@ SpinerTableGridParams paramsToGridParams(int matid, const SesameMetadata &metada
   return gridParams;
 }
 
-void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params &params,
+void getMatBounds(int matid, const SesameMetadata &metadata, const Params &params,
                   Bounds &lRhoBounds, Bounds &lTBounds, Bounds &leBounds) {
 
   // Convert string-based Params to structured grid parameters
@@ -465,6 +565,27 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
             << leBounds << std::endl;
 
   return;
+}
+
+bool checkMetadataValid(int matid, const SesameMetadata &metadata) {
+  auto rangeBad = [](Real vmin, Real vmax) {
+    return !std::isfinite(vmin) || !std::isfinite(vmax) || !(vmax > vmin);
+  };
+
+  if (rangeBad(metadata.rhoMin, metadata.rhoMax) ||
+      rangeBad(metadata.TMin, metadata.TMax) ||
+      rangeBad(metadata.sieMin, metadata.sieMax) || metadata.numRho <= 0 ||
+      metadata.numT <= 0) {
+    std::cerr << "ERROR [" << matid << "]: metadata is not usable. Skipping.\n"
+              << "\trho, T, sie bounds = [" << metadata.rhoMin << ", " << metadata.rhoMax
+              << "], [" << metadata.TMin << ", " << metadata.TMax << "], ["
+              << metadata.sieMin << ", " << metadata.sieMax << "]\n"
+              << "\tnumRho, numT = " << metadata.numRho << ", " << metadata.numT << "\n"
+              << "\tThis usually means matid " << matid
+              << " is not present in the sesame file." << std::endl;
+    return false;
+  }
+  return true;
 }
 
 bool checkValInMatBounds(int matid, const std::string &name, Real val, Real vmin,
