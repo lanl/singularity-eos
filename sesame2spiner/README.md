@@ -53,9 +53,83 @@ air                      Soft Link {5030}
 stainless\ steel\ 347    Soft Link {4272}
 ```
 
+## Using sesame2spiner as a library
+
+The conversion machinery is also available as a library, `sesame2spiner-lib`
+(aliased `sesame2spiner::sesame2spiner`), for host codes that want to generate an
+sp5 file directly from a list of sesame material ids without writing input decks
+to disk first. The declarations live in `<sesame2spiner/generate_files.hpp>`.
+
+### Generating a file from a list of matids
+
+```cpp
+#include <sesame2spiner/generate_files.hpp>
+
+using namespace sesame2spiner;
+using EospacWrapper::Verbosity;
+
+const std::vector<int> matids = {5030, 4272};
+
+herr_t status = saveAllMaterials("materials.sp5", matids,
+                                 /*printMetadata=*/false, Verbosity::Quiet);
+```
+
+This uses the same default grids the command line tool would use for a deck that
+names only `matid`. A material whose metadata cannot be read -- most commonly
+because the matid is not present in the sesame file -- is reported on `stderr`
+and skipped; the remaining materials are still written and the return value is
+non-zero. Duplicate matids are likewise skipped with a warning.
+
+### Overriding parameters per material
+
+Every key accepted in an input deck can also be set programmatically on a
+`Params` object, one per matid:
+
+```cpp
+std::vector<Params> params(matids.size());
+params[0].Set("name", "air");
+params[0].Set("numrho/decade", "40");
+params[1].Set("ionization", "true");
+
+herr_t status = saveAllMaterials("materials.sp5", matids, params,
+                                 /*printMetadata=*/false, Verbosity::Quiet);
+```
+
+### Adding materials one at a time
+
+To build a single file up incrementally -- for instance as a host code discovers
+which materials it needs -- open the file yourself and call the `hid_t` overload
+once per material. Duplicate matid and name detection query the file, so this
+produces the same result as saving everything in one call:
+
+```cpp
+hid_t file = H5Fcreate("materials.sp5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+herr_t status = writeSP5RootAttributes(file);
+
+for (int matid : matids) {
+  if (saveAllMaterials(file, {matid}, {Params{}},
+                       /*printMetadata=*/false, Verbosity::Quiet) != H5_SUCCESS) {
+    status = -1; // note which materials failed here if you need that detail
+  }
+}
+
+if (H5Fclose(file) != H5_SUCCESS) status = -1;
+```
+
+`writeSP5RootAttributes` records the singularity version and the log type the
+file was generated with, and must be called once on a newly created file before
+any materials are added. To add materials to a file from a previous run, reopen
+it with `H5Fopen(..., H5F_ACC_RDWR, ...)` and skip `writeSP5RootAttributes` --
+the attributes are already there. Every call to the `hid_t` overload checks that
+the file's log type matches the current build and refuses to proceed otherwise,
+since the resulting file would be silently misinterpreted at read time.
+
+Note that the file must be closed for the resulting sp5 to be valid, so a host
+code that may exit early should ensure `H5Fclose` still runs.
+
 ## Copyright
 
-© 2021-2023. Triad National Security, LLC. All rights reserved.  This
+© 2021-2026. Triad National Security, LLC. All rights reserved.  This
 program was produced under U.S. Government contract 89233218CNA000001
 for Los Alamos National Laboratory (LANL), which is operated by Triad
 National Security, LLC for the U.S.  Department of Energy/National
