@@ -3,7 +3,7 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
-- [[PRXXX]](https://github.com/lanl/singularity-eos/pull/XXX) Forward the `sieMin`/`sieMax` table bounds accessors through the `UnitSystem` modifier, converting them to the modified unit system
+- [[PR658]](https://github.com/lanl/singularity-eos/pull/XXX) Forward the `sieMin`/`sieMax` table bounds accessors through the `UnitSystem` modifier, converting them to the modified unit system
 
 ### Fixed (Repair bugs, etc)
 
