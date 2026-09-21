@@ -268,6 +268,19 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   PORTABLE_FORCEINLINE_FUNCTION
   Real RhoPmin(const Real temp) const { return inv_scale_ * t_.RhoPmin(temp); }
 
+  // The modified energy is scale_ times the base energy. CheckParams
+  // only requires |scale_| > 0, so a negative scale is legal, and it
+  // maps the minimum energy onto the maximum and vice versa. Swap the
+  // two in that case so the reported bounds stay ordered.
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumInternalEnergy() const {
+    return scale_ *
+           (scale_ < 0 ? t_.MaximumInternalEnergy() : t_.MinimumInternalEnergy());
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumInternalEnergy() const {
+    return scale_ *
+           (scale_ < 0 ? t_.MinimumInternalEnergy() : t_.MaximumInternalEnergy());
+  }
+
   PORTABLE_INLINE_FUNCTION
   Real MeanAtomicMass() const { return inv_scale_ * t_.MeanAtomicMass(); }
   PORTABLE_INLINE_FUNCTION

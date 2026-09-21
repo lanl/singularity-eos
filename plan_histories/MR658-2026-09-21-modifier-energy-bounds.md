@@ -2,7 +2,7 @@
 
 **MR**: #XXX (rename this file once the MR number is assigned)
 **Date**: 2026-09-19
-**Status**: ✅ Phase 1 implemented — 📋 Phase 2 proposed, not implemented
+**Status**: ✅ Phase 1 implemented — ✅ Phase 2 implemented (2026-09-21, at reviewer request)
 
 ## Motivation
 
@@ -173,6 +173,119 @@ bound). Naming is a review decision — flag it early.
 6. **`Variant`**: add two `visit`-based accessors alongside `eos_variant.hpp:475-503`.
 7. **Python bindings**: add to the variant bindings; `SpinerEOSDependsRhoSie` and
    `StellarCollapse` already expose `sieMin`/`sieMax` (`python/module.cpp:143-144,157-158`).
+
+#### Phase 2 Implementation Record (2026-09-21)
+
+Carried out at a reviewer's request. Decisions taken on the open questions:
+
+- **Naming**: `MinimumInternalEnergy()` / `MaximumInternalEnergy()`, matching the
+  spelled-out style of the rest of the introspection API.
+- **Concrete model scope**: all four models that can know their bounds —
+  `SpinerEOSDependsRhoSie`, `StellarCollapse`, `EOSPAC`, and `SpinerEOSDependsRhoT`.
+  `Helmholtz` keeps the permissive base defaults.
+- **Negative `ScaledEOS` scale**: swap min/max when `scale_ < 0`, so the reported
+  bounds stay ordered. The pre-existing `MinimumDensity`/`MaximumDensity` issue was
+  deliberately *not* touched, to keep the diff scoped.
+
+Deviation from the plan: step 2 proposed adding the two methods to
+`SG_ADD_MODIFIER_INTROSPECTION_METHODS`, but `ShiftedEOS` uses that macro and needs a
+real transform, so the macro would collide with its override. Instead the energy bounds
+live in a second macro, `SG_ADD_MODIFIER_ENERGY_BOUNDS_METHODS`, applied only by the
+modifiers that genuinely forward verbatim.
+
+Files changed:
+
+- `singularity-eos/eos/eos_base.hpp`: `MinimumInternalEnergy()`/`MaximumInternalEnergy()`
+  defaults (`-1e100` / `1e100`); new `SG_ADD_MODIFIER_ENERGY_BOUNDS_METHODS` macro; fixed
+  `SG_ADD_MODIFIER_INTROSPECTION_METHODS`'s parameter name (`t` → `t_`, open question 5).
+- Verbatim forwarding via the new macro: `floored_energy.hpp`, `relativistic_eos.hpp`,
+  `zsplit_eos.hpp` (each with a comment on why forwarding is right for that modifier).
+- `ramps_eos.hpp`: hand-written forwarding, since it hand-writes its whole introspection
+  block rather than using the macro.
+- `shifted_eos.hpp`: explicit override adding `shift_` to both bounds.
+- `scaled_eos.hpp`: explicit override multiplying by `scale_`, with the negative-scale swap.
+- `eos_unitsystem.hpp`: explicit override dividing by the energy unit; the Phase 1
+  `sieMin`/`sieMax` pass-throughs are kept, with a comment steering callers to the new
+  methods.
+- `eos_spiner_rho_sie.hpp`, `eos_stellar_collapse.hpp`: one-line delegation to the
+  existing `sieMin()`/`sieMax()`.
+- `eos_eospac.hpp`: new `sie_min_`/`sie_max_` members, filled from the `SesameMetadata`
+  the constructor already fetches (answering open question 4: yes); ordering check added
+  to `CheckParams`.
+- `eos_spiner_rho_temp.hpp`: new `sie_min_`/`sie_max_` members plus a `setEnergyBounds_()`
+  helper called from both construction paths (`loadDataboxes_` and the from-EOS
+  constructor). Answering open question 3: the bounds are the extrema of the tabulated
+  `sie_` field, unioned with `sieCold_`, *not* corner evaluations — corners would assume
+  monotonicity in both arguments, which the table does not guarantee. Cached at load time
+  because a `DataBox::min()` scan per call would be O(numRho*numT). `sieMin()`/`sieMax()`
+  accessors added here too, for parity with the rho-sie table.
+- `eos_variant.hpp`: two `visit`-based accessors.
+- `python/module.hpp`: bound on the generic `eos_class<T>` template, so every bound type
+  including the variant gets them.
+- `test/test_eos_modifiers.cpp`: `BoundedGas` gains the two methods; new `THEN` blocks for
+  the shifted+scaled composition, the negative-scale swap, relativistic pass-through, the
+  unit-system conversion, and the permissive analytic defaults; new scenario exercising the
+  motivating case — energy bounds read off a `singularity::Variant` holding a
+  `UnitSystem<BoundedGas>`.
+- `doc/sphinx/src/using-eos.rst`: documented both methods next to the density bounds, with
+  a note distinguishing them from `MinInternalEnergyFromDensity` and an extended warning
+  covering the negative default minimum.
+- `doc/sphinx/src/modifiers.rst`: new "How Modifiers Transform the Energy Bounds" section
+  enumerating each modifier's transform; the `UnitSystem` section now leads with the new
+  API.
+- `CHANGELOG.md`: second entry under `## Current develop` → `### Added`.
+- Copyright years bumped and generative-AI notices added where missing.
+
+Verification: `clang-format` (v21.1.4) applied to all changed C++ files. **The build and
+test run were handed off to the user** — not verified by me.
+
+#### Phase 1 Reversal: the `UnitSystem` pass-throughs were removed (2026-09-21)
+
+A reviewer objected to the Phase 1 `sieMin()`/`sieMax()` pass-throughs in
+`eos_unitsystem.hpp` — specifically to the lazy-instantiation construct, on the grounds
+that the compile error a new developer hits is confusing even with the explanatory
+comment. Their suggestion was `if constexpr` + a `static_assert`.
+
+Resolution: **delete the pass-throughs instead.** Phase 2 makes them redundant —
+`UnitSystem::MinimumInternalEnergy()` returns the same values, applies the same
+`inv_sie_unit_` conversion, is unconditionally well formed for every `T` because `EosBase`
+supplies a default, and works through the variant. The lazy-instantiation trick only
+existed because `sieMin` was not part of the contract, which is exactly what Phase 2
+fixed. This removes the construct rather than improving its diagnostic. Safe to do because
+Phase 1 was never merged — `c4af3a91` lives only on `buechler/table_bounds`, and the only
+in-tree caller of the pass-through was the Phase 1 test.
+
+Also removed: the `sieMin()`/`sieMax()` aliases Phase 2 had added to
+`SpinerEOSDependsRhoT` "for parity". Adding new instances of a name being signposted as
+superseded works against the deprecation, so that table exposes only
+`MinimumInternalEnergy`/`MaximumInternalEnergy`.
+
+Deprecation of the *base-table* `sieMin`/`sieMax` (on `SpinerEOSDependsRhoSie` and
+`StellarCollapse`) was scoped to **docs + CHANGELOG only** — a note in `models.rst` and an
+entry under `### Deprecated`. No `[[deprecated]]` attribute. Two reasons:
+
+1. **CI.** `SINGULARITY_STRICT_WARNINGS=ON` sets `-Wall -Werror` (`CMakeLists.txt:668`) and
+   both `.github/workflows/warnings.yml` and `sanitizer.yml` enable it.
+   `-Wdeprecated-declarations` is in `-Wall`, so the attribute turns every surviving
+   in-tree call into a hard error: `python/module.cpp:143-144,157-158` (member pointers
+   warn at bind time), `test/profile_stellar_collapse.cpp:121,146`, and the Phase 2
+   delegations in `eos_spiner_rho_sie.hpp`/`eos_stellar_collapse.hpp`. There is also no
+   C++ deprecation macro in the repo; the only precedent is the hand-rolled per-compiler
+   `DEPRECATED_MODULE` in `singularity_eos.f90` (PR644), and these are
+   `PORTABLE_FORCEINLINE_FUNCTION`, so an `ALLOW_DEPRECATED`-style escape hatch would be
+   needed for device compilers.
+2. **Family consistency.** `sieMin`/`sieMax` are one pair among eight table accessors.
+   `rhoMin`/`rhoMax`/`TMin` already duplicate `MinimumDensity`/`MaximumDensity`/
+   `MinimumTemperature` and have never been deprecated; `TMax`, `YeMin` and `YeMax` have
+   **no** contract equivalent at all — there is no `MaximumTemperature()` in the library.
+   `models.rst:2277` presents all eight as one set, so attributing only the energy pair
+   would look arbitrary. Deprecating the family properly requires first adding
+   `MaximumTemperature()` and deciding about `YeMin`/`YeMax` — a follow-on MR.
+
+Python note: the new methods were bound on the generic `eos_class<T>` template, so Python
+users already have the replacement. Giving them a real runtime `DeprecationWarning` would
+mean replacing `def_property_readonly("sieMin", &T::sieMin)` with a lambda calling
+`PyErr_WarnEx`; deferred with the rest of the attribute work.
 
 ## Sign Caveat (applies to both phases, worth noting in review)
 

@@ -189,33 +189,32 @@ internal energy, and temperature. On the other hand,
 specifies the unit system by specifying units for time, mass, length,
 and temperature.
 
-In addition to the bounds introspection methods described in the
-:ref:`EOS API section<using-eos>`, which are converted to the new unit
-system, ``UnitSystem`` also forwards the table bounds accessors
-
-.. cpp:function:: Real sieMin() const;
-
-and
-
-.. cpp:function:: Real sieMax() const;
-
-converting them to the new unit system. These accessors are not part of
-the general EOS API; they are provided only by some tabulated models,
-such as ``SpinerEOSDependsRhoSie`` and ``StellarCollapse``. Calling them
-on a ``UnitSystem`` wrapping a model that does not provide them is a
-compile-time error, but merely instantiating such a ``UnitSystem`` is
-not. This means one no longer needs to call ``GetUnmodifiedObject`` to
-retrieve energy bounds, which would return them in the unmodified (cgs)
-unit system:
+All of the bounds introspection methods described in the :ref:`EOS API
+section<using-eos>`, including ``MinimumInternalEnergy`` and
+``MaximumInternalEnergy``, are converted to the new unit system. Because
+they are part of the general EOS API, they are also reachable through
+the ``singularity::EOS`` variant, so one no longer needs to call
+``GetUnmodifiedObject`` to retrieve energy bounds, which would return
+them in the unmodified (cgs) unit system:
 
 .. code-block:: cpp
 
   using namespace singularity;
-  using EOS = UnitSystem<SpinerEOSDependsRhoSie>;
-  EOS my_eos = /* ... */;
+  EOS my_eos = UnitSystem<SpinerEOSDependsRhoSie>(/* ... */);
   // bounds in the new unit system
-  Real sie_min = my_eos.sieMin();
-  Real sie_max = my_eos.sieMax();
+  Real sie_min = my_eos.MinimumInternalEnergy();
+  Real sie_max = my_eos.MaximumInternalEnergy();
+
+See :ref:`How Modifiers Transform the Energy
+Bounds<modifier-energy-bounds>` below.
+
+.. note::
+
+  ``UnitSystem`` does *not* forward the model-specific table bounds
+  accessors ``sieMin()``/``sieMax()``. Those are not part of the general
+  EOS API, so they cannot be converted for an arbitrary underlying
+  model. Use ``MinimumInternalEnergy``/``MaximumInternalEnergy``
+  instead, which every model provides.
 
 Z-Split EOS
 -------------
@@ -401,3 +400,30 @@ Modifiers can also be undone, extracting the underlying EOS. Continuing the exam
    auto unmodified = my_eos.GetUnmodifiedObject();
 
 will extract the underlying ``IdealGas`` EOS model out from the scale and shift.
+
+.. _modifier-energy-bounds:
+
+How Modifiers Transform the Energy Bounds
+------------------------------------------
+
+Specific internal energy is transformed by several modifiers, so the
+energy bounds reported by ``MinimumInternalEnergy`` and
+``MaximumInternalEnergy`` (described in the :ref:`EOS API
+section<using-eos>`) are transformed to match:
+
+* ``UnitSystem`` divides both bounds by the energy unit.
+* ``ShiftedEOS`` adds the shift to both bounds.
+* ``ScaledEOS`` multiplies both bounds by the scale factor. Since a
+  negative scale factor is legal, and maps the minimum onto the maximum,
+  the two are swapped in that case so the reported bounds stay ordered.
+* ``RelativisticEOS`` and ``BilinearRampEOS`` leave energy alone, so the
+  bounds pass through unchanged.
+* ``FlooredEnergy`` clamps energy to the per-density cold curve, which
+  lies inside the underlying energy range, so the global bounds pass
+  through unchanged.
+* ``ZSplit`` scales energy by a factor that depends on the ionization
+  state passed through the ``lambda``, but the bounds introspection API
+  takes no ``lambda``. The bounds it reports are therefore the
+  *un-split* bounds of the underlying EOS.
+
+This file was made in part with generative AI.

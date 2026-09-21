@@ -12,6 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+// This file was created in part with generative AI
+
 #ifndef _SINGULARITY_EOS_EOS_RELATIVISTIC_EOS_
 #define _SINGULARITY_EOS_EOS_RELATIVISTIC_EOS_
 
@@ -208,6 +210,9 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
   SG_ADD_MODIFIER_METHODS(T, t_);
   SG_ADD_MODIFIER_MEAN_METHODS(t_);
   SG_ADD_MODIFIER_INTROSPECTION_METHODS(t_);
+  // Specific internal energy passes through unmodified, so the energy
+  // bounds forward verbatim.
+  SG_ADD_MODIFIER_ENERGY_BOUNDS_METHODS(t_);
 
  private:
   T t_;

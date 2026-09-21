@@ -292,17 +292,11 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
     return inv_rho_unit_ * t_.RhoPmin(temp * temp_unit_);
   }
 
-  // Pass-throughs for the table bounds accessors some models provide,
-  // e.g., SpinerEOS and StellarCollapse. These are not part of the
-  // EosBase contract, so they are only well formed when the underlying
-  // EOS provides them. Since UnitSystem is a template, these bodies are
-  // only instantiated when called, so UnitSystem<T> remains valid for a
-  // T without these accessors until one of them is actually used.
-  PORTABLE_FORCEINLINE_FUNCTION Real sieMin() const {
-    return inv_sie_unit_ * t_.sieMin();
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumInternalEnergy() const {
+    return inv_sie_unit_ * t_.MinimumInternalEnergy();
   }
-  PORTABLE_FORCEINLINE_FUNCTION Real sieMax() const {
-    return inv_sie_unit_ * t_.sieMax();
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumInternalEnergy() const {
+    return inv_sie_unit_ * t_.MaximumInternalEnergy();
   }
 
   template <typename Indexer_t = Real *>

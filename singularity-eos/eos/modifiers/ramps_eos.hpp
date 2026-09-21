@@ -268,6 +268,13 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
   PORTABLE_FORCEINLINE_FUNCTION Real RhoPmin(const Real temp) const {
     return t_.RhoPmin(temp);
   }
+  // The ramp modifies pressure only, so the energy bounds pass through.
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumInternalEnergy() const {
+    return t_.MinimumInternalEnergy();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumInternalEnergy() const {
+    return t_.MaximumInternalEnergy();
+  }
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(

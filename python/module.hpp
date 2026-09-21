@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -520,6 +520,8 @@ py::class_<T> eos_class(py::module_ & m, std::string name) {
 
     .def("MinimumDensity", &T::MinimumDensity)
     .def("MinimumTemperature", &T::MinimumTemperature)
+    .def("MinimumInternalEnergy", &T::MinimumInternalEnergy)
+    .def("MaximumInternalEnergy", &T::MaximumInternalEnergy)
     .def_property_readonly_static("nlambda", [](py::object) { return T::nlambda(); })
     .def_property_readonly_static("PreferredInput", [](py::object) { return T::PreferredInput(); })
     .def("PrintParams", &T::PrintParams)

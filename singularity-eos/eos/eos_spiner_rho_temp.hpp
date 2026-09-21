@@ -12,6 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+// This file was created in part with generative AI
+
 #ifndef _SINGULARITY_EOS_EOS_EOS_SPINER_RHO_TEMP_HPP_
 #define _SINGULARITY_EOS_EOS_EOS_SPINER_RHO_TEMP_HPP_
 
@@ -253,6 +255,15 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return T_(lTMin_); }
   PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const { return rhoMax(); }
+  // The extent of the tabulated specific internal energy. Unlike
+  // density and temperature, energy is not an independent variable
+  // here, so these are the min and max over the whole (rho, T) grid
+  // rather than the endpoints of an axis. They are cached at load time
+  // because scanning the table on each call would be O(numRho*numT).
+  // No sieMin()/sieMax() aliases are provided here; those names are
+  // superseded on the tables that already have them.
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumInternalEnergy() const { return sie_min_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumInternalEnergy() const { return sie_max_; }
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumPressure() const { return PMin_; }
 
@@ -278,6 +289,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
                         hid_t coldGroup, hid_t mfGroup);
   inline void fixBulkModulus_();
   inline void setlTColdCrit_();
+  inline void setEnergyBounds_();
 
   PORTABLE_FORCEINLINE_FUNCTION
   Real lRho_(const Real rho) const noexcept {
@@ -356,6 +368,8 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   int numRho_, numT_;
   Real lRhoMin_, lRhoMax_, rhoMax_;
   Real lTMin_, lTMax_, TMax_;
+  // Defaults match the permissive EosBase bounds until a table is loaded
+  Real sie_min_ = -1e100, sie_max_ = 1e100;
   Real PMin_;
   Real rhoNormal_, TNormal_, sieNormal_, PNormal_;
   Real CvNormal_, bModNormal_, dPdENormal_, dVdTNormal_;
@@ -694,7 +708,22 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
   Real dPdR = dPdRho_.interpToReal(lRhoNormal, lTNormal);
   dVdTNormal_ = dPdENormal_ * CvNormal_ / (rhoNormal_ * rhoNormal_ * dPdR);
 
+  setEnergyBounds_();
+
   return status;
+}
+
+// Energy is a dependent variable for this table, so its bounds are the
+// extrema of the tabulated sie field rather than the endpoints of an
+// axis. The cold curve is included because it extends the reachable
+// energies below the T = TMin row.
+inline void SpinerEOSDependsRhoT::setEnergyBounds_() {
+  sie_min_ = sie_.min();
+  sie_max_ = sie_.max();
+  if (sieCold_.size() > 0) {
+    sie_min_ = std::min(sie_min_, sieCold_.min());
+    sie_max_ = std::max(sie_max_, sieCold_.max());
+  }
 }
 
 inline void SpinerEOSDependsRhoT::fixBulkModulus_() {
@@ -1651,6 +1680,8 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const EOS &source_eos,
   dPdENormal_ = dPdE_.interpToReal(lRhoNormal, lTNormal);
   Real dPdR = dPdRho_.interpToReal(lRhoNormal, lTNormal);
   dVdTNormal_ = robust::ratio(dPdENormal_ * CvNormal_, rhoNormal_ * rhoNormal_ * dPdR);
+
+  setEnergyBounds_();
 }
 
 } // namespace singularity

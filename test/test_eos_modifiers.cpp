@@ -81,12 +81,10 @@ class BoundedGas : public IdealGas {
   PORTABLE_INLINE_FUNCTION
   Real RhoPmin(const Real /*temp*/) const { return MinimumDensity(); }
 
-  // Table-style bounds accessors, as provided by, e.g., SpinerEOS. These
-  // are not part of the EosBase contract.
   PORTABLE_FORCEINLINE_FUNCTION
-  Real sieMin() const { return 1e-4; }
+  Real MinimumInternalEnergy() const { return 1e-4; }
   PORTABLE_FORCEINLINE_FUNCTION
-  Real sieMax() const { return 1e12; }
+  Real MaximumInternalEnergy() const { return 1e12; }
 };
 
 #ifndef SINGULARITY_BUILD_CLOSURE
@@ -338,8 +336,8 @@ SCENARIO("Modifiers propagate introspection bounds correctly", "[Modifiers]") {
     const Real base_min_pres = bg.MinimumPressure();
     const Real base_max_pres = bg.MaximumPressureAtTemperature(0.0);
     const Real base_rho_pmin = bg.RhoPmin(0.0);
-    const Real base_min_sie = bg.sieMin();
-    const Real base_max_sie = bg.sieMax();
+    const Real base_min_sie = bg.MinimumInternalEnergy();
+    const Real base_max_sie = bg.MaximumInternalEnergy();
 
     AND_GIVEN("A shifted, scaled EOS") {
       auto eos = ScaledEOS<ShiftedEOS<BoundedGas>>(
@@ -368,6 +366,33 @@ SCENARIO("Modifiers propagate introspection bounds correctly", "[Modifiers]") {
       THEN("RhoPmin returns the scaled minimum density") {
         REQUIRE(isClose(eos.RhoPmin(0.0), base_rho_pmin / scale, 1.e-12));
       }
+
+      THEN("The energy bounds are shifted and then scaled") {
+        REQUIRE(
+            isClose(eos.MinimumInternalEnergy(), scale * (base_min_sie + shift), 1.e-12));
+        REQUIRE(
+            isClose(eos.MaximumInternalEnergy(), scale * (base_max_sie + shift), 1.e-12));
+      }
+    }
+
+    AND_GIVEN("A negatively scaled EOS") {
+      constexpr Real neg_scale = -2.0;
+      auto eos = ScaledEOS<BoundedGas>(BoundedGas(gm1, Cv), neg_scale);
+
+      THEN("The energy bounds are swapped so they remain ordered") {
+        REQUIRE(isClose(eos.MinimumInternalEnergy(), neg_scale * base_max_sie, 1.e-12));
+        REQUIRE(isClose(eos.MaximumInternalEnergy(), neg_scale * base_min_sie, 1.e-12));
+        REQUIRE(eos.MinimumInternalEnergy() < eos.MaximumInternalEnergy());
+      }
+    }
+
+    AND_GIVEN("A relativistic EOS") {
+      auto eos = RelativisticEOS<BoundedGas>(BoundedGas(gm1, Cv), 1.0);
+
+      THEN("The energy bounds pass through untouched") {
+        REQUIRE(isClose(eos.MinimumInternalEnergy(), base_min_sie, 1.e-12));
+        REQUIRE(isClose(eos.MaximumInternalEnergy(), base_max_sie, 1.e-12));
+      }
     }
 
     AND_GIVEN("A UnitSystem") {
@@ -388,19 +413,55 @@ SCENARIO("Modifiers propagate introspection bounds correctly", "[Modifiers]") {
         REQUIRE(isClose(us.RhoPmin(0.0), base_rho_pmin / rho_unit, EPS));
       }
 
-      THEN("The unit system converts the table energy bounds") {
-        REQUIRE(isClose(us.sieMin(), base_min_sie / sie_unit, EPS));
-        REQUIRE(isClose(us.sieMax(), base_max_sie / sie_unit, EPS));
+      THEN("The unit system converts the energy bounds") {
+        REQUIRE(isClose(us.MinimumInternalEnergy(), base_min_sie / sie_unit, EPS));
+        REQUIRE(isClose(us.MaximumInternalEnergy(), base_max_sie / sie_unit, EPS));
         AND_THEN("Multiplying by the energy unit recovers the base bounds") {
-          REQUIRE(isClose(us.sieMin() * sie_unit, base_min_sie, EPS));
-          REQUIRE(isClose(us.sieMax() * sie_unit, base_max_sie, EPS));
+          REQUIRE(isClose(us.MinimumInternalEnergy() * sie_unit, base_min_sie, EPS));
+          REQUIRE(isClose(us.MaximumInternalEnergy() * sie_unit, base_max_sie, EPS));
         }
       }
     }
   }
+
+  GIVEN("An unmodified analytic EOS") {
+    IdealGas ig(0.5, 2.0);
+
+    THEN("The energy bounds are the permissive defaults") {
+      // The minimum must be negative. Energies are legitimately negative
+      // for cold curves and for shifted EOS, so zero is not a safe floor.
+      REQUIRE(ig.MinimumInternalEnergy() < 0);
+      REQUIRE(ig.MaximumInternalEnergy() > 0);
+      REQUIRE(ig.MinimumInternalEnergy() < ig.MaximumInternalEnergy());
+    }
+  }
 }
-// IdealGas provides no sieMin/sieMax, so this scenario also guards that
-// UnitSystem<T> is still usable for a T without the table bounds accessors.
+
+SCENARIO("Energy bounds are reachable through the EOS variant", "[Modifiers][Variant]") {
+  GIVEN("A BoundedGas in a unit system, held in a variant") {
+    constexpr Real Cv = 2.0;
+    constexpr Real gm1 = 0.5;
+    constexpr Real rho_unit = 2.0;
+    constexpr Real sie_unit = 3.0;
+    constexpr Real temp_unit = 4.0;
+    constexpr Real EPS = 10 * singularity::robust::EPS();
+
+    BoundedGas bg(gm1, Cv);
+    const Real base_min_sie = bg.MinimumInternalEnergy();
+    const Real base_max_sie = bg.MaximumInternalEnergy();
+
+    // This is the motivating use case: the host code holds a
+    // runtime-polymorphic EOS and needs the energy bounds in its own
+    // unit system, without stripping the modifier.
+    using EOS = singularity::Variant<BoundedGas, UnitSystem<BoundedGas>>;
+    EOS eos = UnitSystem<BoundedGas>(BoundedGas(gm1, Cv), rho_unit, sie_unit, temp_unit);
+
+    THEN("The variant reports the converted energy bounds") {
+      REQUIRE(isClose(eos.MinimumInternalEnergy(), base_min_sie / sie_unit, EPS));
+      REQUIRE(isClose(eos.MaximumInternalEnergy(), base_max_sie / sie_unit, EPS));
+    }
+  }
+}
 SCENARIO("UnitSystem  modifier converts units correctly",
          "[Modifiers][Units][IdealGas]") {
   GIVEN("An IdealGas EOS in non-cgs units") {

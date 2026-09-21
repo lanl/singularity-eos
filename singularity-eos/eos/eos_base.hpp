@@ -11,7 +11,6 @@
 // prepare derivative works, distribute copies to the public, perform
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
-
 #ifndef _SINGULARITY_EOS_EOS_EOS_BASE_
 #define _SINGULARITY_EOS_EOS_EOS_BASE_
 
@@ -131,7 +130,7 @@ char *StrCat(char *destination, const char *source) {
   Real MeanAtomicNumber() const { return t_.MeanAtomicNumber(); }
 
 // for bounds introspection
-#define SG_ADD_MODIFIER_INTROSPECTION_METHODS(t)                                         \
+#define SG_ADD_MODIFIER_INTROSPECTION_METHODS(t_)                                        \
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const {                            \
     return t_.MinimumDensity();                                                          \
   }                                                                                      \
@@ -150,6 +149,18 @@ char *StrCat(char *destination, const char *source) {
   }                                                                                      \
   PORTABLE_FORCEINLINE_FUNCTION                                                          \
   Real RhoPmin(const Real temp) const { return t_.RhoPmin(temp); }
+
+// The energy bounds are kept in their own macro because several
+// modifiers transform energy and therefore must supply their own
+// versions. Use this macro only for modifiers that leave the energy
+// scale untouched.
+#define SG_ADD_MODIFIER_ENERGY_BOUNDS_METHODS(t_)                                        \
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumInternalEnergy() const {                     \
+    return t_.MinimumInternalEnergy();                                                   \
+  }                                                                                      \
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumInternalEnergy() const {                     \
+    return t_.MaximumInternalEnergy();                                                   \
+  }
 
 // These macros are to reduce boilerplate in vector API. They declare
 // all the different "default" vector methods that we define in the
@@ -544,6 +555,18 @@ class EosBase {
   // put it into a formula without guarding against it.
   PORTABLE_FORCEINLINE_FUNCTION
   Real MaximumDensity() const { return 1e100; }
+
+  // Report the range of specific internal energies an EOS supports.
+  // Tabulated models report the extent of their energy axis; analytic
+  // models are unbounded, so the defaults are very large finite numbers
+  // (see the MaximumDensity comment above on the tradeoffs there).
+  // JMM/MB: The default minimum must be negative, not zero. Energies
+  // are legitimately negative for cold curves and for shifted EOS, so
+  // zero is not a safe floor.
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumInternalEnergy() const { return -1e100; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumInternalEnergy() const { return 1e100; }
 
   // These are for the PT space PTE solver to bound the iterations in
   // a safe range.

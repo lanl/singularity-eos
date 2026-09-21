@@ -3,7 +3,7 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
-- [[PR658]](https://github.com/lanl/singularity-eos/pull/XXX) Forward the `sieMin`/`sieMax` table bounds accessors through the `UnitSystem` modifier, converting them to the modified unit system
+- [[PR658]](https://github.com/lanl/singularity-eos/pull/XXX) Add `MinimumInternalEnergy`/`MaximumInternalEnergy` to the EOS introspection API, so energy bounds are reachable through modifiers and the `singularity::EOS` variant
 
 ### Fixed (Repair bugs, etc)
 
@@ -13,6 +13,7 @@
 - [[PR653]](https://github.com/lanl/singularity-eos/pull/653) Move pybind11 to a submodule rather than fetching it via cmake fetchcontent
 
 ### Deprecated (soon to be removed behavior/API/variables/...)
+- [[PR658]](https://github.com/lanl/singularity-eos/pull/XXX) The table bounds accessors `sieMin()`/`sieMax()` on `SpinerEOSDependsRhoSie` and `StellarCollapse` are superseded by `MinimumInternalEnergy()`/`MaximumInternalEnergy()`, which every EOS provides and which work through modifiers and the `singularity::EOS` variant. The old names still work but will be removed.
 
 ## Release 1.12.1
 Date: 08/10/2026
