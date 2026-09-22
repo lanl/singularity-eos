@@ -715,8 +715,9 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
 
 // Energy is a dependent variable for this table, so its bounds are the
 // extrema of the tabulated sie field rather than the endpoints of an
-// axis. The cold curve is included because it extends the reachable
-// energies below the T = TMin row.
+// axis. The cold curve is included because the tabulated values might
+// not have a sufficiently low temperature for sie to be dominated by
+// the cold curve.
 inline void SpinerEOSDependsRhoT::setEnergyBounds_() {
   sie_min_ = sie_.min();
   sie_max_ = sie_.max();
