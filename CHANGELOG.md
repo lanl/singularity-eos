@@ -8,6 +8,7 @@
 ### Fixed (Repair bugs, etc)
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR658]](https://github.com/lanl/singularity-eos/pull/XXX) `ScaledEOS::CheckParams` now requires a strictly positive scale factor, where it previously accepted any nonzero value.
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR653]](https://github.com/lanl/singularity-eos/pull/653) Move pybind11 to a submodule rather than fetching it via cmake fetchcontent

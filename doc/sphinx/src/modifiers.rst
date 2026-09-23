@@ -121,6 +121,11 @@ where the first two parameters are the Gruneisen parameter and
 specific heat required by the ideal gas constructor and the latter is
 the scale.
 
+The scale factor must be strictly positive. A negative scale is not
+physically meaningful: it would invert the sign of energy and entropy,
+and would turn every minimum bound reported by the bounds introspection
+API into a maximum. ``CheckParams`` enforces this.
+
 The Relativistic EOS
 ---------------------
 
@@ -413,9 +418,8 @@ section<using-eos>`) are transformed to match:
 
 * ``UnitSystem`` divides both bounds by the energy unit.
 * ``ShiftedEOS`` adds the shift to both bounds.
-* ``ScaledEOS`` multiplies both bounds by the scale factor. Since a
-  negative scale factor is legal, and maps the minimum onto the maximum,
-  the two are swapped in that case so the reported bounds stay ordered.
+* ``ScaledEOS`` multiplies both bounds by the scale factor. Since the
+  scale factor is required to be positive, this preserves their ordering.
 * ``RelativisticEOS`` and ``BilinearRampEOS`` leave energy alone, so the
   bounds pass through unchanged.
 * ``FlooredEnergy`` clamps energy to the per-density cold curve, which

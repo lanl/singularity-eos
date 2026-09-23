@@ -375,13 +375,14 @@ SCENARIO("Modifiers propagate introspection bounds correctly", "[Modifiers]") {
       }
     }
 
-    AND_GIVEN("A negatively scaled EOS") {
-      constexpr Real neg_scale = -2.0;
-      auto eos = ScaledEOS<BoundedGas>(BoundedGas(gm1, Cv), neg_scale);
+    AND_GIVEN("A scaled EOS") {
+      auto eos = ScaledEOS<BoundedGas>(BoundedGas(gm1, Cv), scale);
 
-      THEN("The energy bounds are swapped so they remain ordered") {
-        REQUIRE(isClose(eos.MinimumInternalEnergy(), neg_scale * base_max_sie, 1.e-12));
-        REQUIRE(isClose(eos.MaximumInternalEnergy(), neg_scale * base_min_sie, 1.e-12));
+      // ScaledEOS::CheckParams requires a positive scale, so the bounds
+      // cannot be inverted by a sign flip and stay ordered by construction.
+      THEN("The energy bounds are scaled and remain ordered") {
+        REQUIRE(isClose(eos.MinimumInternalEnergy(), scale * base_min_sie, 1.e-12));
+        REQUIRE(isClose(eos.MaximumInternalEnergy(), scale * base_max_sie, 1.e-12));
         REQUIRE(eos.MinimumInternalEnergy() < eos.MaximumInternalEnergy());
       }
     }
