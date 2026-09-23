@@ -715,9 +715,29 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
 
 // Energy is a dependent variable for this table, so its bounds are the
 // extrema of the tabulated sie field rather than the endpoints of an
-// axis. The cold curve is included because the tabulated values might
-// not have a sufficiently low temperature for sie to be dominated by
-// the cold curve.
+// axis.
+//
+// The cold curve is unioned in because it is stored separately from the
+// main (rho, T) grid, so a scan of sie_ alone does not see it. In
+// practice the two nearly coincide: EOSPAC's cold curve tables
+// (EOS_Pc_D/EOS_Uc_D, see io_eospac.cpp:eosColdCurves) use the lowest
+// temperature isotherm, and sesame2spiner defaults the grid's TMin to
+// that same isotherm nudged up by an epsilon (TinyShift in
+// generate_files.cpp, needed to avoid EOSPAC extrapolation errors at the
+// table edge). Likewise, the from-EOS constructor evaluates the cold
+// curve at exactly the TMin used for row i == 0. So this union is
+// normally a tie or an epsilon-scale correction, not a large one.
+//
+// It is kept because the near-coincidence is a property of how tables
+// happen to be generated, not a guarantee: an input deck may set Tmin
+// explicitly, or shrinklTBounds may pull the grid's bottom row up away
+// from the cold curve. And the cold curve is a reachable *output*, not
+// merely stored data -- TableStatus::OffBottom returns sieCold_ from
+// sieFromlRhoTlT_, and MinInternalEnergyFromDensity returns it directly.
+// Taking the min costs one O(numRho) scan at load time and guarantees
+// MinimumInternalEnergy() never reports a floor above an energy this EOS
+// will actually hand back, which would break the root-find bracketing
+// these bounds exist to provide.
 inline void SpinerEOSDependsRhoT::setEnergyBounds_() {
   sie_min_ = sie_.min();
   sie_max_ = sie_.max();
