@@ -53,6 +53,19 @@ using singularity::UnitSystem;
 
 /* A toy version of ideal gas where bounds have been placed on it so
    we can check these are passed through modifiers properly.
+
+   The bound values below are arbitrary sentinels, not physically
+   derived: the tests that use them only check that modifiers transform
+   a bound correctly (scale it, shift it, convert its units), and never
+   evaluate the EOS at one. They are deliberately given distinct
+   magnitudes so that a modifier forwarding the *wrong* bound -- say, an
+   energy bound where it meant a temperature bound -- shows up as a test
+   failure rather than a coincidental pass.
+
+   Note in particular that the energy bounds are not consistent with
+   sie = Cv * T for the Cv the tests construct this with. They do not
+   need to be, and tying them to the temperature bounds would defeat the
+   distinctness described above.
  */
 class BoundedGas : public IdealGas {
  public:
@@ -81,6 +94,7 @@ class BoundedGas : public IdealGas {
   PORTABLE_INLINE_FUNCTION
   Real RhoPmin(const Real /*temp*/) const { return MinimumDensity(); }
 
+  // Sentinel energy bounds; see the note on the class above.
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumInternalEnergy() const { return 1e-4; }
   PORTABLE_FORCEINLINE_FUNCTION
