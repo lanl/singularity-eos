@@ -166,9 +166,11 @@ class PowerMG : public EosBase<PowerMG> {
   }
   // Essentially unbounded... I think.
   PORTABLE_FORCEINLINE_FUNCTION
-  Real MinimumPressure() const { return -1e100; }
+  Real MinimumPressure() const { return -BIG_FINITE_BOUND; }
   PORTABLE_FORCEINLINE_FUNCTION
-  Real MaximumPressureAtTemperature([[maybe_unused]] const Real T) const { return 1e100; }
+  Real MaximumPressureAtTemperature([[maybe_unused]] const Real T) const {
+    return BIG_FINITE_BOUND;
+  }
 
   inline void Finalize() {}
   static std::string EosType() { return std::string("PowerMG"); }

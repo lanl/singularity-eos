@@ -369,7 +369,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   Real lRhoMin_, lRhoMax_, rhoMax_;
   Real lTMin_, lTMax_, TMax_;
   // Defaults match the permissive EosBase bounds until a table is loaded
-  Real sie_min_ = -1e100, sie_max_ = 1e100;
+  Real sie_min_ = -BIG_FINITE_BOUND, sie_max_ = BIG_FINITE_BOUND;
   Real PMin_;
   Real rhoNormal_, TNormal_, sieNormal_, PNormal_;
   Real CvNormal_, bModNormal_, dPdENormal_, dVdTNormal_;

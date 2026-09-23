@@ -1245,8 +1245,8 @@ class EOSPAC : public EosBase<EOSPAC> {
   Real press_min_ = 0;
   // Defaults match the permissive EosBase bounds, in case the table
   // metadata is unavailable.
-  Real sie_min_ = -1e100;
-  Real sie_max_ = 1e100;
+  Real sie_min_ = -BIG_FINITE_BOUND;
+  Real sie_max_ = BIG_FINITE_BOUND;
   // TODO(JMM): Is the fact that EOS_INTEGER isn't a size_t a
   // problem? Could it ever realistically overflow?
   EOS_INTEGER shared_size_, packed_size_;

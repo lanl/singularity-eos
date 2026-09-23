@@ -554,7 +554,7 @@ class EosBase {
   // the max. On the other hand, it's more fraught if someone tries to
   // put it into a formula without guarding against it.
   PORTABLE_FORCEINLINE_FUNCTION
-  Real MaximumDensity() const { return 1e100; }
+  Real MaximumDensity() const { return BIG_FINITE_BOUND; }
 
   // Report the range of specific internal energies an EOS supports.
   // Tabulated models report the extent of their energy axis; analytic
@@ -564,9 +564,9 @@ class EosBase {
   // are legitimately negative for cold curves and for shifted EOS, so
   // zero is not a safe floor.
   PORTABLE_FORCEINLINE_FUNCTION
-  Real MinimumInternalEnergy() const { return -1e100; }
+  Real MinimumInternalEnergy() const { return -BIG_FINITE_BOUND; }
   PORTABLE_FORCEINLINE_FUNCTION
-  Real MaximumInternalEnergy() const { return 1e100; }
+  Real MaximumInternalEnergy() const { return BIG_FINITE_BOUND; }
 
   // These are for the PT space PTE solver to bound the iterations in
   // a safe range.
@@ -574,7 +574,9 @@ class EosBase {
   Real MinimumPressure() const { return 0; }
   // Gruneisen EOS's often have a maximum density, which implies a maximum pressure.
   PORTABLE_FORCEINLINE_FUNCTION
-  Real MaximumPressureAtTemperature([[maybe_unused]] const Real T) const { return 1e100; }
+  Real MaximumPressureAtTemperature([[maybe_unused]] const Real T) const {
+    return BIG_FINITE_BOUND;
+  }
 
   PORTABLE_INLINE_FUNCTION
   Real RhoPmin(const Real temp) const { return 0.0; }
