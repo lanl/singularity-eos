@@ -1504,14 +1504,35 @@ and the function
 .. cpp:function:: Real MaximumDensity() const;
 
 provide bounds for valid inputs into a table, which can be used by a
-root finder to meaningful bound the root search.
+root finder to meaningful bound the root search. The corresponding
+functions for specific internal energy are
+
+.. cpp:function:: Real MinimumInternalEnergy() const;
+
+and
+
+.. cpp:function:: Real MaximumInternalEnergy() const;
+
+For tabulated models these report the extent of the tabulated energies,
+which is the natural way to seed a root find or a bounds array in
+energy. Note that for a table in density and temperature, energy is a
+dependent variable, so these are the extrema of the tabulated energy
+field over the whole grid rather than the endpoints of an axis.
+
+.. note::
+
+  ``MinimumInternalEnergy`` is a property of the whole table. It is
+  *not* the same quantity as ``MinInternalEnergyFromDensity``, which is
+  the cold curve: the minimum energy at a *given* density.
 
 .. warning::
 
   For unbounded equations of state, ``MinimumDensity`` and
-  ``MinimumTemperature`` will return zero, while ``MaximumDensity``
-  will return a very large finite number. Which number you get,
-  however, is not guaranteed. You may wish to apply more sensible
+  ``MinimumTemperature`` will return zero, while ``MaximumDensity`` and
+  ``MaximumInternalEnergy`` will return very large finite numbers, and
+  ``MinimumInternalEnergy`` a very large negative one. (Energies are
+  legitimately negative, so zero is not a safe floor.) Which number you
+  get, however, is not guaranteed. You may wish to apply more sensible
   bounds in your own code.
 
 Similarly,

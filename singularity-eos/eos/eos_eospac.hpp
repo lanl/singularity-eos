@@ -238,6 +238,7 @@ class EOSPAC : public EosBase<EOSPAC> {
     // TODO(JMM): More validation checks?
     PORTABLE_ALWAYS_REQUIRE(rho_min_ >= 0, "Non-negative minimum density");
     PORTABLE_ALWAYS_REQUIRE(temp_min_ >= 0, "Non-negative minimum temperature");
+    PORTABLE_ALWAYS_REQUIRE(sie_max_ > sie_min_, "Energy bounds must be ordered");
     AZbar_.CheckParams();
   }
   inline EOSPAC GetOnDevice() { return *this; }
@@ -1212,6 +1213,8 @@ class EOSPAC : public EosBase<EOSPAC> {
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rho_min_; }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return temp_min_; }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumPressure() const { return press_min_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumInternalEnergy() const { return sie_min_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumInternalEnergy() const { return sie_max_; }
 
  private:
   static constexpr const unsigned long _preferred_input =
@@ -1240,6 +1243,10 @@ class EOSPAC : public EosBase<EOSPAC> {
   Real rho_min_ = 0;
   Real temp_min_ = 0;
   Real press_min_ = 0;
+  // Defaults match the permissive EosBase bounds, in case the table
+  // metadata is unavailable.
+  Real sie_min_ = -BIG_FINITE_BOUND;
+  Real sie_max_ = BIG_FINITE_BOUND;
   // TODO(JMM): Is the fact that EOS_INTEGER isn't a size_t a
   // problem? Could it ever realistically overflow?
   EOS_INTEGER shared_size_, packed_size_;
@@ -1356,6 +1363,8 @@ inline EOSPAC::EOSPAC(const int matid, TableSplit split, bool invert_at_setup,
   rho_min_ = m.rhoMin;
   temp_min_ = m.TMin;
   press_min_ = m.PMin;
+  sie_min_ = m.sieMin;
+  sie_max_ = m.sieMax;
 
   // use std::max to hydrogen, in case of bad table
   AZbar_.Abar = std::max(1.0, m.meanAtomicMass);

@@ -292,6 +292,13 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
     return inv_rho_unit_ * t_.RhoPmin(temp * temp_unit_);
   }
 
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumInternalEnergy() const {
+    return inv_sie_unit_ * t_.MinimumInternalEnergy();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumInternalEnergy() const {
+    return inv_sie_unit_ * t_.MaximumInternalEnergy();
+  }
+
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
       const Real rho, const Real temperature,

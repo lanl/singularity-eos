@@ -139,9 +139,11 @@ class MGUsup : public EosBase<MGUsup> {
   // Hugoniot pressure ill defined at reference density. On one side,
   // negative. On the other positive.
   PORTABLE_FORCEINLINE_FUNCTION
-  Real MinimumPressure() const { return -1e100; }
+  Real MinimumPressure() const { return -BIG_FINITE_BOUND; }
   PORTABLE_FORCEINLINE_FUNCTION
-  Real MaximumPressureAtTemperature([[maybe_unused]] const Real T) const { return 1e100; }
+  Real MaximumPressureAtTemperature([[maybe_unused]] const Real T) const {
+    return BIG_FINITE_BOUND;
+  }
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void

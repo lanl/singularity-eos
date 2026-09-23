@@ -11,7 +11,6 @@
 // prepare derivative works, distribute copies to the public, perform
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
-
 #ifndef _SINGULARITY_EOS_EOS_EOS_SPINER_RHO_SIE_HPP_
 #define _SINGULARITY_EOS_EOS_EOS_SPINER_RHO_SIE_HPP_
 
@@ -275,6 +274,8 @@ class SpinerEOSDependsRhoSieTransformable
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return TMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const { return rhoMax(); }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumInternalEnergy() const { return sieMin(); }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumInternalEnergy() const { return sieMax(); }
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumPressure() const { return PMin_; }
   PORTABLE_INLINE_FUNCTION

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -11,6 +11,8 @@
 // prepare derivative works, distribute copies to the public, perform
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
+
+// This file was created in part with generative AI
 
 #ifndef _SINGULARITY_EOS_EOS_EOS_STELLAR_COLLAPSE_HPP_
 #define _SINGULARITY_EOS_EOS_EOS_STELLAR_COLLAPSE_HPP_
@@ -236,6 +238,8 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return TMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const { return rhoMax(); }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumInternalEnergy() const { return sieMin(); }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumInternalEnergy() const { return sieMax(); }
   constexpr static inline int nlambda() noexcept { return _n_lambda; }
   template <typename T>
   static inline constexpr bool NeedsLambda() {

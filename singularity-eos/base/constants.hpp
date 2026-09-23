@@ -41,6 +41,12 @@ enum class TableStatus { OnTable = 0, OffBottom = 1, OffTop = 2 };
 constexpr Real ROOM_TEMPERATURE = 293; // K
 constexpr Real ATMOSPHERIC_PRESSURE = 1e6;
 
+// The "unbounded" value reported by the bounds introspection API when a
+// model has no real bound in a given variable: a big finite number
+// rather than an actual infinity. See the comment on
+// EosBase::MaximumDensity for why. Negate it for lower bounds.
+constexpr Real BIG_FINITE_BOUND = 1e100;
+
 struct SharedMemSettings {
   SharedMemSettings() = default;
   SharedMemSettings(char *data_, bool is_domain_root_)

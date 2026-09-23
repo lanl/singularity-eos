@@ -12,6 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+// This file was created in part with generative AI
+
 #ifndef _SINGULARITY_EOS_EOS_ZSPLIT_EOS_
 #define _SINGULARITY_EOS_EOS_ZSPLIT_EOS_
 
@@ -281,6 +283,10 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
   SG_ADD_MODIFIER_METHODS(T, t_);
   SG_ADD_MODIFIER_MEAN_METHODS(t_);
   SG_ADD_MODIFIER_INTROSPECTION_METHODS(t_);
+  // ZSplit scales energy by a lambda-dependent factor, but the bounds
+  // introspection API takes no lambda. The bounds reported here are
+  // therefore the *un-split* bounds of the underlying EOS.
+  SG_ADD_MODIFIER_ENERGY_BOUNDS_METHODS(t_);
 
  private:
   template <typename Indexer_t = Real *>

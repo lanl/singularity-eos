@@ -428,6 +428,16 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   SG_ADD_MODIFIER_MEAN_METHODS(t_);
   SG_ADD_MODIFIER_INTROSPECTION_METHODS(t_);
 
+  // The modified energy is the base energy plus the shift, so the
+  // energy bounds shift with it. These cannot use
+  // SG_ADD_MODIFIER_ENERGY_BOUNDS_METHODS, which forwards verbatim.
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumInternalEnergy() const {
+    return t_.MinimumInternalEnergy() + shift_;
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumInternalEnergy() const {
+    return t_.MaximumInternalEnergy() + shift_;
+  }
+
  private:
   T t_;
   double shift_;

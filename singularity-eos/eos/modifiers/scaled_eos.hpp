@@ -57,11 +57,15 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   ScaledEOS() = default;
 
   PORTABLE_INLINE_FUNCTION void CheckParams() const {
-    PORTABLE_ALWAYS_REQUIRE(std::abs(scale_) > 0, "Scale must not be zero.");
-    PORTABLE_ALWAYS_REQUIRE(std::abs(inv_scale_) > 0, "Inverse scale must not be zero.");
     PORTABLE_ALWAYS_REQUIRE(!std::isnan(scale_), "Scale must be well defined.");
     PORTABLE_ALWAYS_REQUIRE(!std::isnan(inv_scale_),
                             "Inverse scale must be well defined.");
+    // A negative scale is not physically meaningful: it would invert the
+    // sign of energy and entropy, and would turn every minimum bound into
+    // a maximum. Require strict positivity, as UnitSystem does for its
+    // unit factors. This also subsumes the zero check.
+    PORTABLE_ALWAYS_REQUIRE(scale_ > 0, "Scale must be positive.");
+    PORTABLE_ALWAYS_REQUIRE(inv_scale_ > 0, "Inverse scale must be positive.");
     t_.CheckParams();
   }
   auto GetOnDevice() { return ScaledEOS<T>(t_.GetOnDevice(), scale_); }
@@ -267,6 +271,15 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   }
   PORTABLE_FORCEINLINE_FUNCTION
   Real RhoPmin(const Real temp) const { return inv_scale_ * t_.RhoPmin(temp); }
+
+  // The modified energy is scale_ times the base energy. CheckParams
+  // requires scale_ > 0, so this preserves the ordering of the bounds.
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumInternalEnergy() const {
+    return scale_ * t_.MinimumInternalEnergy();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumInternalEnergy() const {
+    return scale_ * t_.MaximumInternalEnergy();
+  }
 
   PORTABLE_INLINE_FUNCTION
   Real MeanAtomicMass() const { return inv_scale_ * t_.MeanAtomicMass(); }

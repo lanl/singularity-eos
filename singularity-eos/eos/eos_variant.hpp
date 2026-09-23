@@ -489,6 +489,18 @@ class Variant {
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumInternalEnergy() const {
+    return PortsOfCall::visit([](const auto &eos) { return eos.MinimumInternalEnergy(); },
+                              eos_);
+  }
+
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumInternalEnergy() const {
+    return PortsOfCall::visit([](const auto &eos) { return eos.MaximumInternalEnergy(); },
+                              eos_);
+  }
+
+  PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumPressure() const {
     return PortsOfCall::visit([](const auto &eos) { return eos.MinimumPressure(); },
                               eos_);

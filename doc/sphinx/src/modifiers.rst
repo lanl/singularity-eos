@@ -121,6 +121,11 @@ where the first two parameters are the Gruneisen parameter and
 specific heat required by the ideal gas constructor and the latter is
 the scale.
 
+The scale factor must be strictly positive. A negative scale is not
+physically meaningful: it would invert the sign of energy and entropy,
+and would turn every minimum bound reported by the bounds introspection
+API into a maximum. ``CheckParams`` enforces this.
+
 The Relativistic EOS
 ---------------------
 
@@ -188,6 +193,33 @@ internal energy, and temperature. On the other hand,
 
 specifies the unit system by specifying units for time, mass, length,
 and temperature.
+
+All of the bounds introspection methods described in the :ref:`EOS API
+section<using-eos>`, including ``MinimumInternalEnergy`` and
+``MaximumInternalEnergy``, are converted to the new unit system. Because
+they are part of the general EOS API, they are also reachable through
+the ``singularity::EOS`` variant, so one no longer needs to call
+``GetUnmodifiedObject`` to retrieve energy bounds, which would return
+them in the unmodified (cgs) unit system:
+
+.. code-block:: cpp
+
+  using namespace singularity;
+  EOS my_eos = UnitSystem<SpinerEOSDependsRhoSie>(/* ... */);
+  // bounds in the new unit system
+  Real sie_min = my_eos.MinimumInternalEnergy();
+  Real sie_max = my_eos.MaximumInternalEnergy();
+
+See :ref:`How Modifiers Transform the Energy
+Bounds<modifier-energy-bounds>` below.
+
+.. note::
+
+  ``UnitSystem`` does *not* forward the model-specific table bounds
+  accessors ``sieMin()``/``sieMax()``. Those are not part of the general
+  EOS API, so they cannot be converted for an arbitrary underlying
+  model. Use ``MinimumInternalEnergy``/``MaximumInternalEnergy``
+  instead, which every model provides.
 
 Z-Split EOS
 -------------
@@ -373,3 +405,29 @@ Modifiers can also be undone, extracting the underlying EOS. Continuing the exam
    auto unmodified = my_eos.GetUnmodifiedObject();
 
 will extract the underlying ``IdealGas`` EOS model out from the scale and shift.
+
+.. _modifier-energy-bounds:
+
+How Modifiers Transform the Energy Bounds
+------------------------------------------
+
+Specific internal energy is transformed by several modifiers, so the
+energy bounds reported by ``MinimumInternalEnergy`` and
+``MaximumInternalEnergy`` (described in the :ref:`EOS API
+section<using-eos>`) are transformed to match:
+
+* ``UnitSystem`` divides both bounds by the energy unit.
+* ``ShiftedEOS`` adds the shift to both bounds.
+* ``ScaledEOS`` multiplies both bounds by the scale factor. Since the
+  scale factor is required to be positive, this preserves their ordering.
+* ``RelativisticEOS`` and ``BilinearRampEOS`` leave energy alone, so the
+  bounds pass through unchanged.
+* ``FlooredEnergy`` clamps energy to the per-density cold curve, which
+  lies inside the underlying energy range, so the global bounds pass
+  through unchanged.
+* ``ZSplit`` scales energy by a factor that depends on the ionization
+  state passed through the ``lambda``, but the bounds introspection API
+  takes no ``lambda``. The bounds it reports are therefore the
+  *un-split* bounds of the underlying EOS.
+
+This file was made in part with generative AI.

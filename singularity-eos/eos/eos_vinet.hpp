@@ -136,9 +136,11 @@ class Vinet : public EosBase<Vinet> {
 
   // Essentially unbounded... I think.
   PORTABLE_FORCEINLINE_FUNCTION
-  Real MinimumPressure() const { return -1e100; }
+  Real MinimumPressure() const { return -BIG_FINITE_BOUND; }
   PORTABLE_FORCEINLINE_FUNCTION
-  Real MaximumPressureAtTemperature([[maybe_unused]] const Real T) const { return 1e100; }
+  Real MaximumPressureAtTemperature([[maybe_unused]] const Real T) const {
+    return BIG_FINITE_BOUND;
+  }
 
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here

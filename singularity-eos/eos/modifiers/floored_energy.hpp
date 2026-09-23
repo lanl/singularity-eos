@@ -411,6 +411,10 @@ class FlooredEnergy : public EosBase<FlooredEnergy<T>> {
   SG_ADD_MODIFIER_METHODS(T, t_);
   SG_ADD_MODIFIER_MEAN_METHODS(t_);
   SG_ADD_MODIFIER_INTROSPECTION_METHODS(t_);
+  // The floor clamps energy to the per-density cold curve, which lies
+  // inside the underlying energy range, so the global bounds are
+  // unchanged.
+  SG_ADD_MODIFIER_ENERGY_BOUNDS_METHODS(t_);
 
  private:
   T t_;
