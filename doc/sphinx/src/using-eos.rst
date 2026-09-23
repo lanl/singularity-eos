@@ -1528,13 +1528,12 @@ field over the whole grid rather than the endpoints of an axis.
 .. warning::
 
   For unbounded equations of state, ``MinimumDensity`` and
-  ``MinimumTemperature`` will return zero, while ``MaximumDensity``,
-  ``MinimumInternalEnergy`` and ``MaximumInternalEnergy`` will return
-  very large finite numbers, negative in the case of
-  ``MinimumInternalEnergy``. (Energies are legitimately negative, so
-  zero is not a safe floor.) Which number you get, however, is not
-  guaranteed. You may wish to apply more sensible bounds in your own
-  code.
+  ``MinimumTemperature`` will return zero, while ``MaximumDensity`` and
+  ``MaximumInternalEnergy`` will return very large finite numbers, and
+  ``MinimumInternalEnergy`` a very large negative one. (Energies are
+  legitimately negative, so zero is not a safe floor.) Which number you
+  get, however, is not guaranteed. You may wish to apply more sensible
+  bounds in your own code.
 
 Similarly,
 
