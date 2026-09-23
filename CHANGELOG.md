@@ -5,10 +5,12 @@
 ### Added (new features/APIs/variables/...)
 - [[PR658]](https://github.com/lanl/singularity-eos/pull/XXX) Add `MinimumInternalEnergy`/`MaximumInternalEnergy` to the EOS introspection API, so energy bounds are reachable through modifiers and the `singularity::EOS` variant
 - Added `sesame2spiner::saveAllMaterials` overloads taking a list of matids instead of a list of input files, with optional per-material `Params` overrides, so host codes can generate an sp5 file without writing input decks to disk. Also added an overload taking an already-open `hid_t`, plus `writeSP5RootAttributes`, so a single sp5 file can be built up one material at a time.
+- [[PR653]] (https://github.com/lanl/singularity-eos/pull/659) Added `sesame2spiner::saveAllMaterials` overloads taking a list of matids instead of a list of input files, with optional per-material `Params` overrides, so host codes can generate an sp5 file without writing input decks to disk. Also added an overload taking an already-open `hid_t`, plus `writeSP5RootAttributes`, so a single sp5 file can be built up one material at a time.
 
 ### Fixed (Repair bugs, etc)
-- `sesame2spiner` now validates the metadata returned by `eosGetMetadata` before using it. A matid absent from the sesame file previously produced all-zero bounds with no error, which reached `log()` and generated NaN grids; it is now reported and skipped.
-- `sesame2spiner` no longer reports an HDF5 failure against every material following the first failed one, and now names the offending matid. Material save status is no longer accumulated by summing `herr_t` values, which could cancel out and report success.
+- [[PR653]] (https://github.com/lanl/singularity-eos/pull/659) `sesame2spiner` now validates the metadata returned by `eosGetMetadata` before using it. A matid absent from the sesame file previously produced 
+all-zero bounds with no error, which reached `log()` and generated NaN grids; it is now reported and skipped.  It also no longer reports an HDF5 failure against every material following the first failed one, 
+and now names the offending matid. Material save status is no longer accumulated by summing `herr_t` values, which could cancel out and report success.
 
 ### Changed (changing behavior/API/variables/...)
 - [[PR658]](https://github.com/lanl/singularity-eos/pull/XXX) `ScaledEOS::CheckParams` now requires a strictly positive scale factor, where it previously accepted any nonzero value.
