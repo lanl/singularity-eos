@@ -1,0 +1,4 @@
+.. _contributing-doc:
+
+Contributing
+=============
