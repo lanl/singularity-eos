@@ -903,9 +903,11 @@ PORTABLE_INLINE_FUNCTION Real Helmholtz::lTFromRhoSie_(const Real rho, const Rea
           math_utils::pow10(electrons_.lTMax()), HELM_EOS_EPS, T, nullptr,
           options_.VERBOSE, false);
       if (status != RootFinding1D::Status::SUCCESS) {
+#ifndef NDEBUG
         if (options_.VERBOSE) {
           printf("Newton-Raphson failed to converge, falling back to regula falsi\n");
         }
+#endif // NDEBUG
         status = RootFinding1D::regula_falsi(
             [&](Real T) {
               Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
@@ -944,15 +946,19 @@ PORTABLE_INLINE_FUNCTION Real Helmholtz::lTFromRhoSie_(const Real rho, const Rea
   lT = std::log10(T);
   // Make sure the result is within the table bounds
   if (lT < electrons_.lTMin()) {
+#ifndef NDEBUG
     if (options_.VERBOSE) {
       printf("Temperature below table limit, setting lT = lTMin. (lT = %f)\n", lT);
     }
+#endif // NDEBUG
     lT = electrons_.lTMin();
   }
   if (lT > electrons_.lTMax()) {
+#ifndef NDEBUG
     if (options_.VERBOSE) {
       printf("Temperature above table limit, setting lT = lTMax. (lT = %f)\n", lT);
     }
+#endif // NDEBUG
     lT = electrons_.lTMax();
   }
   IndexerUtils::SafeGet<IndexableTypes::LogTemperature>(lambda, Lambda::lT, lT);
