@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -11,6 +11,8 @@
 // prepare derivative works, distribute copies to the public, perform
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
+
+// This file was partially modified by AI.
 
 #include <array>
 #include <cmath>
@@ -39,6 +41,43 @@
 #ifdef SINGULARITY_TEST_STELLAR_COLLAPSE
 
 #include <singularity-eos/base/spiner_table_utils.hpp>
+
+SCENARIO("StellarCollapse internal energy from density and pressure",
+         "[StellarCollapse][SieFromRhoP]") {
+  singularity::StellarCollapse sc("./goldfiles/stellar_collapse_ideal.h5", false, false);
+  auto eos = sc.GetOnDevice();
+  const Real yemin = sc.YeMin();
+  const Real yemax = sc.YeMax();
+  const Real lrhomin = std::log10(sc.rhoMin());
+  const Real lrhomax = std::log10(sc.rhoMax());
+  const Real ltmin = std::log10(sc.TMin());
+  const Real ltmax = std::log10(sc.TMax());
+
+  int nwrong = 0;
+  portableReduce(
+      "StellarCollapse internal energy from density and pressure", 0, 3,
+      PORTABLE_LAMBDA(const int i, int &nw) {
+        const Real fraction = (i + 1) / 4.0;
+        const Real rho = std::pow(10., lrhomin + fraction * (lrhomax - lrhomin));
+        const Real temp = std::pow(10., ltmin + fraction * (ltmax - ltmin));
+        Real lambda[2] = {yemin + fraction * (yemax - yemin), 0.0};
+        const Real expected = eos.InternalEnergyFromDensityTemperature(rho, temp, lambda);
+        const Real pressure = eos.PressureFromDensityTemperature(rho, temp, lambda);
+
+        Real sie = 0.0;
+        eos.InternalEnergyFromDensityPressure(rho, pressure, sie, lambda);
+        nw += !isClose(sie, expected, 1e-6);
+        nw += !isClose(eos.InternalEnergyFromDensityPressure(rho, pressure, lambda),
+                       expected, 1e-6);
+      },
+      nwrong);
+  THEN("Both scalar overloads recover the energy with an electron-fraction lambda") {
+    REQUIRE(nwrong == 0);
+  }
+
+  eos.Finalize();
+  sc.Finalize();
+}
 
 template <typename EOS_t>
 void CompareStellarCollapse(EOS_t sc, EOS_t sc2) {

@@ -178,7 +178,7 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
     const Real scale = GetScale_(lambda);
     const Real iscale = GetInvScale_(lambda);
     sie *= iscale;
-    t_.InternalEnergyFromDensityPressure(rho, P, sie, lambda);
+    t_.InternalEnergyFromDensityPressure(rho, P * iscale, sie, lambda);
     sie *= scale;
   }
 

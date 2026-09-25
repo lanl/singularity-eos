@@ -719,9 +719,9 @@ class EosBase {
       return eos.PressureFromDensityInternalEnergy(rho, sie, lambda);
     };
     const Real sie_min =
-        eos.InternalEnergyFromDensityTemperature(rho, eos.MinimumTemperature());
+        eos.InternalEnergyFromDensityTemperature(rho, eos.MinimumTemperature(), lambda);
     // temp not bounded. just pick something huge.
-    const Real sie_max = eos.InternalEnergyFromDensityTemperature(rho, 1e20);
+    const Real sie_max = eos.InternalEnergyFromDensityTemperature(rho, 1e20, lambda);
     Real sie_guess =
         (((sie_min < sie) && (sie < sie_max)) ? 0.5 * (sie_min + sie_max) : sie);
     auto status = regula_falsi(f, P, sie_guess, sie_min, sie_max, robust::EPS(),
@@ -737,9 +737,9 @@ class EosBase {
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     const CRTP &eos = *(static_cast<CRTP const *>(this));
     const Real sie_min =
-        eos.InternalEnergyFromDensityTemperature(rho, eos.MinimumTemperature());
+        eos.InternalEnergyFromDensityTemperature(rho, eos.MinimumTemperature(), lambda);
     // temp not bounded. just pick something huge.
-    const Real sie_max = eos.InternalEnergyFromDensityTemperature(rho, 1e20);
+    const Real sie_max = eos.InternalEnergyFromDensityTemperature(rho, 1e20, lambda);
     Real sie = 0.5 * (sie_min + sie_max);
     eos.InternalEnergyFromDensityPressure(rho, P, sie, lambda);
     return sie;
