@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2024-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2024-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -11,6 +11,8 @@
 // prepare derivative works, distribute copies to the public, perform
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
+
+// This file was partially modified by AI.
 
 #include <cmath>
 #include <cstdio>

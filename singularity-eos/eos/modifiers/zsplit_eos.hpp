@@ -12,6 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+// This file was partially modified by AI.
+
 #ifndef _SINGULARITY_EOS_EOS_ZSPLIT_EOS_
 #define _SINGULARITY_EOS_EOS_ZSPLIT_EOS_
 
