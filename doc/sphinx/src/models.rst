@@ -2277,6 +2277,16 @@ functions ``rhoMin()``, ``rhoMax()``, ``TMin()``, ``TMax()``,
 ``YeMin()``, ``YeMax()``, ``sieMin()``, and ``sieMax()``, which all
 return a ``Real`` number.
 
+.. note::
+
+  ``sieMin()`` and ``sieMax()`` are superseded by
+  ``MinimumInternalEnergy()`` and ``MaximumInternalEnergy()``, described
+  in the :ref:`EOS API section<using-eos>`. Prefer the latter: they are
+  part of the general EOS API, so unlike ``sieMin``/``sieMax`` they are
+  available on every model, are transformed correctly by modifiers, and
+  are reachable through the ``singularity::EOS`` variant. The old names
+  still work but will be removed in a future release.
+
 .. warning::
     As with the SpinerEOS models, the stellar collapse models use fast
     logs. You can switch the logs to true logs with the
@@ -2484,3 +2494,5 @@ See :ref:`EOSPAC Vector Functions <eospac_vector>` for more details.
 .. _EOSPAC: https://laws.lanl.gov/projects/data/eos/eospacReleases.php
 
 
+
+This file was made in part with generative AI.
