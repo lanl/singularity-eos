@@ -42,6 +42,50 @@ using Lambda_t = singularity::IndexerUtils::VariadicIndexer<MeanIonizationState>
 using EOS =
     singularity::Variant<IdealGas, IdealElectrons, ZSplitI<IdealGas>, ZSplitE<IdealGas>>;
 
+SCENARIO("ZSplit internal energy from density and pressure", "[ZSplit][SieFromRhoP]") {
+  constexpr Real gm1 = 2. / 3.;
+  constexpr Real Cv = 1e8;
+  auto eos_i = ZSplitI<IdealGas>(IdealGas(gm1, Cv));
+  auto eos_e = ZSplitE<IdealGas>(IdealGas(gm1, Cv));
+  auto ions = eos_i.GetOnDevice();
+  auto electrons = eos_e.GetOnDevice();
+
+  int nwrong = 0;
+  portableReduce(
+      "ZSplit internal energy from density and pressure", 0, 3,
+      PORTABLE_LAMBDA(const int i, int &nw) {
+        const Real rho = 1.0 + i;
+        const Real temp = 1e3 * (i + 1);
+        const Real Z = 0.5 + i;
+        Lambda_t lambda;
+        lambda[MeanIonizationState()] = Z;
+        const Real ei = Cv * temp / (Z + 1);
+        const Real ee = Z * ei;
+        const Real Pi = gm1 * rho * ei;
+        const Real Pe = gm1 * rho * ee;
+
+        Real sie_i = 0.0;
+        Real sie_e = 0.0;
+        ions.InternalEnergyFromDensityPressure(rho, Pi, sie_i, lambda);
+        electrons.InternalEnergyFromDensityPressure(rho, Pe, sie_e, lambda);
+        nw += !isClose(sie_i, ei, 1e-12);
+        nw += !isClose(sie_e, ee, 1e-12);
+        nw +=
+            !isClose(ions.InternalEnergyFromDensityPressure(rho, Pi, lambda), ei, 1e-12);
+        nw += !isClose(electrons.InternalEnergyFromDensityPressure(rho, Pe, lambda), ee,
+                       1e-12);
+      },
+      nwrong);
+  THEN("Both scalar overloads recover the ion and electron energies") {
+    REQUIRE(nwrong == 0);
+  }
+
+  ions.Finalize();
+  electrons.Finalize();
+  eos_i.Finalize();
+  eos_e.Finalize();
+}
+
 SCENARIO("ZSplit of Ideal Gas", "[ZSplit][IdealGas][IdealElectrons]") {
   GIVEN("An ideal gas EOS") {
     constexpr Real gm1 = (5. / 3.) - 1.;
