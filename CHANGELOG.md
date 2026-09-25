@@ -6,6 +6,7 @@
 - [[PR658]](https://github.com/lanl/singularity-eos/pull/XXX) Add `MinimumInternalEnergy`/`MaximumInternalEnergy` to the EOS introspection API, so energy bounds are reachable through modifiers and the `singularity::EOS` variant
 
 ### Fixed (Repair bugs, etc)
+- [[PR661]](https://github.com/lanl/singularity-eos/pull/661) Fix bug in InternalEnergyFromDensityPressure where the lambda wasn't threaded all the way through.
 
 ### Changed (changing behavior/API/variables/...)
 - [[PR658]](https://github.com/lanl/singularity-eos/pull/XXX) `ScaledEOS::CheckParams` now requires a strictly positive scale factor, where it previously accepted any nonzero value.
