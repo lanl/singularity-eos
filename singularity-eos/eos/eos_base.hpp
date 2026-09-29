@@ -723,7 +723,7 @@ class EosBase {
     // temp not bounded. just pick something huge.
     const Real sie_max = eos.InternalEnergyFromDensityTemperature(rho, 1e20, lambda);
     Real sie_guess =
-        (((sie_min < sie) && (sie < sie_max)) ? 0.5 * (sie_min + sie_max) : sie);
+      (((sie_min < sie) && (sie < sie_max)) ? sie : 0.5 * (sie_min + sie_max));
     auto status = regula_falsi(f, P, sie_guess, sie_min, sie_max, robust::EPS(),
                                robust::EPS(), sie);
     if (status == Status::FAIL) {
