@@ -143,10 +143,12 @@ PORTABLE_INLINE_FUNCTION bool set_bracket(const T &f, Real &a, const Real guess,
     }
   }
   // if we get here then we failed to bracket a root
+#ifndef NDEBUG
   if (verbose) {
     printf("set_bracket failed to bound a root! %.14e %.14e %.14e %.14e %.14e %.14e\n", a,
            guess, b, ya, yg, yb);
   }
+#endif // NDEBUG
   return false;
 }
 
@@ -175,9 +177,11 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
     } else {
       // ya, yg, and yb have the same sign
       if (!set_bracket(func, a, guess, b, ya, yg, yb, verbose)) {
+#ifndef NDEBUG
         if (verbose) {
           printf("regula_falsi failed! %.14e %.14e %.14e %.14e\n", ytarget, guess, a, b);
         }
+#endif // NDEBUG
         return Status::FAIL;
       }
     }
@@ -222,10 +226,12 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
   }
   auto status = Status::SUCCESS;
   if (iteration_count == max_iter) {
+#ifndef NDEBUG
     if (verbose) {
       printf("root finding reached the maximum number of iterations.  likely not "
              "converged\n");
     }
+#endif // NDEBUG
     status = Status::FAIL;
   }
   if (counts != nullptr) {
@@ -279,10 +285,12 @@ PORTABLE_INLINE_FUNCTION Status newton_raphson(const T &f, const Real ytarget,
     // Per default, we fail if the root is out of bounds controlled by
     // fail_on_bound_root.
     if ((_x <= a && _xold <= a) || (_x >= b && _xold >= b)) {
+#ifndef NDEBUG
       if (verbose) {
         printf("newton_raphson out of bounds! %.14e %.14e %.14e %.14e\n", ytarget, guess,
                a, b);
       }
+#endif // NDEBUG
       if (fail_on_bound_root) {
         status = Status::FAIL;
       }
@@ -291,10 +299,12 @@ PORTABLE_INLINE_FUNCTION Status newton_raphson(const T &f, const Real ytarget,
     _x = std::max(std::min(_x, b), a);
   }
   if (iter >= max_iter) {
+#ifndef NDEBUG
     if (verbose) {
       printf("root finding reached the maximum number of iterations.  likely not "
              "converged\n");
     }
+#endif // NDEBUG
     status = Status::FAIL;
   }
 

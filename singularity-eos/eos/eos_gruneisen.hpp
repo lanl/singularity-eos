@@ -447,10 +447,12 @@ Gruneisen::MaxStableDensityAtTemperature(const Real temperature) const {
   if (slope_at_ref_density < 0) {
     // Something is very wrong in the construction of this EOS... just error out
     using PortsOfCall::printf;
+#ifndef NDEBUG
     printf("ERROR: The pressure is decreasing as density increases at the reference\n"
            "       density, %.15g, for temperature, %.15g. Check that the reference\n"
            "       temperature is set correctly. This is an unstable state.",
            _rho0, temperature);
+#endif // NDEBUG
     PORTABLE_ALWAYS_THROW_OR_ABORT("Input pressure is off EOS surface");
   }
 
@@ -498,11 +500,13 @@ PORTABLE_INLINE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
     auto pres_max = PressureFromDensityTemperature(rho_upper, temp);
     if (press > pres_max) {
       // We're off the EOS surface
+#ifndef NDEBUG
       using PortsOfCall::printf;
       printf("ERROR: Requested pressure, %.15g, exceeds maximum, %.15g, for \n"
              "       temperature, %.15g.\n"
              "       setting pressure to maximum allowed value.\n",
              press, pres_max, temp);
+#endif // NDEBUG
       p_used = pres_max;
     }
     // Construct a reasonable guess for the density
