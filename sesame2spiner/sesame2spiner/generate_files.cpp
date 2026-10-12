@@ -260,15 +260,18 @@ herr_t saveAllMaterials(hid_t file, const std::vector<int> &matids,
                 << "Using a default name: " << new_name << std::endl;
       name = new_name;
     }
-    if (H5Lexists(file, name.c_str(), H5P_DEFAULT) > 0) {
-      std::string new_name;
-      int suffix = 2;
-      do {
-        new_name = name + "_" + std::to_string(suffix++);
-      } while (H5Lexists(file, new_name.c_str(), H5P_DEFAULT) > 0);
+    // Suffix until the name is free. The candidate is kept separate from name so
+    // that each attempt appends to the original rather than to the previous
+    // attempt, and so the original is still available for the warning below.
+    std::string unique_name = name;
+    int suffix = 2;
+    while (H5Lexists(file, unique_name.c_str(), H5P_DEFAULT) > 0) {
+      unique_name = name + "_" + std::to_string(suffix++);
+    }
+    if (unique_name != name) {
       std::cerr << "...WARNING: Name " << name << " already used. "
-                << "Using name: " << new_name << std::endl;
-      name = new_name;
+                << "Using name: " << unique_name << std::endl;
+      name = unique_name;
     }
 
     Bounds lRhoBounds, lTBounds, leBounds;
