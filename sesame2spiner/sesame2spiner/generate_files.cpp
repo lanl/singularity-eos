@@ -227,7 +227,10 @@ herr_t saveAllMaterials(hid_t file, const std::vector<int> &matids,
   }
 
   SesameMetadata metadata;
-  int num_failed = 0;
+  // Collected rather than just counted so the summary below can name the
+  // materials that failed. With a long matid list the per-material errors
+  // scroll away among the progress output.
+  std::vector<int> failed_matids;
 
   std::cout << "Processing " << matids.size() << " materials..." << std::endl;
 
@@ -249,7 +252,7 @@ herr_t saveAllMaterials(hid_t file, const std::vector<int> &matids,
     if (printMetadata) std::cout << metadata << std::endl;
 
     if (!checkMetadataValid(matid, metadata)) {
-      num_failed += 1;
+      failed_matids.push_back(matid);
       continue;
     }
 
@@ -295,17 +298,21 @@ herr_t saveAllMaterials(hid_t file, const std::vector<int> &matids,
     if (mat_status != H5_SUCCESS) {
       std::cerr << "ERROR [" << matid << "]: problem with HDF5 while saving material."
                 << std::endl;
-      num_failed += 1;
+      failed_matids.push_back(matid);
     }
   }
 
-  if (num_failed > 0) {
-    std::cerr << "WARNING: " << num_failed << " of " << matids.size()
-              << " materials could not be saved." << std::endl;
+  if (!failed_matids.empty()) {
+    std::cerr << "WARNING: " << failed_matids.size() << " of " << matids.size()
+              << " materials could not be saved. Failed matids:";
+    for (const int matid : failed_matids) {
+      std::cerr << " " << matid;
+    }
+    std::cerr << std::endl;
   }
   // Count failures rather than summing herr_t values, which can cancel out and
   // report success.
-  return (num_failed == 0) ? H5_SUCCESS : -1;
+  return failed_matids.empty() ? H5_SUCCESS : -1;
 }
 
 herr_t saveAllMaterials(const std::string &savename, const std::vector<int> &matids,
