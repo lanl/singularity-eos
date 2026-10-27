@@ -25,8 +25,6 @@ done
 cd ../../../
 tar czvf singularity-eos-${B}.tar.gz --exclude-vcs --exclude=".git*" \
 --exclude="build*" --exclude="nbproject" --exclude="data" \
---exclude="eigen/doc" --exclude="eigen/demos" --exclude="eigen/failtest" \
---exclude="eigen/test" --exclude="eigen/bench" --exclude="eigen/unsupported" \
 --exclude="json/benchmarks" --exclude="json/doc" --exclude="variant/3rdparty" \
 --exclude="variant/test" --exclude="utils/kokkos" --exclude="test" \
 --exclude="Catch2" --exclude="singularity-eos-data" singularity-eos/

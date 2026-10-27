@@ -70,14 +70,10 @@ cmake_dependent_option(SINGULARITY_EOSPAC_USE_MODERN_ERROR_CODES
   "Use the current eospac implementation of error codes, which must be compared with a function. Requires EOSPAC version 6.3.0 or greater."
   ON "SINGULARITY_USE_EOSPAC" OFF)
 
-# TODO This should be dependent option (or fortran option)
-option(SINGULARITY_BUILD_CLOSURE "Mixed Cell Closure" ON)
+option(SINGULARITY_BUILD_CLOSURE "Mixed Cell Closure (requires Kokkos and Kokkos Kernels)" OFF)
 
 cmake_dependent_option(SINGULARITY_USE_CUDA "Use CUDA backend of Kokkos" OFF
                        "SINGULARITY_USE_KOKKOS" OFF)
-cmake_dependent_option(
-  SINGULARITY_USE_KOKKOSKERNELS "Use KokkosKernels for LA routines" ON
-  "SINGULARITY_USE_KOKKOS;SINGULARITY_BUILD_CLOSURE" OFF)
 
 # extra build options
 option(SINGULARITY_BUILD_PYTHON "Compile Python bindings" OFF)
@@ -177,7 +173,6 @@ endif()
 # ------------------------------------------------------------------------------#
 
 # Load CMake modules for finding dependencies
-include(singularity-eos/Eigen3)
 include(singularity-eos/eospac)
 include(singularity-eos/hdf5)
 include(singularity-eos/kokkos)
@@ -273,20 +268,12 @@ if(SINGULARITY_FORCE_SUBMODULE_MODE)
   set(SINGULARITY_SUBMODULE_MODE ON)
 endif()
 
-# Use to determine if Eigen is used or not
-set(SINGULARITY_USE_EIGEN
-    OFF
-    CACHE BOOL "" FORCE)
-if(SINGULARITY_BUILD_CLOSURE AND NOT SINGULARITY_USE_KOKKOSKERNELS)
-  if(SINGULARITY_USE_CUDA)
-    message(
-      FATAL_ERROR
-        "\"SINGULARITY_BUILD_CLOSURE=ON\" and \"SINGULARITY_USE_CUDA=ON\" requires \"SINGULARITY_USE_KOKKOSKERNELS=ON\""
-    )
+if(SINGULARITY_BUILD_CLOSURE)
+  if(NOT SINGULARITY_USE_KOKKOS)
+    message(FATAL_ERROR
+      "SINGULARITY_BUILD_CLOSURE=ON requires SINGULARITY_USE_KOKKOS=ON. "
+      "Enable Kokkos or disable mixed cell closures.")
   endif()
-  set(SINGULARITY_USE_EIGEN
-      ON
-      CACHE BOOL "" FORCE)
 endif()
 
 # ------------------------------------------------------------------------------#
@@ -306,7 +293,7 @@ if(SINGULARITY_SUBMODULE_MODE)
   # Kokkos first (ports-of-call may depend on it if PORTABILITY_STRATEGY_KOKKOS is set)
   if(SINGULARITY_USE_KOKKOS)
     singularity_import_kokkos()
-    if(SINGULARITY_USE_KOKKOSKERNELS)
+    if(SINGULARITY_BUILD_CLOSURE)
       singularity_import_kokkoskernels()
     endif()
   endif()
@@ -319,11 +306,6 @@ if(SINGULARITY_SUBMODULE_MODE)
     singularity_import_spiner()
   endif()
 
-  # Eigen (if needed)
-  if(SINGULARITY_USE_EIGEN)
-    singularity_import_eigen()
-  endif()
-
   # And pybind11 (if needed)
   if (SINGULARITY_BUILD_PYTHON)
     singularity_import_pybind11()
@@ -334,7 +316,7 @@ else()
   # Kokkos first
   if(SINGULARITY_USE_KOKKOS)
     singularity_find_kokkos()
-    if(SINGULARITY_USE_KOKKOSKERNELS)
+    if(SINGULARITY_BUILD_CLOSURE)
       singularity_find_kokkoskernels()
     endif()
   endif()
@@ -345,11 +327,6 @@ else()
   # Then spiner
   if(SINGULARITY_USE_SPINER)
     singularity_find_spiner()
-  endif()
-
-  # Eigen (if needed)
-  if(SINGULARITY_USE_EIGEN)
-    singularity_find_eigen()
   endif()
 
   # And pybind11 (if needed)
@@ -512,12 +489,9 @@ endif()
 # see get_sg_eos.cpp
 if(SINGULARITY_USE_KOKKOS)
   singularity_enable_kokkos(singularity-eos_Common)
-  if(SINGULARITY_USE_KOKKOSKERNELS)
+  if(SINGULARITY_BUILD_CLOSURE)
     singularity_enable_kokkoskernels(singularity-eos_Common)
   endif()
-endif()
-if(SINGULARITY_USE_EIGEN)
-  singularity_enable_eigen(singularity-eos_Interface)
 endif()
 
 # ----------------------------------------------------------------------------#

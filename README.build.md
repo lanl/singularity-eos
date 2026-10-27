@@ -49,6 +49,7 @@ The main CMake options to configure building are in the following table:
 | `SINGULARITY_USE_FORTRAN`           | ON      | Enable Fortran API for equation of state.|
 | `SINGULARITY_USE_KOKKOS`            | OFF     | Uses Kokkos as the portability backend. Currently only Kokkos is supported for GPUs.|
 | `SINGULARITY_USE_EOSPAC`            | OFF     | Link against EOSPAC. Needed for sesame2spiner and some tests.|
+| `SINGULARITY_BUILD_CLOSURE` | OFF | Mixed cell closures; requires Kokkos and Kokkos Kernels on CPU and GPU.|
 | `SINGULARITY_BUILD_TESTS`           | OFF     | Build test infrastructure.|
 | `SINGULARITY_BUILD_PYTHON`          | OFF     | Build Python bindings.|
 | `SINGULARITY_INVERT_AT_SETUP`       | OFF     | For tests, pre-invert eospac tables.|
@@ -82,13 +83,21 @@ These options are listed in the following table, along with their preconditions:
 |--|--|--|--|
 | `SINGULARITY_USE_SPINER_WITH_HDF5` | `SINGULARITY_USE_SPINER=ON` | ON/OFF | Requests that `spiner` be configured for `HDF5` support.|
 | `SINGULARITY_USE_CUDA`              | `SINGULARITY_USE_KOKKOS=ON`  | ON/OFF | Target nvidia GPUs for `Kokkos` offloading.|
-| `SINGULARITY_USE_KOKKOSKERNELS`     | `SINGULARITY_USE_KOKKOS=ON`  | ON/OFF |Use Kokkos Kernels for linear algebra. Needed for mixed cell closure models on GPU.|
-| `SINGULARITY_BUILD_CLOSURE` | `SINGULARITY_USE_KOKKOS=ON` `SINGULARITY_USE_KOKKOSKERNELS=ON` | ON/OFF | Mixed cell closure.|
 | `SINGULARITY_BUILD_SESAME2SPINER` | `SINGULARITY_USE_SPINER=ON` `SINGULARITY_USE_SPINER_WITH_HDF5=ON` | ON/OFF | Builds the conversion tool sesame2spiner which makes files readable by SpinerEOS.|
 | `SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER` | `SINGULARITY_USE_SPINER=ON` `SINGULARITY_USE_SPINER_WITH_HDF5=ON` | ON/OFF | Builds the conversion tool stellarcollapse2spiner which optionally makes stellar collapse files faster to read.|
 | `SINGULARITY_TEST_SESAME` | `SINGULARITY_BUILD_TESTS=ON` `SINGULARITY_BUILD_SESAME2SPINER=ON` | ON/OFF | Test the Sesame table readers.|
 | `SINGULARITY_TEST_STELLAR_COLLAPSE` | `SINGULARITY_BUILD_TESTS=ON` `SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON`    | ON/OFF | Test the Stellar Collapse table readers.|
 | `SINGULARITY_TEST_PYTHON`           | `SINGULARITY_BUILD_TESTS=ON` `SINGULARITY_BUILD_PYTHON=ON`    | ON/OFF    | Test the Python bindings.|
+
+Mixed cell closures default to OFF. To enable them on either CPU or GPU, set
+`SINGULARITY_BUILD_CLOSURE=ON` and `SINGULARITY_USE_KOKKOS=ON`. Kokkos Kernels
+is enabled automatically for closures. Configuring closures without Kokkos, or
+without an available Kokkos Kernels dependency, is an error.
+CPU closure builds previously using Eigen must migrate to Kokkos and Kokkos Kernels; Eigen is no longer used.
+
+With `SINGULARITY_BUILD_CLOSURE=OFF`, Kokkos remains optional and Kokkos Kernels
+is not required. Set `SINGULARITY_USE_KOKKOS=OFF` for a build without either.
+The Fortran mixed-cell backend also requires closures to be enabled.
 
 ## CMake presets
 
@@ -133,7 +142,7 @@ For example, suppose that the `basic` preset is mostly sufficient, but you would
 
 ```bash
 # in <top-level>/build
-$> cmake .. --preset="basic_with_testing" -DSINGULARITY_BUILD_CLOSURE=ON
+$> cmake .. --preset="basic_with_testing" -DSINGULARITY_BUILD_CLOSURE=ON -DSINGULARITY_USE_KOKKOS=ON
 # ...
 ```
 

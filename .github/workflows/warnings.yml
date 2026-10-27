@@ -33,5 +33,6 @@ jobs:
                   -DSINGULARITY_BUILD_TESTS=ON \
                   -DSINGULARITY_FORCE_SUBMODULE_MODE=ON \
                   -DSINGULARITY_USE_KOKKOS=ON \
+                  -DSINGULARITY_BUILD_CLOSURE=ON \
                   ..
             make -j4

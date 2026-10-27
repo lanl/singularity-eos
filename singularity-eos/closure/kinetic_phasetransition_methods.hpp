@@ -25,14 +25,6 @@
 
 #include <cmath>
 
-#ifdef SINGULARITY_USE_KOKKOSKERNELS
-#include <KokkosBatched_ApplyQ_Decl.hpp>
-#include <KokkosBatched_QR_Decl.hpp>
-#include <KokkosBatched_Trsv_Decl.hpp>
-#else
-#include <Eigen/Dense>
-#endif // SINGULARITY_USE_KOKKOSKERNELS
-
 namespace singularity {
 
 PORTABLE_INLINE_FUNCTION void SmallStepMFUpdate(const Real logdt, const int num_phases,

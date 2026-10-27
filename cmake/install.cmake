@@ -123,7 +123,7 @@ install(FILES ${CMAKE_BINARY_DIR}/generated/singularity-eos/eos/eos.hpp
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/singularity-eos/eos)
 
 # install the fortran modules NB: cmake doesn't provide a clean way to handle
-if(SINGULARITY_USE_FORTRAN)
+if(SINGULARITY_USE_FORTRAN AND TARGET singularity-eos_Library)
   install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/fortran/
           DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/singularity-eos/eos)
 endif()

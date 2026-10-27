@@ -10,6 +10,9 @@ jobs:
     tests-minimal:
       name: Run minimal set of tests, to constrain minimal build
       runs-on: ubuntu-latest
+      strategy:
+        matrix:
+          closure: ["ON", "OFF"]
 
       steps:
         - name: Checkout code
@@ -33,6 +36,7 @@ jobs:
                   -DSINGULARITY_BUILD_TESTS=ON \
                   -DSINGULARITY_FORCE_SUBMODULE_MODE=ON \
                   -DSINGULARITY_USE_KOKKOS=ON \
+                  -DSINGULARITY_BUILD_CLOSURE=${{ matrix.closure }} \
                   ..
             make -j4
             make install

@@ -91,12 +91,8 @@ if(@SINGULARITY_USE_KOKKOS@)
   find_dependency(Kokkos)
 endif()
 
-if(@SINGULARITY_USE_KOKKOSKERNELS@)
+if(@SINGULARITY_BUILD_CLOSURE@)
   find_dependency(KokkosKernels)
-endif()
-
-if(@SINGULARITY_USE_EIGEN@)
-  find_dependency(Eigen3)
 endif()
 
 if(@SINGULARITY_USE_EOSPAC@)

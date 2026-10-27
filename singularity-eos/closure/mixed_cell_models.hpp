@@ -15,6 +15,8 @@
 #ifndef _SINGULARITY_EOS_CLOSURE_MIXED_CELL_MODELS_
 #define _SINGULARITY_EOS_CLOSURE_MIXED_CELL_MODELS_
 
+#ifdef SINGULARITY_BUILD_CLOSURE
+
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/eos/eos.hpp>
@@ -26,13 +28,13 @@
 #include <cmath>
 #include <utility>
 
-#ifdef SINGULARITY_USE_KOKKOSKERNELS
+#ifndef PORTABILITY_STRATEGY_KOKKOS
+#error "Mixed cell closures require Kokkos and Kokkos Kernels."
+#endif
+
 #include <KokkosBatched_ApplyQ_Decl.hpp>
 #include <KokkosBatched_QR_Decl.hpp>
 #include <KokkosBatched_Trsm_Decl.hpp>
-#else
-#include <Eigen/Dense>
-#endif // SINGULARITY_USE_KOKKOSKERNELS
 
 namespace singularity {
 
@@ -217,10 +219,6 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
   } else {
     // TODO(JMM): Should we switch to an SVD-based psuedo-inverse for
     // larger matrices?
-#ifdef SINGULARITY_USE_KOKKOSKERNELS
-#ifndef PORTABILITY_STRATEGY_KOKKOS
-#error "Kokkos Kernels requires Kokkos."
-#endif
     // aliases for kokkos views
     using Unmgd = Kokkos::MemoryTraits<Kokkos::Unmanaged>;
     using Lrgt = Kokkos::LayoutRight;
@@ -258,20 +256,6 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
     // R^-1 R x = R^-1 Q^T B -> x = R^-1 Q^T B
     // store solution vector x in B
     InvertR::invoke(1.0, A, B);
-#else
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-#warning "Eigen should not be used with Kokkos."
-#endif
-    // Eigen VERSION
-    using Matrix_t = Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-    Eigen::Map<Matrix_t> A(a, n, n);
-
-    Eigen::Map<Eigen::VectorXd> B(b, n);
-    Eigen::Map<Eigen::VectorXd> X(scr, n);
-    X = A.colPivHouseholderQr().solve(B);
-
-    B = X;
-#endif // SINGULARITY_USE_KOKKOSKERNELS
   }
   bool retval = check_nans(b, n);
   return retval;
@@ -2292,4 +2276,5 @@ PORTABLE_INLINE_FUNCTION SolverStatus PTESolver(System &s) {
 
 } // namespace singularity
 
+#endif // SINGULARITY_BUILD_CLOSURE
 #endif // _SINGULARITY_EOS_CLOSURE_MIXED_CELL_MODELS_

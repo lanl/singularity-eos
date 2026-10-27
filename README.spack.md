@@ -66,7 +66,7 @@ The following variants may be used to customize the dependencies and their build
     enable_fortran [on]     on, off                 Enable building fortran interface
     enable_tests [off]      on, off                 Build tests
     kokkos [on]             on, off                 Enable kokkos
-    kokkos-kernels [off]    on, off                 Enable kokkos-kernals for linear algebra
+    kokkos-kernels [off]    on, off                 Enable Kokkos Kernels (required for closures)
     mpi [off]               on, off                 Build with MPI support
     openmp [off]            on, off                 Enable openmp
 ```
@@ -117,3 +117,8 @@ To build with `kokkos` using a `cuda` backend (and required CUDA architecture)
 ```bash
 $> spack install singularity-eos-deps+cuda+kokkos+kokkos-kernels cuda_arch=70 +enable_tests+enable_fortran build_extra=sesame,stellarcollapse
 ```
+
+Mixed cell closures now require both `+kokkos` and `+kokkos-kernels` on CPU
+and GPU. Builds with `~closure` can use `~kokkos~kokkos-kernels`. Externally
+maintained Spack recipes must enforce these dependencies for `+closure` and
+no longer depend on Eigen.

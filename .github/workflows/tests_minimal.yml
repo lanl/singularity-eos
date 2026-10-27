@@ -33,6 +33,7 @@ jobs:
                   -DSINGULARITY_BUILD_TESTS=ON \
                   -DSINGULARITY_FORCE_SUBMODULE_MODE=ON \
                   -DSINGULARITY_USE_KOKKOS=OFF \
+                  -DSINGULARITY_BUILD_CLOSURE=OFF \
                   ..
             make -j4
             make install

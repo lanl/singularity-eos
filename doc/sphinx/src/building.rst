@@ -57,9 +57,8 @@ Dependencies
  `spiner`_                              submodule [*]_ / external [*]_   Optional; enhanced backend for EOS tables
  `hdf5`_                                external only                    Optional; used for table I/O
  `eospac`_                              external only                    Optional; used for sesame tables.
- `kokkos`_                              submodule / external             Optional; enables GPU offloading.
- `Eigen`_                               submodule / external             Optional; used for linear algebra on the CPU when doing mixed-cell closures.
- `kokkos-kernels`_                      submodule / external             Optional; used for linear algebra on the GPU when doing mixed-cell closures.
+ `kokkos`_                              submodule / external             Required for mixed-cell closures; otherwise optional. Enables GPU offloading.
+ `kokkos-kernels`_                      submodule / external             Required for mixed-cell closures on CPU and GPU; otherwise optional.
  `pybind11`_                            external / fetchable [*]_        Optional
 ====================================== =============================== ===========================================
 
@@ -76,8 +75,6 @@ Dependencies
 .. _eospac: https://laws.lanl.gov/projects/data/eos/eospacReleases.php
 
 .. _kokkos: https://github.com/kokkos/kokkos
-
-.. _Eigen: https://eigen.tuxfamily.org/index.php?title=Main_Page
 
 .. _kokkos-kernels: https://github.com/kokkos/kokkos-kernels/
 
@@ -143,6 +140,14 @@ preconditions and defaults are logically constructed and the most
 natural in practice (``SINGULARITY_TEST_*`` are only available if
 ``SINGLARITY_BUILD_TESTS`` is enabled, for instance).
 
+Mixed cell closures default to OFF. Enabling ``SINGULARITY_BUILD_CLOSURE``
+requires ``SINGULARITY_USE_KOKKOS=ON`` on CPU and GPU. Kokkos Kernels is
+enabled automatically for closures. Configuring closures without Kokkos, or
+without an available Kokkos Kernels dependency, is a configuration error.
+CPU closure builds previously using Eigen must migrate to Kokkos and Kokkos Kernels; Eigen is no longer used.
+With closures disabled, Kokkos remains optional and Kokkos Kernels is not
+required. The Fortran mixed-cell backend requires closures to be enabled.
+
 These options are listed in the following table, along with their
 preconditions:
 
@@ -151,7 +156,6 @@ preconditions:
 ============================================== ================================================================================= ===========================================
  ``SINGULARITY_USE_SPINER_WITH_HDF5``           ``SINGULARITY_USE_SPINER=ON``                                                     Requests that ``spiner`` be configured for ``HDF5`` support.
  ``SINGULARITY_USE_CUDA``                       ``SINGULARITY_USE_KOKKOS=ON``                                                     Target nvidia GPUs for ``Kokkos`` offloading.
- ``SINGULARITY_USE_KOKKOSKERNELS``              ``SINGULARITY_USE_KOKKOS=ON`` ``SINGULARITY_BUILD_CLOSURE=ON``                       Use Kokkos Kernels for linear algebra. Needed for mixed cell closure models on GPU.
  ``SINGULARITY_BUILD_SESAME2SPINER``            ``SINGULARITY_USE_SPINER=ON`` ``SINGULARITY_USE_SPINER_WITH_HDF5=ON``             Builds the conversion tool sesame2spiner which makes files readable by SpinerEOS.
  ``SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER``   ``SINGULARITY_USE_SPINER=ON`` ``SINGULARITY_USE_SPINER_WITH_HDF5=ON``             Builds the conversion tool stellarcollapse2spiner which optionally makes stellar collapse files faster to read.
  ``SINGULARITY_TEST_SESAME``                    ``SINGULARITY_BUILD_TESTS=ON`` ``SINGULARITY_BUILD_SESAME2SPINER=ON``             Test the Sesame table readers.
@@ -232,7 +236,7 @@ closure models:
 .. code:: bash
 
    # in <top-level>/build
-   $> cmake .. --preset="basic_with_testing" -DSINGULARITY_BUILD_CLOSURE=ON
+   $> cmake .. --preset="basic_with_testing" -DSINGULARITY_BUILD_CLOSURE=ON -DSINGULARITY_USE_KOKKOS=ON
    # ...
 
 User defined presets
@@ -710,7 +714,7 @@ supports a number of relevant variants:
 | kokkos-kernels [off]        | on, off         | Use kokkos-kernels for      |
 |                             |                 | linear algebra suport,      |
 |                             |                 | which is needed with        |
-|                             |                 | mixed-cell closures on GPU  |
+|                             |                 | mixed-cell closures         |
 +-----------------------------+-----------------+-----------------------------+
 | mpi [off]                   | on, off         | Build with parallel HDF5    |
 |                             |                 | otherwise build with serial |

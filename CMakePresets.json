@@ -32,7 +32,8 @@
       "name": "with_kokkos_gpu",
       "hidden": true,
       "cacheVariables": {
-        "SINGULARITY_USE_KOKKOS": "ON"
+        "SINGULARITY_USE_KOKKOS": "ON",
+        "SINGULARITY_BUILD_CLOSURE": "ON"
       }
     },
     {
