@@ -63,6 +63,8 @@ cmake_dependent_option(SINGULARITY_BUILD_FORTRAN_BACKEND
 
 option(SINGULARITY_USE_KOKKOS "Use Kokkos for portability" OFF)
 option(SINGULARITY_USE_EOSPAC "Enable eospac backend" OFF)
+option(SINGULARITY_FETCH_EIGEN
+       "Fetch Eigen when it cannot be found as a package" OFF)
 cmake_dependent_option(SINGULARITY_EOSPAC_ENABLE_SHMEM
   "Support shared memory with EOSPAC backend. Requires EOSPAC version 6.5.7."
   OFF "SINGULARITY_USE_EOSPAC" OFF)
@@ -321,7 +323,7 @@ if(SINGULARITY_SUBMODULE_MODE)
 
   # Eigen (if needed)
   if(SINGULARITY_USE_EIGEN)
-    singularity_import_eigen()
+    singularity_find_eigen()
   endif()
 
   # And pybind11 (if needed)
