@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -11,6 +11,8 @@
 // prepare derivative works, distribute copies to the public, perform
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
+
+// This file was partially modified by AI.
 
 #ifdef SINGULARITY_TEST_HELMHOLTZ
 
@@ -36,6 +38,51 @@
 
 using singularity::Helmholtz;
 const std::string filename = "../data/helmholtz/helm_table.dat";
+
+SCENARIO("Helmholtz internal energy from density and pressure",
+         "[HelmholtzEOS][SieFromRhoP]") {
+  Helmholtz host_eos(filename, true, true, false, true, true);
+  auto eos = host_eos.GetOnDevice();
+
+  int nwrong = 0;
+  portableReduce(
+      "Helmholtz internal energy from density and pressure", 0, 3,
+      PORTABLE_LAMBDA(const int k, int &nw) {
+        constexpr Real abar[3] = {1.0, 4.0, 12.0};
+        constexpr Real zbar[3] = {1.0, 2.0, 6.0};
+        constexpr Real densities[4] = {1e-3, 1e1, 1e5, 1e9};
+        constexpr Real temperatures[4] = {1e4, 1e6, 1e8, 1e10};
+        for (int i = 0; i < 4; ++i) {
+          for (int j = 0; j < 4; ++j) {
+            Real lambda[3] = {abar[k], zbar[k], -1.0};
+            const Real rho = densities[i];
+            const Real temp = temperatures[j];
+            const Real expected =
+                eos.InternalEnergyFromDensityTemperature(rho, temp, lambda);
+            const Real pressure = eos.PressureFromDensityTemperature(rho, temp, lambda);
+
+            Real sie = 0.0;
+            eos.InternalEnergyFromDensityPressure(rho, pressure, sie, lambda);
+            const Real sie_returned =
+                eos.InternalEnergyFromDensityPressure(rho, pressure, lambda);
+            if (!isClose(sie, expected, 1e-6) || !isClose(sie_returned, expected, 1e-6)) {
+              printf("Helmholtz sie mismatch: Abar=%g Zbar=%g rho=%g T=%g "
+                     "expected=%.14e output=%.14e returned=%.14e\n",
+                     abar[k], zbar[k], rho, temp, expected, sie, sie_returned);
+              nw += 1;
+            }
+          }
+        }
+      },
+      nwrong);
+  THEN("Both scalar overloads recover the energy with a composition lambda") {
+    REQUIRE(nwrong == 0);
+  }
+
+  eos.Finalize();
+  host_eos.Finalize();
+}
+
 SCENARIO("Helmholtz equation of state - Table interpolation (tgiven)", "[HelmholtzEOS]") {
   GIVEN("A Helmholtz EOS") {
     /* We only test the EOS without Coulomb corrections since those are

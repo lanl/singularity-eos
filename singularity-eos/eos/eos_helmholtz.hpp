@@ -6,7 +6,7 @@
 // Original work is open-sourced under the CC-By license
 // https://creativecommons.org/licenses/by/4.0/
 //------------------------------------------------------------------------------
-// © 2023-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2023-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -18,6 +18,8 @@
 // prepare derivative works, distribute copies to the public, perform
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
+
+// This file was partially modified by AI.
 
 #ifndef _SINGULARITY_EOS_EOS_HELMHOLTZ_HPP_
 #define _SINGULARITY_EOS_EOS_HELMHOLTZ_HPP_
@@ -458,6 +460,8 @@ class Helmholtz : public EosBase<Helmholtz> {
         options_(rad, gas, coul, ion, ele, verbose, newton_raphson) {}
 
   PORTABLE_INLINE_FUNCTION void CheckParams() const { electrons_.CheckParams(); }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumTemperature() const { return electrons_.MinimumTemperature(); }
   constexpr static inline int nlambda() noexcept { return 3; }
   template <typename T>
   static inline constexpr bool NeedsLambda() {
@@ -955,7 +959,7 @@ PORTABLE_INLINE_FUNCTION Real Helmholtz::lTFromRhoSie_(const Real rho, const Rea
     }
     lT = electrons_.lTMax();
   }
-  IndexerUtils::SafeGet<IndexableTypes::LogTemperature>(lambda, Lambda::lT, lT);
+  IndexerUtils::SafeSet<IndexableTypes::LogTemperature>(lambda, Lambda::lT, lT);
   return lT;
 }
 
@@ -1004,6 +1008,7 @@ void HelmElectrons::GetFromDensityTemperature(Real rho, Real lT, Real Ye, Real Y
   rho = std::min(rhoMax(), std::max(rhoMin(), rho));
   De = std::min(rhoMax(), std::max(rhoMin(), De));
   lDe = std::min(lRhoMax(), std::max(lRhoMin(), lDe));
+  lT = std::min(lTMax(), std::max(lTMin(), lT));
   Real T = math_utils::pow10(lT);
 
   // Find central indexes in table
