@@ -58,7 +58,7 @@ Dependencies
  `hdf5`_                                external only                    Optional; used for table I/O
  `eospac`_                              external only                    Optional; used for sesame tables.
  `kokkos`_                              submodule / external             Optional; enables GPU offloading.
- `Eigen`_                               submodule / external             Optional; used for linear algebra on the CPU when doing mixed-cell closures.
+ `Eigen`_                               external / fetchable [*]_        Optional; used for linear algebra on the CPU when doing mixed-cell closures.
  `kokkos-kernels`_                      submodule / external             Optional; used for linear algebra on the GPU when doing mixed-cell closures.
  `pybind11`_                            external / fetchable [*]_        Optional
 ====================================== =============================== ===========================================
@@ -66,6 +66,10 @@ Dependencies
 .. [*] available as a git submodule for in-tree builds
 .. [*] located outside the build tree and discoverable by CMake
 .. [*] CMake can download and configure this source in-tree
+
+Eigen is discovered with ``find_package(Eigen3)``. If no package is available,
+set ``SINGULARITY_FETCH_EIGEN=ON`` to download the pinned Eigen revision during
+configuration.
 
 .. _spiner: https://github.com/lanl/spiner
 
@@ -102,6 +106,7 @@ The main CMake options to configure building are in the following table:
  ``SINGULARITY_USE_FORTRAN``             ON       Enable Fortran API for equation of state.
  ``SINGULARITY_USE_KOKKOS``              OFF      Uses Kokkos as the portability backend. Currently only Kokkos is supported for GPUs.
  ``SINGULARITY_USE_EOSPAC``              OFF      Link against EOSPAC. Needed for sesame2spiner and some tests.
+ ``SINGULARITY_FETCH_EIGEN``              OFF      Download Eigen if it cannot be found as a package.
  ``SINGULARITY_EOSPAC_ENABLE_SHMEM``     OFF      Enable shared memory support in EOSPAC backend.
  ``SINGULARITY_BUILD_CLOSURE``           OFF      Build the mixed cell closure models
  ``SINGULARITY_BUILD_TESTS``             OFF      Build test infrastructure.

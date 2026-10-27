@@ -48,14 +48,6 @@ macro(singularity_cmake_config pkg)
     set(KokkosKernels_INST_OFFSET_SIZE_T OFF CACHE BOOL "" FORCE)
     set(KokkosKernels_INST_ORDINAL_INT OFF CACHE BOOL "" FORCE)
     set(KokkosKernels_INST_ORDINAL_INT OFF CACHE BOOL "" FORCE)
-  elseif(${pkg} STREQUAL "Eigen3")
-    set(EIGEN_TEST_CXX11 OFF CACHE BOOL "" FORCE)
-    set(EIGEN_BUILD_PKGCONFIG OFF CACHE BOOL "" FORCE)
-    set(EIGEN_BUILD_DOC OFF CACHE BOOL "" FORCE)
-    #TODO: I don't like this as it can interfere with
-    #     other projects, but I don't have a great solution
-    #     to disable testing in here.
-    set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
   else()
     set(_PKG_DEFAULT_CONFIGURED ON)
   endif()

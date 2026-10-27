@@ -21,7 +21,7 @@ jobs:
         - name: install dependencies
           run: |
             sudo apt-get update -y -qq
-            sudo apt-get install -y --allow-downgrades --allow-remove-essential --allow-change-held-packages -qq build-essential libhdf5-serial-dev binutils-gold clang llvm
+            sudo apt-get install -y --allow-downgrades --allow-remove-essential --allow-change-held-packages -qq build-essential libeigen3-dev libhdf5-serial-dev binutils-gold clang llvm
             pip install numpy
             pip install h5py
         - name: build and run tests
