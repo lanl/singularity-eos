@@ -3,28 +3,29 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
-- [[PR658]](https://github.com/lanl/singularity-eos/pull/XXX) Add `MinimumInternalEnergy`/`MaximumInternalEnergy` to the EOS introspection API, so energy bounds are reachable through modifiers and the `singularity::EOS` variant
-- [[PR658]](https://github.com/lanl/singularity-eos/pull/XXX) Add `sesame2spiner::saveAllMaterials` overloads taking a list of matids instead of a list of input files, with optional per-material `Params` overrides, so host codes can generate an sp5 file without writing input decks to disk. Also added an overload taking an already-open `hid_t`, plus `writeSP5RootAttributes`, so a single sp5 file can be built up one material at a time.
-- [[PR653]] (https://github.com/lanl/singularity-eos/pull/659) Added `sesame2spiner::saveAllMaterials` overloads taking a list of matids instead of a list of input files, with optional per-material `Params` overrides, so host codes can generate an sp5 file without writing input decks to disk. Also added an overload taking an already-open `hid_t`, plus `writeSP5RootAttributes`, so a single sp5 file can be built up one material at a time.
+- [[PR658]](https://github.com/lanl/singularity-eos/pull/658) Add `MinimumInternalEnergy`/`MaximumInternalEnergy` to the EOS introspection API, so energy bounds are reachable through modifiers and the `singularity::EOS` variant
+- [[PR659]](https://github.com/lanl/singularity-eos/pull/659) Add `sesame2spiner::saveAllMaterials` overloads taking a list of matids instead of a list of input files, with optional per-material `Params` overrides, so host codes can generate an sp5 file without writing input decks to disk. Also added an overload taking an already-open `hid_t`, plus `writeSP5RootAttributes`, so a single sp5 file can be built up one material at a time.
+- [[PR659]](https://github.com/lanl/singularity-eos/pull/659) Added `sesame2spiner::saveAllMaterials` overloads taking a list of matids instead of a list of input files, with optional per-material `Params` overrides, so host codes can generate an sp5 file without writing input decks to disk. Also added an overload taking an already-open `hid_t`, plus `writeSP5RootAttributes`, so a single sp5 file can be built up one material at a time.
 
 ### Fixed (Repair bugs, etc)
 - [[PR661]](https://github.com/lanl/singularity-eos/pull/661) Fix bug in InternalEnergyFromDensityPressure where the lambda wasn't threaded all the way through.
-- `sesame2spiner` now validates the metadata returned by `eosGetMetadata` before using it. A matid absent from the sesame file previously produced all-zero bounds with no error, which reached `log()` and generated NaN grids; it is now reported and skipped.
-- `sesame2spiner` no longer reports an HDF5 failure against every material following the first failed one, and now names the offending matid. Material save status is no longer accumulated by summing `herr_t` values, which could cancel out and report success.
-- [[PR653]] (https://github.com/lanl/singularity-eos/pull/659) `sesame2spiner` now validates the metadata returned by `eosGetMetadata` before using it. A matid absent from the sesame file previously produced 
+- [[PR659]](https://github.com/lanl/singularity-eos/pull/659) `sesame2spiner` now validates the metadata returned by `eosGetMetadata` before using it. A matid absent from the sesame file previously produced all-zero bounds with no error, which reached `log()` and generated NaN grids; it is now reported and skipped.
+- [[PR659]](https://github.com/lanl/singularity-eos/pull/659) `sesame2spiner` no longer reports an HDF5 failure against every material following the first failed one, and now names the offending matid. Material save status is no longer accumulated by summing `herr_t` values, which could cancel out and report success.
+- [[PR659]](https://github.com/lanl/singularity-eos/pull/659) `sesame2spiner` now validates the metadata returned by `eosGetMetadata` before using it. A matid absent from the sesame file previously produced
 all-zero bounds with no error, which reached `log()` and generated NaN grids; it is now reported and skipped.  It also no longer reports an HDF5 failure against every material following the first failed one, 
 and now names the offending matid. Material save status is no longer accumulated by summing `herr_t` values, which could cancel out and report success.
 
 ### Changed (changing behavior/API/variables/...)
-- [[PR658]](https://github.com/lanl/singularity-eos/pull/XXX) `ScaledEOS::CheckParams` now requires a strictly positive scale factor, where it previously accepted any nonzero value.
-- [[PR658]](https://github.com/lanl/singularity-eos/pull/XXX) `sesame2spiner` now honors the requested verbosity when reading material metadata, rather than always using `Verbosity::Debug`. Default command line output is correspondingly quieter.
-- [[PR658]](https://github.com/lanl/singularity-eos/pull/XXX) `sesame2spiner::getMatBounds` no longer takes a leading index argument, which was unused.
+- [[PR658]](https://github.com/lanl/singularity-eos/pull/658) `ScaledEOS::CheckParams` now requires a strictly positive scale factor, where it previously accepted any nonzero value.
+- [[PR659]](https://github.com/lanl/singularity-eos/pull/659) `sesame2spiner` now honors the requested verbosity when reading material metadata, rather than always using `Verbosity::Debug`. Default command line output is correspondingly quieter.
+- [[PR659]](https://github.com/lanl/singularity-eos/pull/659) `sesame2spiner::getMatBounds` no longer takes a leading index argument, which was unused.
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR653]](https://github.com/lanl/singularity-eos/pull/653) Move pybind11 to a submodule rather than fetching it via cmake fetchcontent
 
 ### Deprecated (soon to be removed behavior/API/variables/...)
-- [[PR658]](https://github.com/lanl/singularity-eos/pull/XXX) The table bounds accessors `sieMin()`/`sieMax()` on `SpinerEOSDependsRhoSie` and `StellarCollapse` are superseded by `MinimumInternalEnergy()`/`MaximumInternalEnergy()`, which every EOS provides and which work through modifiers and the `singularity::EOS` variant. The old names still work but will be removed.
+- [[PR663]](https://github.com/lanl/singularity-eos/pull/663) Breaking change. Eigen removed as a dependency.
+- [[PR658]](https://github.com/lanl/singularity-eos/pull/658) The table bounds accessors `sieMin()`/`sieMax()` on `SpinerEOSDependsRhoSie` and `StellarCollapse` are superseded by `MinimumInternalEnergy()`/`MaximumInternalEnergy()`, which every EOS provides and which work through modifiers and the `singularity::EOS` variant. The old names still work but will be removed.
 
 ## Release 1.12.1
 Date: 08/10/2026
@@ -46,7 +47,7 @@ Date: 07/20/2026
 
 ### Fixed (Repair bugs, etc)
 - [[PR645]](https://github.com/lanl/singularity-eos/pull/645) Fix internal energy from density and pressure for JWL
-- [[PR63]](https://github.com/lanl/singularity-eos/pull/639) Fixed UnitSystem temperature bug. Temperature is now treated in the same as the time, mass, and length unit factors.
+- [[PR639]](https://github.com/lanl/singularity-eos/pull/639) Fixed UnitSystem temperature bug. Temperature is now treated in the same as the time, mass, and length unit factors.
 - [[PR637]](https://github.com/lanl/singularity-eos/pull/637) Fix is_normal 
 
 ### Changed (changing behavior/API/variables/...)
@@ -100,7 +101,7 @@ Date: 12/25/2025
 - [[PR563]](https://github.com/lanl/singularity-eos/pull/563) Fixed DensityFromPressureTemperature for the Carnahan-Starling EOS.
 - [[PR564]](https://github.com/lanl/singularity-eos/pull/564) Fix logic for numerical vs type indices by adding safeGet(), safeSet(), safeMustGet(), and safeMustSet() helpers
 - [[PR568]](https://github.com/lanl/singularity-eos/pull/568) Fix bug in FixedT and FixedP PTE solvers when materials have negative energies at the initial guess
-- [[PR583]](https://github.com/lanl/singularity-eos/pull/582) Allow PTE solvers to operate on tables with pressure as a preferred input
+- [[PR582]](https://github.com/lanl/singularity-eos/pull/582) Allow PTE solvers to operate on tables with pressure as a preferred input
 
 ### Changed (changing behavior/API/variables/...)
 - [[PR579]](https://github.com/lanl/singularity-eos/pull/579) Python bindings now support numpy arrays with arbitrary stride. Numpy array length no longer required input.
@@ -141,7 +142,7 @@ Date: 8/27/2025
 - [[PR545]](https://github.com/lanl/singularity-eos/pull/545) Implement reduced system for PTESolverRhoT
 - [[PR543]](https://github.com/lanl/singularity-eos/pull/543) Made PTE solvers more robust for Maxwell constructed tables
 - [[PR502]](https://github.com/lanl/singularity-eos/pull/502) Expose split tables to Fortran interface
-- [[PR519]] (https://github.com/lanl/singularity-eos/pull/519) Split eos_spiner.hpp into eos_spiner_rho_sie.hpp and eos_spiner_rho_temp.hpp files.  
+- [[PR519]](https://github.com/lanl/singularity-eos/pull/519) Split eos_spiner.hpp into eos_spiner_rho_sie.hpp and eos_spiner_rho_temp.hpp files.
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR528]](https://github.com/lanl/singularity-eos/pull/528) Remove unused variable subGroup in SpinerEOSDependsRhoT
@@ -238,7 +239,7 @@ Date: 7/29/2024
 - [[PR343]](https://github.com/lanl/singularity-eos/pull/343) Add chemical potentials to stellar collapse gold files
 - [[PR342]](https://github.com/lanl/singularity-eos/pull/342) Fix missing using statement in stellar collapse root finding routines
 - [[PR341]](https://github.com/lanl/singularity-eos/pull/341) Short-circuit HDF5 machinery when cray-wrappers used in-tree
-- [[PR340]](https://github.com/lanl/singularity-eos/pull/335) Fix in-tree builds with plugin infrastructure
+- [[PR340]](https://github.com/lanl/singularity-eos/pull/340) Fix in-tree builds with plugin infrastructure
 - [[PR335]](https://github.com/lanl/singularity-eos/pull/335) Fix missing hermite.hpp in CMake install required for Helmholtz EOS
 - [[PR356]](https://github.com/lanl/singularity-eos/pull/356) Guard against FPEs in the PTE solver
 - [[PR356]](https://github.com/lanl/singularity-eos/pull/356) Update CMake for proper Kokkos linking in Fortran interface
@@ -278,7 +279,7 @@ Date: 11/28/2023
 - [[PR238]](https://github.com/lanl/singularity-eos/pull/238) Fixed broken examples
 - [[PR228]](https://github.com/lanl/singularity-eos/pull/228) added untracked header files in cmake
 - [[PR215]](https://github.com/lanl/singularity-eos/pull/215) and [[PR216]](https://github.com/lanl/singularity-eos/pull/216) fix duplicate definition of EPS and fix CI
-- [[PR232]](https://github.com/lanl/singularity-eos/pull/228) Fixed uninitialized cmake path variables
+- [[PR232]](https://github.com/lanl/singularity-eos/pull/232) Fixed uninitialized cmake path variables
 - [[PR308]](https://github.com/lanl/singularity-eos/pull/308) spack builds +fortran now compile via correct blocking out of interfaces via preprocessor ifdef
 
 ### Added (new features/APIs/variables/...)
@@ -292,7 +293,7 @@ Date: 11/28/2023
 - [[PR265]](https://github.com/lanl/singularity-eos/pull/265) Add missing UnitSystem modifier combinations to variant and EOSPAC
 - [[PR279]](https://github.com/lanl/singularity-eos/pull/279) added noble-abel EoS
 - [[PR274]](https://github.com/lanl/singularity-eos/pull/274) added a stiffened gas EoS
-- [[PR264]](https://github.com/lanl/singularity-eos/pull/274) added a Helmholtz EoS
+- [[PR264]](https://github.com/lanl/singularity-eos/pull/264) added a Helmholtz EoS
 - [[PR254]](https://github.com/lanl/singularity-eos/pull/254) added ability to peel off modifiers as needed
 - [[PR250]](https://github.com/lanl/singularity-eos/pull/250) added mass fraction output to stellar collapse eos
 - [[PR226]](https://github.com/lanl/singularity-eos/pull/226) added entropy interpolation to stellar collapse eos
