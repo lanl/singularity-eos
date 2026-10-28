@@ -145,8 +145,9 @@ PORTABLE_INLINE_FUNCTION bool set_bracket(const T &f, Real &a, const Real guess,
   }
   // if we get here then we failed to bracket a root
   if (verbose) {
-    PortsOfCall::printf("set_bracket failed to bound a root! %.14e %.14e %.14e %.14e %.14e %.14e\n", a,
-           guess, b, ya, yg, yb);
+    PortsOfCall::printf(
+        "set_bracket failed to bound a root! %.14e %.14e %.14e %.14e %.14e %.14e\n", a,
+        guess, b, ya, yg, yb);
   }
   return false;
 }
@@ -177,7 +178,8 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
       // ya, yg, and yb have the same sign
       if (!set_bracket(func, a, guess, b, ya, yg, yb, verbose)) {
         if (verbose) {
-          PortsOfCall::printf("regula_falsi failed! %.14e %.14e %.14e %.14e\n", ytarget, guess, a, b);
+          PortsOfCall::printf("regula_falsi failed! %.14e %.14e %.14e %.14e\n", ytarget,
+                              guess, a, b);
         }
         return Status::FAIL;
       }
@@ -224,8 +226,9 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
   auto status = Status::SUCCESS;
   if (iteration_count == max_iter) {
     if (verbose) {
-      PortsOfCall::printf("root finding reached the maximum number of iterations.  likely not "
-             "converged\n");
+      PortsOfCall::printf(
+          "root finding reached the maximum number of iterations.  likely not "
+          "converged\n");
     }
     status = Status::FAIL;
   }
@@ -281,8 +284,8 @@ PORTABLE_INLINE_FUNCTION Status newton_raphson(const T &f, const Real ytarget,
     // fail_on_bound_root.
     if ((_x <= a && _xold <= a) || (_x >= b && _xold >= b)) {
       if (verbose) {
-        PortsOfCall::printf("newton_raphson out of bounds! %.14e %.14e %.14e %.14e\n", ytarget, guess,
-               a, b);
+        PortsOfCall::printf("newton_raphson out of bounds! %.14e %.14e %.14e %.14e\n",
+                            ytarget, guess, a, b);
       }
       if (fail_on_bound_root) {
         status = Status::FAIL;
@@ -293,8 +296,9 @@ PORTABLE_INLINE_FUNCTION Status newton_raphson(const T &f, const Real ytarget,
   }
   if (iter >= max_iter) {
     if (verbose) {
-      PortsOfCall::printf("root finding reached the maximum number of iterations.  likely not "
-             "converged\n");
+      PortsOfCall::printf(
+          "root finding reached the maximum number of iterations.  likely not "
+          "converged\n");
     }
     status = Status::FAIL;
   }
