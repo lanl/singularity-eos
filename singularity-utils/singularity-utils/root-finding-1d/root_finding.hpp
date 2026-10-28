@@ -25,10 +25,11 @@
 // #include <iostream> // debug
 // #include <iomanip>
 #include <cmath>
-#include <cstdio>
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
 #include <tuple>
+
+#include <ports-of-call/portability.hpp>
 
 #define SINGULARITY_ROOT_DEBUG (0)
 #define SINGULARITY_ROOT_VERBOSE (0)
@@ -105,7 +106,7 @@ class RootCounts {
   }
   PORTABLE_INLINE_FUNCTION void print_counts() const {
     for (std::size_t i{0}; i < nbins_; ++i)
-      printf("%e\n", counts_[i]);
+      PortsOfCall::printf("%e\n", counts_[i]);
   }
   PORTABLE_INLINE_FUNCTION std::size_t nBins() const { return nbins_; }
   PORTABLE_INLINE_FUNCTION std::size_t more() const { return nbins_ - 1; }
@@ -144,8 +145,9 @@ PORTABLE_INLINE_FUNCTION bool set_bracket(const T &f, Real &a, const Real guess,
   }
   // if we get here then we failed to bracket a root
   if (verbose) {
-    printf("set_bracket failed to bound a root! %.14e %.14e %.14e %.14e %.14e %.14e\n", a,
-           guess, b, ya, yg, yb);
+    PortsOfCall::printf(
+        "set_bracket failed to bound a root! %.14e %.14e %.14e %.14e %.14e %.14e\n", a,
+        guess, b, ya, yg, yb);
   }
   return false;
 }
@@ -176,7 +178,8 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
       // ya, yg, and yb have the same sign
       if (!set_bracket(func, a, guess, b, ya, yg, yb, verbose)) {
         if (verbose) {
-          printf("regula_falsi failed! %.14e %.14e %.14e %.14e\n", ytarget, guess, a, b);
+          PortsOfCall::printf("regula_falsi failed! %.14e %.14e %.14e %.14e\n", ytarget,
+                              guess, a, b);
         }
         return Status::FAIL;
       }
@@ -223,8 +226,9 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
   auto status = Status::SUCCESS;
   if (iteration_count == max_iter) {
     if (verbose) {
-      printf("root finding reached the maximum number of iterations.  likely not "
-             "converged\n");
+      PortsOfCall::printf(
+          "root finding reached the maximum number of iterations.  likely not "
+          "converged\n");
     }
     status = Status::FAIL;
   }
@@ -280,8 +284,8 @@ PORTABLE_INLINE_FUNCTION Status newton_raphson(const T &f, const Real ytarget,
     // fail_on_bound_root.
     if ((_x <= a && _xold <= a) || (_x >= b && _xold >= b)) {
       if (verbose) {
-        printf("newton_raphson out of bounds! %.14e %.14e %.14e %.14e\n", ytarget, guess,
-               a, b);
+        PortsOfCall::printf("newton_raphson out of bounds! %.14e %.14e %.14e %.14e\n",
+                            ytarget, guess, a, b);
       }
       if (fail_on_bound_root) {
         status = Status::FAIL;
@@ -292,8 +296,9 @@ PORTABLE_INLINE_FUNCTION Status newton_raphson(const T &f, const Real ytarget,
   }
   if (iter >= max_iter) {
     if (verbose) {
-      printf("root finding reached the maximum number of iterations.  likely not "
-             "converged\n");
+      PortsOfCall::printf(
+          "root finding reached the maximum number of iterations.  likely not "
+          "converged\n");
     }
     status = Status::FAIL;
   }
