@@ -211,8 +211,10 @@ PORTABLE_INLINE_FUNCTION Real MGUsup::HugTemperatureFromDensity(Real rho) const 
   Real eta = 1.0 - robust::ratio(_rho0, rho);
   Real f1 = 1.0 - _s * eta;
   if (f1 <= 0.0) {
+#ifndef NDEBUG
     printf("f1, eta, rho, rho0, s = %.14e %.14e %.14e %.14e %.14e\n", f1, eta, rho, _rho0,
            _s);
+#endif // NDEBUG
     PORTABLE_ALWAYS_THROW_OR_ABORT("MGUsup model parameters s and rho0 together with rho "
                                    "give a negative argument for a logarithm.");
   }
@@ -243,7 +245,6 @@ PORTABLE_INLINE_FUNCTION Real MGUsup::HugTemperatureFromDensity(Real rho) const 
       PORTABLE_WARN("Hugoniot Temperature not converged");
 #endif // NDEBUG
     }
-    // printf("sum=%e\n",sum);
     temp = _T0 - pf * ((G0os - 3.0) + exp(-G0os) * (G0os * G0os - 4.0 * G0os + 2.0) *
                                           (std::log(f1) + sum));
     temp = temp * exp(_G0 * eta);

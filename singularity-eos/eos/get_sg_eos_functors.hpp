@@ -133,6 +133,7 @@ struct init_functor {
     any_bad_vals = any_bad_vals || error_utils::bad_value(spvol_v(i), "spvol");
 
     if (any_bad_vals) {
+#ifndef NDEBUG
       using PortsOfCall::printf;
       printf("### Bad Value Output state:\n");
       printf("  ~~Bulk state~~\n");
@@ -148,6 +149,7 @@ struct init_functor {
         printf(" %24.15g", frac_mass_v(i, m));
         printf("\n");
       }
+#endif // NDEBUG
       PORTABLE_ALWAYS_ABORT(
           "Bad values INPUT to singularity-eos interface. See output for details");
     }
