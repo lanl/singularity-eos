@@ -489,17 +489,17 @@ py::class_<T> eos_class(py::module_ & m, std::string name) {
           auto param_bitmask = it.second.first;
           auto param_ptr = it.second.second;
           output |= param_bitmask;
-          *param_ptr = kwargs[param].cast<Real>();
+          *param_ptr = kwargs[param].template cast<Real>();
         }
       }
 
       // override auto-detection
       if(kwargs.contains("output")) {
-        output = kwargs["output"].cast<unsigned long>();
+        output = kwargs["output"].template cast<unsigned long>();
       }
 
       if(kwargs.contains("lmbda")) {
-        auto lambda = kwargs["lmbda"].cast<py::array_t<Real>>();
+        auto lambda = kwargs["lmbda"].template cast<py::array_t<Real>>();
         self.FillEos(s.density, s.temperature, s.specific_internal_energy, s.pressure, s.specific_heat, s.bulk_modulus, output, lambda.mutable_data());
       } else {
         self.FillEos(s.density, s.temperature, s.specific_internal_energy, s.pressure, s.specific_heat, s.bulk_modulus, output, np<Real>());
