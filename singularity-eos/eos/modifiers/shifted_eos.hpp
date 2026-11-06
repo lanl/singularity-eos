@@ -151,44 +151,34 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                  Real &cv, Real &bmod, const unsigned long output,
                                  Indexer_t &&lambda = nullptr) const {
-    Real senergy;
-    switch (t_.PreferredInput()) {
-    case thermalqs::density | thermalqs::temperature:
-      t_.FillEos(rho, temp, energy, press, cv, bmod, output, lambda);
-      energy = energy + shift_;
-      break;
-    case thermalqs::density | thermalqs::specific_internal_energy:
-      senergy = energy - shift_;
-      t_.FillEos(rho, temp, senergy, press, cv, bmod, output, lambda);
-      break;
-    default:
-      EOS_ERROR("Didn't find a valid input for ShiftedEOS::FillEOS\n");
-    }
+    Real senergy = (output & thermalqs::specific_internal_energy) ? 0 : energy - shift_;
+    t_.FillEos(rho, temp, senergy, press, cv, bmod, output, lambda);
+    if (output & thermalqs::specific_internal_energy) energy = senergy + shift_;
   }
 
   // vector implementations
   template <typename Space, typename EnableIfSpace =
                                 std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
-  inline void shift_sies(const Space &s, const Real *sies, Real *shifted,
-                         const int num) const {
+  inline void shift_sies(const Space &s, const Real *sies, Real *shifted, const int num,
+                         const Real input_scale = 1) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(ShiftedEOS<T>).name(), __func__);
     static auto const cname = name.c_str();
     const auto shift_val = shift_;
     portableFor(
         cname, s, 0, num,
-        PORTABLE_LAMBDA(const int i) { shifted[i] = sies[i] - shift_val; });
+        PORTABLE_LAMBDA(const int i) { shifted[i] = input_scale * sies[i] - shift_val; });
   }
 
   template <typename Space, typename EnableIfSpace =
                                 std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>
-  inline void unshift_sies(const Space &s, Real *sies, const int num) const {
+  inline void unshift_sies(const Space &s, Real *sies, const int num,
+                           const Real output_scale = 1) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(ShiftedEOS<T>).name(), __func__);
     static auto const cname = name.c_str();
-    const auto shift_val = shift_;
-    portableFor(
-        cname, s, 0, num, PORTABLE_LAMBDA(const int i) { sies[i] += shift_val; });
+    const auto shift_val = output_scale * shift_;
+    portableFor(cname, s, 0, num, PORTABLE_LAMBDA(const int i) { sies[i] += shift_val; });
   }
 
   template <
@@ -200,7 +190,10 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
                                        LambdaIndexer &&lambdas,
                                        Transform &&transform = Transform()) const {
     Real *shifted_sies = scratch;
-    shift_sies(s, sies, shifted_sies, num);
+    // Apply an outer modifier's energy conversion before subtracting this shift.
+    const Real input_scale = transform.y.is_set() ? transform.y.get() : Real(1);
+    shift_sies(s, sies, shifted_sies, num, input_scale);
+    transform.y.clear();
     t_.TemperatureFromDensityInternalEnergy(
         s, rhos, shifted_sies, temperatures, &scratch[num], num,
         std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
@@ -226,7 +219,10 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
       const Space &s, const Real *rhos, const Real *sies, Real *pressures, Real *scratch,
       const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
     Real *shifted_sies = scratch;
-    shift_sies(s, sies, shifted_sies, num);
+    // Apply an outer modifier's energy conversion before subtracting this shift.
+    const Real input_scale = transform.y.is_set() ? transform.y.get() : Real(1);
+    shift_sies(s, sies, shifted_sies, num, input_scale);
+    transform.y.clear();
     t_.PressureFromDensityInternalEnergy(s, rhos, shifted_sies, pressures, &scratch[num],
                                          num, std::forward<LambdaIndexer>(lambdas),
                                          std::forward<Transform>(transform));
@@ -239,10 +235,11 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
                                            Real *scratch, const int num,
                                            LambdaIndexer &&lambdas,
                                            Transform &&transform = Transform()) const {
-    t_.MinInternalEnergyFromDensity(s, rhos, sies, &scratch[num], num,
+    const Real output_scale = transform.f.is_set() ? transform.f.get() : Real(1);
+    t_.MinInternalEnergyFromDensity(s, rhos, sies, scratch, num,
                                     std::forward<LambdaIndexer>(lambdas),
                                     std::forward<Transform>(transform));
-    unshift_sies(s, sies, num);
+    unshift_sies(s, sies, num, output_scale);
   }
 
   template <
@@ -265,7 +262,10 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
       const Space &s, const Real *rhos, const Real *sies, Real *cvs, Real *scratch,
       const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
     Real *shifted_sies = scratch;
-    shift_sies(s, sies, shifted_sies, num);
+    // Apply an outer modifier's energy conversion before subtracting this shift.
+    const Real input_scale = transform.y.is_set() ? transform.y.get() : Real(1);
+    shift_sies(s, sies, shifted_sies, num, input_scale);
+    transform.y.clear();
     t_.SpecificHeatFromDensityInternalEnergy(s, rhos, shifted_sies, cvs, &scratch[num],
                                              num, std::forward<LambdaIndexer>(lambdas),
                                              std::forward<Transform>(transform));
@@ -291,7 +291,10 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
       const Space &s, const Real *rhos, const Real *sies, Real *bmods, Real *scratch,
       const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
     Real *shifted_sies = scratch;
-    shift_sies(s, sies, shifted_sies, num);
+    // Apply an outer modifier's energy conversion before subtracting this shift.
+    const Real input_scale = transform.y.is_set() ? transform.y.get() : Real(1);
+    shift_sies(s, sies, shifted_sies, num, input_scale);
+    transform.y.clear();
     t_.BulkModulusFromDensityInternalEnergy(s, rhos, shifted_sies, bmods, &scratch[num],
                                             num, std::forward<LambdaIndexer>(lambdas),
                                             std::forward<Transform>(transform));
@@ -316,7 +319,10 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
       const Space &s, const Real *rhos, const Real *sies, Real *gm1s, Real *scratch,
       const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
     Real *shifted_sies = scratch;
-    shift_sies(s, sies, shifted_sies, num);
+    // Apply an outer modifier's energy conversion before subtracting this shift.
+    const Real input_scale = transform.y.is_set() ? transform.y.get() : Real(1);
+    shift_sies(s, sies, shifted_sies, num, input_scale);
+    transform.y.clear();
     t_.GruneisenParamFromDensityInternalEnergy(s, rhos, shifted_sies, gm1s, &scratch[num],
                                                num, std::forward<LambdaIndexer>(lambdas),
                                                std::forward<Transform>(transform));
@@ -329,10 +335,12 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
       const Space &s, const Real *rhos, const Real *temperatures, Real *sies,
       Real *scratch, const int num, LambdaIndexer &&lambdas,
       Transform &&transform = Transform()) const {
+    // Capture the outer output conversion before inner modifiers compose it.
+    const Real output_scale = transform.f.is_set() ? transform.f.get() : Real(1);
     t_.InternalEnergyFromDensityTemperature(s, rhos, temperatures, sies, scratch, num,
                                             std::forward<LambdaIndexer>(lambdas),
                                             std::forward<Transform>(transform));
-    unshift_sies(s, sies, num);
+    unshift_sies(s, sies, num, output_scale);
   }
 
   template <
@@ -355,7 +363,10 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
       const Space &s, const Real *rhos, const Real *sies, Real *entropies, Real *scratch,
       const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
     Real *shifted_sies = scratch;
-    shift_sies(s, sies, shifted_sies, num);
+    // Apply an outer modifier's energy conversion before subtracting this shift.
+    const Real input_scale = transform.y.is_set() ? transform.y.get() : Real(1);
+    shift_sies(s, sies, shifted_sies, num, input_scale);
+    transform.y.clear();
     t_.EntropyFromDensityInternalEnergy(s, rhos, shifted_sies, entropies, &scratch[num],
                                         num, std::forward<LambdaIndexer>(lambdas),
                                         std::forward<Transform>(transform));
