@@ -43,6 +43,7 @@ namespace variadic_utils = singularity::variadic_utils;
 
 using EOSBuilder::Modify;
 using singularity::BilinearRampEOS;
+using singularity::EosBase;
 using singularity::Gruneisen;
 using singularity::IdealGas;
 using singularity::RelativisticEOS;
@@ -239,8 +240,9 @@ void checkModifierConversions(EOS &eos, Real rho_factor, Real energy_factor,
       std::max(std::size_t(1),
                static_cast<std::size_t>(EOS::max_scratch_size(count) / sizeof(Real))));
 #define CHECK_MODIFIER_VECTOR(NAME, Y, YFACTOR, YOFFSET, FACTOR, OFFSET)                 \
-  eos.NAME(PortsOfCall::Exec::Host(), rhos, Y, result, scratch.data(), count,            \
-           singularity::NullIndexer{});                                                  \
+  eos.NAME(PortsOfCall::Exec::Host(), static_cast<const Real *>(rhos),                   \
+           static_cast<const Real *>(Y), static_cast<Real *>(result), scratch.data(),    \
+           count, singularity::NullIndexer{});                                           \
   for (int i = 0; i < count; ++i) {                                                      \
     const Real rho = rhos[i] / rho_factor;                                               \
     const Real y = (Y[i] - (YOFFSET)) / (YFACTOR);                                       \
@@ -267,8 +269,9 @@ void checkModifierConversions(EOS &eos, Real rho_factor, Real energy_factor,
       EOS::scratch_size("MinInternalEnergyFromDensity", count) / sizeof(Real);
   constexpr Real guard = 123456;
   std::vector<Real> guarded(required + count + 2, guard);
-  eos.MinInternalEnergyFromDensity(PortsOfCall::Exec::Host(), rhos, result,
-                                   guarded.data() + 1, count, singularity::NullIndexer{});
+  eos.MinInternalEnergyFromDensity(
+      PortsOfCall::Exec::Host(), static_cast<const Real *>(rhos),
+      static_cast<Real *>(result), guarded.data() + 1, count, singularity::NullIndexer{});
   for (int i = 0; i < count; ++i)
     CHECK(isClose(
         result[i],
