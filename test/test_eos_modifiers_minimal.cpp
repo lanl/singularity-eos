@@ -11,7 +11,13 @@
 // prepare derivative works, distribute copies to the public, perform
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
+#include <algorithm>
+#include <cmath>
 #include <limits>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
@@ -44,6 +50,309 @@ using singularity::ScaledEOS;
 using singularity::ShiftedEOS;
 using singularity::UnitSystem;
 using singularity::Variant;
+
+namespace {
+// A cold energy term exposes density-conversion errors hidden by an ideal gas.
+template <bool EnergyPreferred = false>
+class ModifierTestEOS : public singularity::EosBase<ModifierTestEOS<EnergyPreferred>> {
+ public:
+  SG_ADD_BASE_CLASS_USINGS(ModifierTestEOS<EnergyPreferred>)
+  PORTABLE_FUNCTION void CheckParams() const {}
+  static constexpr unsigned long PreferredInput() {
+    return thermalqs::density | (EnergyPreferred ? thermalqs::specific_internal_energy
+                                                 : thermalqs::temperature);
+  }
+  template <typename Lambda = Real *>
+  PORTABLE_FUNCTION Real InternalEnergyFromDensityTemperature(Real rho, Real temp,
+                                                              Lambda && = nullptr) const {
+    return rho * rho + 3 * temp - 5;
+  }
+  template <typename Lambda = Real *>
+  PORTABLE_FUNCTION Real TemperatureFromDensityInternalEnergy(Real rho, Real energy,
+                                                              Lambda && = nullptr) const {
+    return (energy - rho * rho + 5) / 3;
+  }
+  template <typename Lambda = Real *>
+  PORTABLE_FUNCTION Real MinInternalEnergyFromDensity(Real rho,
+                                                      Lambda && = nullptr) const {
+    return rho * rho - 5;
+  }
+  template <typename Lambda = Real *>
+  PORTABLE_FUNCTION Real PressureFromDensityTemperature(Real rho, Real temp,
+                                                        Lambda && = nullptr) const {
+    return rho * (temp + rho);
+  }
+  template <typename Lambda = Real *>
+  PORTABLE_FUNCTION Real SpecificHeatFromDensityTemperature(Real, Real,
+                                                            Lambda && = nullptr) const {
+    return 3;
+  }
+  template <typename Lambda = Real *>
+  PORTABLE_FUNCTION Real EntropyFromDensityTemperature(Real rho, Real temp,
+                                                       Lambda && = nullptr) const {
+    return rho + 2 * temp;
+  }
+  template <typename Lambda = Real *>
+  PORTABLE_FUNCTION Real BulkModulusFromDensityTemperature(Real rho, Real temp,
+                                                           Lambda && = nullptr) const {
+    return rho * (temp + 2 * rho) + rho / 3 * (temp + rho - 2 * rho * rho);
+  }
+  template <typename Lambda = Real *>
+  PORTABLE_FUNCTION Real GruneisenParamFromDensityTemperature(Real, Real,
+                                                              Lambda && = nullptr) const {
+    return Real(1) / 3;
+  }
+#define MODIFIER_TEST_FROM_ENERGY(NAME)                                                  \
+  template <typename Lambda = Real *>                                                    \
+  PORTABLE_FUNCTION Real NAME##FromDensityInternalEnergy(                                \
+      Real rho, Real energy, Lambda &&lambda = nullptr) const {                          \
+    return NAME##FromDensityTemperature(                                                 \
+        rho, TemperatureFromDensityInternalEnergy(rho, energy), lambda);                 \
+  }
+  MODIFIER_TEST_FROM_ENERGY(Pressure)
+  MODIFIER_TEST_FROM_ENERGY(SpecificHeat)
+  MODIFIER_TEST_FROM_ENERGY(Entropy)
+  MODIFIER_TEST_FROM_ENERGY(BulkModulus)
+  MODIFIER_TEST_FROM_ENERGY(GruneisenParam)
+#undef MODIFIER_TEST_FROM_ENERGY
+  template <typename Lambda = Real *>
+  PORTABLE_FUNCTION void InternalEnergyFromDensityPressure(Real rho, Real pressure,
+                                                           Real &energy,
+                                                           Lambda && = nullptr) const {
+    energy = InternalEnergyFromDensityTemperature(rho, pressure / rho - rho);
+  }
+  template <typename Lambda = Real *>
+  PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &pressure,
+                                 Real &cv, Real &bulk, unsigned long output,
+                                 Lambda && = nullptr) const {
+    if (output & thermalqs::density) {
+      rho = (std::sqrt(temp * temp + 4 * pressure) - temp) / 2;
+    }
+    if (output & thermalqs::temperature)
+      temp = TemperatureFromDensityInternalEnergy(rho, energy);
+    if (output & thermalqs::specific_internal_energy)
+      energy = InternalEnergyFromDensityTemperature(rho, temp);
+    if (output & thermalqs::pressure)
+      pressure = PressureFromDensityTemperature(rho, temp);
+    if (output & thermalqs::specific_heat) cv = 3;
+    if (output & thermalqs::bulk_modulus)
+      bulk = BulkModulusFromDensityTemperature(rho, temp);
+  }
+  template <typename Lambda = Real *>
+  PORTABLE_FUNCTION void
+  ValuesAtReferenceState(Real &rho, Real &temp, Real &energy, Real &pressure, Real &cv,
+                         Real &bulk, Real &dpde, Real &dvdt, Lambda && = nullptr) const {
+    rho = 2;
+    temp = 4;
+    energy = 11;
+    pressure = 12;
+    cv = 3;
+    bulk = BulkModulusFromDensityTemperature(rho, temp);
+    dpde = Real(2) / 3;
+    dvdt = Real(1) / 16;
+  }
+#define MODIFIER_TEST_VECTOR(NAME)                                                       \
+  template <typename Space, typename Lambdas,                                            \
+            typename = std::enable_if_t<!variadic_utils::has_int_index_v<Space>>>        \
+  void NAME(const Space &, const Real *x, const Real *y, Real *out, Real *, int count,   \
+            Lambdas &&, singularity::Transform &&transform = {}) const {                 \
+    for (int i = 0; i < count; ++i)                                                      \
+      out[i] =                                                                           \
+          transform.f.get() * NAME(transform.x.get() * x[i], transform.y.get() * y[i]);  \
+  }
+  MODIFIER_TEST_VECTOR(InternalEnergyFromDensityTemperature)
+  MODIFIER_TEST_VECTOR(TemperatureFromDensityInternalEnergy)
+  MODIFIER_TEST_VECTOR(PressureFromDensityTemperature)
+  MODIFIER_TEST_VECTOR(PressureFromDensityInternalEnergy)
+  MODIFIER_TEST_VECTOR(SpecificHeatFromDensityTemperature)
+  MODIFIER_TEST_VECTOR(SpecificHeatFromDensityInternalEnergy)
+  MODIFIER_TEST_VECTOR(EntropyFromDensityTemperature)
+  MODIFIER_TEST_VECTOR(EntropyFromDensityInternalEnergy)
+  MODIFIER_TEST_VECTOR(BulkModulusFromDensityTemperature)
+  MODIFIER_TEST_VECTOR(BulkModulusFromDensityInternalEnergy)
+  MODIFIER_TEST_VECTOR(GruneisenParamFromDensityTemperature)
+  MODIFIER_TEST_VECTOR(GruneisenParamFromDensityInternalEnergy)
+#undef MODIFIER_TEST_VECTOR
+  static unsigned long scratch_size(std::string method, unsigned int count) {
+    return method == "MinInternalEnergyFromDensity" ? count * sizeof(Real) : 0;
+  }
+  static unsigned long max_scratch_size(unsigned int count) {
+    return count * sizeof(Real);
+  }
+  template <typename Space, typename Lambdas>
+  void MinInternalEnergyFromDensity(const Space &, const Real *rhos, Real *out,
+                                    Real *scratch, int count, Lambdas &&,
+                                    singularity::Transform &&transform = {}) const {
+    for (int i = 0; i < count; ++i) {
+      scratch[i] = transform.x.get() * rhos[i];
+      out[i] = transform.f.get() * MinInternalEnergyFromDensity(scratch[i]);
+    }
+  }
+};
+
+// rho_user=rho_factor*rho_base, e_user=energy_factor*e_base+shift,
+// T_user=temp_factor*T_base. Compare against the analytic base at several states.
+template <typename EOS>
+void checkModifierConversions(EOS &eos, Real rho_factor, Real energy_factor,
+                              Real temp_factor, Real shift = 0) {
+  const ModifierTestEOS<> base;
+  constexpr int count = 3;
+  Real rhos[count], temps[count], energies[count], result[count];
+  for (int i = 0; i < count; ++i) {
+    const Real rho = Real(0.7) + i, temp = 2 + i;
+    rhos[i] = rho_factor * rho;
+    temps[i] = temp_factor * temp;
+    energies[i] =
+        energy_factor * base.InternalEnergyFromDensityTemperature(rho, temp) + shift;
+    CHECK(isClose(eos.InternalEnergyFromDensityTemperature(rhos[i], temps[i]),
+                  energies[i], 1.e-12));
+    CHECK(isClose(eos.TemperatureFromDensityInternalEnergy(rhos[i], energies[i]),
+                  temps[i], 1.e-12));
+    Real r = rhos[i], t = 0, e = energies[i], p = 0, c = 0, b = 0;
+    eos.FillEos(r, t, e, p, c, b,
+                thermalqs::temperature | thermalqs::pressure | thermalqs::specific_heat |
+                    thermalqs::bulk_modulus);
+    CHECK(e == energies[i]);
+    CHECK(isClose(t, temps[i], 1.e-12));
+    CHECK(isClose(c, 3 * energy_factor / temp_factor, 1.e-12));
+    CHECK(isClose(
+        p, rho_factor * energy_factor * base.PressureFromDensityTemperature(rho, temp),
+        1.e-12));
+    e = -999;
+    eos.FillEos(r, t, e, p, c, b,
+                thermalqs::specific_internal_energy | thermalqs::pressure |
+                    thermalqs::specific_heat | thermalqs::bulk_modulus);
+    CHECK(isClose(e, energies[i], 1.e-12));
+    CHECK(isClose(c, 3 * energy_factor / temp_factor, 1.e-12));
+    Real solved_energy = energies[i];
+    eos.InternalEnergyFromDensityPressure(rhos[i], p, solved_energy);
+    CHECK(isClose(solved_energy, energies[i], 1.e-12));
+    r = -999;
+    e = -999;
+    eos.FillEos(r, t, e, p, c, b,
+                thermalqs::density | thermalqs::specific_internal_energy |
+                    thermalqs::specific_heat | thermalqs::bulk_modulus);
+    CHECK(isClose(r, rhos[i], 1.e-12));
+    CHECK(isClose(e, energies[i], 1.e-12));
+  }
+  std::vector<Real> scratch(
+      std::max(std::size_t(1),
+               static_cast<std::size_t>(EOS::max_scratch_size(count) / sizeof(Real))));
+#define CHECK_MODIFIER_VECTOR(NAME, Y, YFACTOR, YOFFSET, FACTOR, OFFSET)                 \
+  eos.NAME(PortsOfCall::Exec::Host(), rhos, Y, result, scratch.data(), count,            \
+           singularity::NullIndexer{});                                                  \
+  for (int i = 0; i < count; ++i) {                                                      \
+    const Real rho = rhos[i] / rho_factor;                                               \
+    const Real y = (Y[i] - (YOFFSET)) / (YFACTOR);                                       \
+    CHECK(isClose(result[i], (FACTOR) * base.NAME(rho, y) + (OFFSET), 1.e-12));          \
+  }
+  CHECK_MODIFIER_VECTOR(InternalEnergyFromDensityTemperature, temps, temp_factor, 0,
+                        energy_factor, shift)
+  CHECK_MODIFIER_VECTOR(TemperatureFromDensityInternalEnergy, energies, energy_factor,
+                        shift, temp_factor, 0)
+  CHECK_MODIFIER_VECTOR(PressureFromDensityInternalEnergy, energies, energy_factor, shift,
+                        rho_factor * energy_factor, 0)
+  CHECK_MODIFIER_VECTOR(SpecificHeatFromDensityTemperature, temps, temp_factor, 0,
+                        energy_factor / temp_factor, 0)
+  CHECK_MODIFIER_VECTOR(SpecificHeatFromDensityInternalEnergy, energies, energy_factor,
+                        shift, energy_factor / temp_factor, 0)
+  CHECK_MODIFIER_VECTOR(EntropyFromDensityInternalEnergy, energies, energy_factor, shift,
+                        energy_factor / temp_factor, 0)
+  CHECK_MODIFIER_VECTOR(BulkModulusFromDensityInternalEnergy, energies, energy_factor,
+                        shift, rho_factor * energy_factor, 0)
+  CHECK_MODIFIER_VECTOR(GruneisenParamFromDensityInternalEnergy, energies, energy_factor,
+                        shift, 1, 0)
+#undef CHECK_MODIFIER_VECTOR
+  const auto required =
+      EOS::scratch_size("MinInternalEnergyFromDensity", count) / sizeof(Real);
+  constexpr Real guard = 123456;
+  std::vector<Real> guarded(required + count + 2, guard);
+  eos.MinInternalEnergyFromDensity(PortsOfCall::Exec::Host(), rhos, result,
+                                   guarded.data() + 1, count, singularity::NullIndexer{});
+  for (int i = 0; i < count; ++i)
+    CHECK(isClose(
+        result[i],
+        energy_factor * base.MinInternalEnergyFromDensity(rhos[i] / rho_factor) + shift,
+        1.e-12));
+  CHECK(guarded.front() == guard);
+  for (std::size_t i = required + 1; i < guarded.size(); ++i)
+    CHECK(guarded[i] == guard);
+  Real r, t, e, p, c, b, dpde, dvdt;
+  eos.ValuesAtReferenceState(r, t, e, p, c, b, dpde, dvdt);
+  CHECK(isClose(r, 2 * rho_factor, 1.e-12));
+  CHECK(isClose(t, 4 * temp_factor, 1.e-12));
+  CHECK(isClose(e, 11 * energy_factor + shift, 1.e-12));
+  CHECK(isClose(p, 12 * rho_factor * energy_factor, 1.e-12));
+  CHECK(isClose(c, 3 * energy_factor / temp_factor, 1.e-12));
+  CHECK(isClose(b,
+                base.BulkModulusFromDensityTemperature(2, 4) * rho_factor * energy_factor,
+                1.e-12));
+  CHECK(isClose(dpde, Real(2) / 3 * rho_factor, 1.e-12));
+  CHECK(isClose(dvdt, Real(1) / (16 * rho_factor * temp_factor), 1.e-12));
+}
+} // namespace
+
+TEST_CASE("Modifier conversions compose without tabulated dependencies",
+          "[modifiers][Transform]") {
+  using Base = ModifierTestEOS<>;
+  UnitSystem<Base> units(Base{}, 2, 4, 5);
+  checkModifierConversions(units, 0.5, 0.25, 0.2);
+  UnitSystem<ShiftedEOS<Base>> units_shift(ShiftedEOS<Base>(Base{}, 10), 2, 4, 5);
+  checkModifierConversions(units_shift, 0.5, 0.25, 0.2, 2.5);
+  ShiftedEOS<UnitSystem<Base>> shift_units(UnitSystem<Base>(Base{}, 2, 4, 5), 2.5);
+  checkModifierConversions(shift_units, 0.5, 0.25, 0.2, 2.5);
+  ScaledEOS<Base> scaled(Base{}, 2);
+  checkModifierConversions(scaled, 0.5, 2, 1);
+  ScaledEOS<ShiftedEOS<Base>> scaled_shift(ShiftedEOS<Base>(Base{}, 10), 2);
+  checkModifierConversions(scaled_shift, 0.5, 2, 1, 20);
+  ShiftedEOS<ScaledEOS<Base>> shift_scaled(ScaledEOS<Base>(Base{}, 2), 20);
+  checkModifierConversions(shift_scaled, 0.5, 2, 1, 20);
+  // PreferredInput must not determine which quantities FillEos actually receives.
+  using EnergyBase = ModifierTestEOS<true>;
+  ShiftedEOS<EnergyBase> shifted_energy(EnergyBase{}, 10);
+  checkModifierConversions(shifted_energy, 1, 1, 1, 10);
+  ScaledEOS<EnergyBase> scaled_energy(EnergyBase{}, 2);
+  checkModifierConversions(scaled_energy, 0.5, 2, 1);
+}
+
+TEST_CASE("Shifted FillEos converts the actual energy input", "[ShiftedEOS][IdealGas]") {
+  IdealGas base(0.5, 3);
+  ShiftedEOS<IdealGas> eos(IdealGas(0.5, 3), 10);
+  Real rho = 2, temp = 0, energy = 16, pressure = 0, cv = 0, bulk = 0;
+  eos.FillEos(rho, temp, energy, pressure, cv, bulk,
+              thermalqs::temperature | thermalqs::pressure | thermalqs::specific_heat |
+                  thermalqs::bulk_modulus);
+  CHECK(isClose(temp, 2));
+  CHECK(energy == 16);
+  CHECK(isClose(pressure, base.PressureFromDensityTemperature(rho, temp)));
+  CHECK(isClose(cv, 3));
+  energy = -999;
+  eos.FillEos(rho, temp, energy, pressure, cv, bulk,
+              thermalqs::specific_internal_energy | thermalqs::pressure);
+  CHECK(isClose(energy, 16));
+}
+
+TEST_CASE("Scaling preserves energy and heat capacity", "[ScaledEOS][Gruneisen]") {
+  Gruneisen base(0.394e6, 1.489, 0, 0, 2.02, 0.47, 8.93, 297, 1.e6, 8.56796e7);
+  constexpr Real scale = 2, rho = 5, temp = 400;
+  ScaledEOS<Gruneisen> eos(Gruneisen(base), scale);
+  const Real energy =
+      scale * base.InternalEnergyFromDensityTemperature(scale * rho, temp);
+  const Real cv = scale * base.SpecificHeatFromDensityTemperature(scale * rho, temp);
+  CHECK(isClose(eos.InternalEnergyFromDensityTemperature(rho, temp), energy));
+  CHECK(isClose(eos.TemperatureFromDensityInternalEnergy(rho, energy), temp));
+  CHECK(isClose(eos.SpecificHeatFromDensityTemperature(rho, temp), cv));
+  CHECK(isClose(eos.SpecificHeatFromDensityInternalEnergy(rho, energy), cv));
+  CHECK(isClose(eos.MinInternalEnergyFromDensity(rho),
+                scale * base.MinInternalEnergyFromDensity(scale * rho)));
+  Real r = rho, t = 0, e = energy, p = 0, c = 0, b = 0;
+  eos.FillEos(r, t, e, p, c, b,
+              thermalqs::temperature | thermalqs::pressure | thermalqs::specific_heat |
+                  thermalqs::bulk_modulus);
+  CHECK(isClose(t, temp));
+  CHECK(e == energy);
+  CHECK(isClose(c, cv));
+}
 
 SCENARIO("Relativistic EOS", "[EOSBuilder][RelativisticEOS][IdealGas]") {
   using EOS = Variant<IdealGas, RelativisticEOS<IdealGas>>;
