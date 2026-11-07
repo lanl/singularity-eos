@@ -328,7 +328,7 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
                                transform.y.apply(sie_unit_);
                                transform.f.apply(inv_press_unit_);)
   SG_MODIFIER_FORWARD_1IN_1OUT(MinInternalEnergyFromDensity, transform.x.apply(rho_unit_);
-                               transform.f.apply(sie_unit_);)
+                               transform.f.apply(inv_sie_unit_);)
   SG_MODIFIER_FORWARD_2IN_1OUT(SpecificHeatFromDensityTemperature,
                                transform.x.apply(rho_unit_);
                                transform.y.apply(temp_unit_);
