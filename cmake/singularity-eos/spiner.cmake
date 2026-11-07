@@ -14,7 +14,7 @@ macro(singularity_import_spiner)
 endmacro()
 
 macro(singularity_find_spiner)
-  find_package(spiner 1.6 REQUIRED)
+  find_package(spiner 2.0 REQUIRED)
 endmacro()
 
 macro(_singularity_chk_spiner_opt singularity_opt spiner_opt)
