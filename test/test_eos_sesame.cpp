@@ -612,7 +612,7 @@ TEST_CASE("SesameEOS supports device queries and host vector dispatch",
   PORTABLE_FREE(device_result);
   device.Finalize();
   Real r[2] = {0.7, 1}, t[2] = {2, 3}, p[2] = {};
-  eos.PressureFromDensityTemperature(PortsOfCall::Exec::Host(), r, t, p, 2,
+  eos.PressureFromDensityTemperature(PortsOfCall::Exec::Host(), &r[0], &t[0], &p[0], 2,
                                      singularity::NullIndexer{});
   CHECK(close(p[0], eos.PressureFromDensityTemperature(r[0], t[0])));
   CHECK(close(p[1], eos.PressureFromDensityTemperature(r[1], t[1])));

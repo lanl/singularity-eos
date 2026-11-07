@@ -1060,7 +1060,7 @@ inline void StellarCollapse::dataBoxToFastLogs(DataBox &db, DataBox &scratch,
 
 inline void StellarCollapse::medianFilter_(DataBox &db) {
   DataBox tmp;
-  tmp.copy(db);
+  tmp.deepCopy(db);
   medianFilter_(tmp, db);
   free(tmp);
 }
