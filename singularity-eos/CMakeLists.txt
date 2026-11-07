@@ -50,6 +50,7 @@ register_headers(
     eos/eos_jwl.hpp
     eos/eos_helmholtz.hpp
     eos/eos_sap_polynomial.hpp
+    eos/eos_sesame.hpp
     eos/eos_type_lists.hpp
     eos/modifiers/modifier_vector_macros.hpp
     eos/modifiers/relativistic_eos.hpp

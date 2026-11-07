@@ -70,6 +70,10 @@ static constexpr const auto full_eos_list =
        ,
        EOSPAC
 #endif // SINGULARITY_USE_EOSPAC
+#ifdef SINGULARITY_USE_SESAME2SPINER
+       ,
+       SesameEOS
+#endif // SINGULARITY_USE_SESAME2SPINER
        >{};
 // modifiers that get applied to all eos's
 static constexpr const auto apply_to_all = al<ScaledEOS, ShiftedEOS>{};

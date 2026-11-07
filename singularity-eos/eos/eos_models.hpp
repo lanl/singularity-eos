@@ -28,6 +28,9 @@
 #include <singularity-eos/eos/eos_noble_abel.hpp>
 #include <singularity-eos/eos/eos_powermg.hpp>
 #include <singularity-eos/eos/eos_sap_polynomial.hpp>
+#ifdef SINGULARITY_USE_SESAME2SPINER
+#include <singularity-eos/eos/eos_sesame.hpp>
+#endif
 #include <singularity-eos/eos/eos_spiner.hpp>
 #include <singularity-eos/eos/eos_stellar_collapse.hpp>
 #include <singularity-eos/eos/eos_stiff.hpp>
