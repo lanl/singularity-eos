@@ -175,6 +175,19 @@ PYBIND11_MODULE(singularity_eos, m) {
     .def(py::init<int, bool>(), py::arg("matid"), py::arg("invert_at_setup")=false);
 #endif
 
+#ifdef SINGULARITY_USE_SESAME2SPINER
+  eos_class<SesameEOS>(m, "SesameEOS")
+    .def(py::init())
+    .def(py::init<const std::string&, int>(), py::arg("filename"), py::arg("matid"))
+    .def_property_readonly("matid", &SesameEOS::matid)
+    .def_property_readonly("rhoMin", &SesameEOS::MinimumDensity)
+    .def_property_readonly("rhoMax", &SesameEOS::MaximumDensity)
+    .def_property_readonly("TMin", &SesameEOS::MinimumTemperature)
+    .def_property_readonly("TMax", &SesameEOS::MaximumTemperature)
+    .def_property_readonly("entropy_available", &SesameEOS::EntropyAvailable)
+    .def_property_readonly("temperature_guess_available", &SesameEOS::TemperatureGuessAvailable);
+#endif
+
   create_shifted_eos_classes(m);
   create_scaled_eos_classes(m);
   create_bilinear_ramp_eos_classes(m);
