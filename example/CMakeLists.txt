@@ -15,6 +15,11 @@ add_executable(get_sound_speed_press get_sound_speed_press.cpp)
 target_link_libraries(get_sound_speed_press
                       PRIVATE singularity-eos::singularity-eos)
 
+if(SINGULARITY_BUILD_SESAME2SPINER)
+  add_executable(get_native_sesame_state get_native_sesame_state.cpp)
+  target_link_libraries(get_native_sesame_state PRIVATE singularity-eos::singularity-eos)
+endif()
+
 
 if(SINGULARITY_USE_SPINER_WITH_HDF5)
   add_executable(eos_grid eos_grid.cpp)
