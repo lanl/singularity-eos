@@ -18,6 +18,8 @@
 # ------------------------------------------------------------------------------
 
 add_library(sesame2spiner-lib
+  sesame2spiner/native_tables.cpp
+  sesame2spiner/native_tables.hpp
   sesame2spiner/io_eospac.cpp
   sesame2spiner/io_eospac.hpp
   sesame2spiner/generate_files.cpp

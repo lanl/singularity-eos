@@ -717,6 +717,9 @@ if(SINGULARITY_BUILD_TESTS)
   include(CTest)
   enable_testing()
   add_subdirectory(test)
+  if(SINGULARITY_BUILD_SESAME2SPINER)
+    add_subdirectory(sesame2spiner/test)
+  endif()
 endif()
 
 # ----------------------------------------------------------------------------#

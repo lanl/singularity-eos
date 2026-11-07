@@ -111,15 +111,39 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
                         eospacSplit apply_splitting = eospacSplit::none,
                         bool linear_interp = false);
 
+// Select a specific SESAME file before loading. An empty filename retains the
+// material-ID search behavior of the existing overloads. Source selection also
+// repairs handles invalidated by CreateTables when default lookup failed.
+EOS_INTEGER eosSafeLoad(const std::string &filename, int ntables, int matid,
+                        EOS_INTEGER tableType[], EOS_INTEGER tableHandle[],
+                        const std::vector<std::string> &table_names, Verbosity eospacWarn,
+                        bool invert_at_setup = false, EOS_REAL insert_data = 0.0,
+                        eospacMonotonicity monotonicity = eospacMonotonicity::none,
+                        bool apply_smoothing = false,
+                        eospacSplit apply_splitting = eospacSplit::none,
+                        bool linear_interp = false);
+
 // output is boolean mask. 1 for no errors. 0 for errors.
 bool eosSafeInterpolate(EOS_INTEGER *table, EOS_INTEGER nxypairs, EOS_REAL xVals[],
                         EOS_REAL yVals[], EOS_REAL var[], EOS_REAL dx[], EOS_REAL dy[],
                         const char tablename[], Verbosity eospacWarn,
                         EOS_INTEGER options[] = nullptr,
                         EOS_REAL option_values[] = nullptr, EOS_INTEGER nopts = 0);
+// Capture the interpolation status before diagnostics or option resets can
+// overwrite it. Existing callers retain their original interface and behavior.
+bool eosSafeInterpolate(EOS_INTEGER *table, EOS_INTEGER nxypairs, EOS_REAL xVals[],
+                        EOS_REAL yVals[], EOS_REAL var[], EOS_REAL dx[], EOS_REAL dy[],
+                        const char tablename[], Verbosity eospacWarn,
+                        EOS_INTEGER &interpolationStatus, EOS_INTEGER options[] = nullptr,
+                        EOS_REAL option_values[] = nullptr, EOS_INTEGER nopts = 0);
 
 void eosSafeTableInfo(EOS_INTEGER *table, EOS_INTEGER numInfoItems,
                       EOS_INTEGER infoItems[], EOS_REAL infoVals[], Verbosity eospacWarn);
+// Status-producing overload for callers that require successful extraction.
+// The original warning-only overload remains source and ABI compatible.
+void eosSafeTableInfo(EOS_INTEGER *table, EOS_INTEGER numInfoItems,
+                      EOS_INTEGER infoItems[], EOS_REAL infoVals[],
+                      EOS_INTEGER &errorCode, Verbosity eospacWarn);
 
 void eosSafeTableCmnts(EOS_INTEGER *table, EOS_CHAR *comments, Verbosity eospacWarn);
 void eosSafeTableMetaData(EOS_INTEGER *table, EOS_INTEGER infoItem, EOS_CHAR *infoString,

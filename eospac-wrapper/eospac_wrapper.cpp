@@ -138,6 +138,17 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
                         bool invert_at_setup, double insert_data,
                         eospacMonotonicity monotonicity, bool apply_smoothing,
                         eospacSplit apply_splitting, bool linear_interp) {
+  return eosSafeLoad(std::string(), ntables, matid, tableType, tableHandle, table_names,
+                     eospacWarn, invert_at_setup, insert_data, monotonicity,
+                     apply_smoothing, apply_splitting, linear_interp);
+}
+
+EOS_INTEGER eosSafeLoad(const std::string &filename, int ntables, int matid,
+                        EOS_INTEGER tableType[], EOS_INTEGER tableHandle[],
+                        const std::vector<std::string> &table_names, Verbosity eospacWarn,
+                        bool invert_at_setup, double insert_data,
+                        eospacMonotonicity monotonicity, bool apply_smoothing,
+                        eospacSplit apply_splitting, bool linear_interp) {
   EOS_INTEGER NTABLES[] = {ntables};
   std::vector<EOS_INTEGER> MATID(ntables, matid);
 
@@ -145,7 +156,37 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
   EOS_INTEGER tableHandleErrorCode = EOS_OK;
   EOS_CHAR errorMessage[EOS_MaxErrMsgLen];
 
+  // Allocate the filename before acquiring handles. Empty means the existing
+  // default search path; otherwise bind every handle to this exact data file.
+  std::vector<EOS_CHAR> dataFile(filename.begin(), filename.end());
+  dataFile.push_back('\0');
+  if (!filename.empty()) {
+    EOS_INTEGER max_length = 0;
+    eos_GetMaxDataFileNameLength(&max_length);
+    if (filename.find('\0') != std::string::npos || max_length <= 0 ||
+        filename.size() >= static_cast<std::size_t>(max_length)) {
+      errorCode = EOS_OPEN_SESAME_FILE_FAILED;
+      eosCheckError(errorCode, "Invalid SESAME source filename: " + filename, eospacWarn);
+      return errorCode;
+    }
+  }
   eos_CreateTables(NTABLES, tableType, MATID.data(), tableHandle, &errorCode);
+
+  if (!filename.empty()) {
+    // SetDataFileName may repair a handle invalidated by CreateTables when the
+    // material was absent from the default search path. Check status afterwards.
+    EOS_INTEGER fileError = EOS_OK;
+    for (int i = 0; i < ntables; ++i) {
+      EOS_INTEGER selectedError = EOS_OK;
+      eos_SetDataFileName(&tableHandle[i], &MATID[i], &tableType[i], dataFile.data(),
+                          &selectedError);
+      eosCheckError(selectedError, "eos_SetDataFileName: " + filename, eospacWarn);
+      if (!eosErrorCodesEqual(selectedError, EOS_OK) &&
+          eosErrorCodesEqual(fileError, EOS_OK))
+        fileError = selectedError;
+    }
+    errorCode = fileError;
+  }
 
   if (errorCode != EOS_OK) {
     if (eospacWarn != Verbosity::Quiet) {
@@ -275,6 +316,17 @@ bool eosSafeInterpolate(EOS_INTEGER *table, EOS_INTEGER nxypairs, EOS_REAL xVals
                         const char tablename[], Verbosity eospacWarn,
                         EOS_INTEGER options[], EOS_REAL option_values[],
                         EOS_INTEGER nopts) {
+  EOS_INTEGER interpolationStatus = EOS_OK;
+  return eosSafeInterpolate(table, nxypairs, xVals, yVals, var, dx, dy, tablename,
+                            eospacWarn, interpolationStatus, options, option_values,
+                            nopts);
+}
+
+bool eosSafeInterpolate(EOS_INTEGER *table, EOS_INTEGER nxypairs, EOS_REAL xVals[],
+                        EOS_REAL yVals[], EOS_REAL var[], EOS_REAL dx[], EOS_REAL dy[],
+                        const char tablename[], Verbosity eospacWarn,
+                        EOS_INTEGER &interpolationStatus, EOS_INTEGER options[],
+                        EOS_REAL option_values[], EOS_INTEGER nopts) {
   EOS_INTEGER errorCode = EOS_OK;
   EOS_CHAR errorMessage[EOS_MaxErrMsgLen];
 
@@ -289,6 +341,7 @@ bool eosSafeInterpolate(EOS_INTEGER *table, EOS_INTEGER nxypairs, EOS_REAL xVals
   }
 
   eos_Interpolate(table, &nxypairs, xVals, yVals, var, dx, dy, &errorCode);
+  interpolationStatus = errorCode;
 
 #ifndef SINGULARITY_EOSPAC_SKIP_EXTRAP
   if (errorCode != EOS_OK && eospacWarn == Verbosity::Debug) {
@@ -323,7 +376,12 @@ void eosSafeTableInfo(EOS_INTEGER *table, EOS_INTEGER numInfoItems,
                       EOS_INTEGER infoItems[], EOS_REAL infoVals[],
                       Verbosity eospacWarn) {
   EOS_INTEGER errorCode = EOS_OK;
-  // EOS_CHAR errorMessage[EOS_MaxErrMsgLen];
+  eosSafeTableInfo(table, numInfoItems, infoItems, infoVals, errorCode, eospacWarn);
+}
+
+void eosSafeTableInfo(EOS_INTEGER *table, EOS_INTEGER numInfoItems,
+                      EOS_INTEGER infoItems[], EOS_REAL infoVals[],
+                      EOS_INTEGER &errorCode, Verbosity eospacWarn) {
   EOS_INTEGER NITEMS[] = {numInfoItems};
   eos_GetTableInfo(table, NITEMS, infoItems, infoVals, &errorCode);
   eosCheckError(errorCode, "eos_GetTableInfo", eospacWarn);
