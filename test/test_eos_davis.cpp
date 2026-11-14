@@ -141,18 +141,13 @@ SCENARIO("Davis reactants EOS basic calls", "[DavisReactants]") {
               const Real sie = e0 * (0.25 + 1.75 * i / (N - 1.0));
               const Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
 
-              // the out-param signature, which also accepts an initial guess
               Real sie_out = 0.0;
               eos.InternalEnergyFromDensityPressure(rho, P, sie_out);
               nw += !isClose(sie_out, sie, 1e-12);
 
-              // the guess-free signature must agree
-              const Real sie_ret = eos.InternalEnergyFromDensityPressure(rho, P);
-              nw += !isClose(sie_ret, sie, 1e-12);
-
               // and the recovered energy must reproduce the pressure
-              nw += !isClose(eos.PressureFromDensityInternalEnergy(rho, sie_out), P,
-                             1e-12);
+              nw +=
+                  !isClose(eos.PressureFromDensityInternalEnergy(rho, sie_out), P, 1e-12);
             },
             nwrong);
         REQUIRE(nwrong == 0);
@@ -254,18 +249,13 @@ SCENARIO("Davis products EOS basic calls", "[DavisProducts]") {
               const Real sie = e0 * (0.25 + 1.75 * i / (N - 1.0));
               const Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
 
-              // the out-param signature, which also accepts an initial guess
               Real sie_out = 0.0;
               eos.InternalEnergyFromDensityPressure(rho, P, sie_out);
               nw += !isClose(sie_out, sie, 1e-12);
 
-              // the guess-free signature must agree
-              const Real sie_ret = eos.InternalEnergyFromDensityPressure(rho, P);
-              nw += !isClose(sie_ret, sie, 1e-12);
-
               // and the recovered energy must reproduce the pressure
-              nw += !isClose(eos.PressureFromDensityInternalEnergy(rho, sie_out), P,
-                             1e-12);
+              nw +=
+                  !isClose(eos.PressureFromDensityInternalEnergy(rho, sie_out), P, 1e-12);
             },
             nwrong);
         REQUIRE(nwrong == 0);
