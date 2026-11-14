@@ -82,6 +82,22 @@ class DavisReactants : public EosBase<DavisReactants> {
     return Es(rho) +
            _Cv0 * t_s * _i1pa * (std::pow(robust::ratio(temp, t_s), 1.0 + _alpha) - 1.0);
   }
+  // Analytic inverse of PressureFromDensityInternalEnergy, so no root find
+  // is needed. Overrides the iterative version in EosBase.
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void InternalEnergyFromDensityPressure(
+      const Real rho, const Real P, Real &sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    sie = Es(rho) + robust::ratio(P - Ps(rho), Gamma(rho) * rho);
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityPressure(
+      const Real rho, const Real P,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    Real sie;
+    InternalEnergyFromDensityPressure(rho, P, sie, lambda);
+    return sie;
+  }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
       const Real rho, const Real temp,
@@ -237,6 +253,20 @@ class DavisProducts : public EosBase<DavisProducts> {
       const Real rho, const Real temp,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return _Cv * (temp - Ts(rho)) + Es(rho);
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void InternalEnergyFromDensityPressure(
+      const Real rho, const Real P, Real &sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    sie = Es(rho) + robust::ratio(P - Ps(rho), rho * Gamma(rho));
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityPressure(
+      const Real rho, const Real P,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    Real sie;
+    InternalEnergyFromDensityPressure(rho, P, sie, lambda);
+    return sie;
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
