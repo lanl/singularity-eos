@@ -130,6 +130,55 @@ SCENARIO("Davis reactants EOS basic calls", "[DavisReactants]") {
       }
     }
 
+    WHEN("Internal energy is computed from density and pressure") {
+      THEN("It inverts the pressure lookup over a range of states") {
+        int nwrong = 0;
+        portableReduce(
+            "Round trip sie -> P -> sie for DavisReactants", 0, N,
+            PORTABLE_LAMBDA(const int i, int &nw) {
+              // sweep both density and energy across the grid
+              const Real rho = rho0 * (0.5 + 2.5 * i / (N - 1.0));
+              const Real sie = e0 * (0.25 + 1.75 * i / (N - 1.0));
+              const Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
+
+              // the out-param signature, which also accepts an initial guess
+              Real sie_out = 0.0;
+              eos.InternalEnergyFromDensityPressure(rho, P, sie_out);
+              nw += !isClose(sie_out, sie, 1e-12);
+
+              // the guess-free signature must agree
+              const Real sie_ret = eos.InternalEnergyFromDensityPressure(rho, P);
+              nw += !isClose(sie_ret, sie, 1e-12);
+
+              // and the recovered energy must reproduce the pressure
+              nw += !isClose(eos.PressureFromDensityInternalEnergy(rho, sie_out), P,
+                             1e-12);
+            },
+            nwrong);
+        REQUIRE(nwrong == 0);
+      }
+
+      THEN("A supplied initial guess does not change the answer") {
+        int nwrong = 0;
+        portableReduce(
+            "Initial guess independence for DavisReactants", 0, N,
+            PORTABLE_LAMBDA(const int i, int &nw) {
+              const Real rho = rho0 * (0.5 + 2.5 * i / (N - 1.0));
+              const Real sie = e0 * (0.25 + 1.75 * i / (N - 1.0));
+              const Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
+              // the analytic inverse should ignore the guess entirely
+              Real sie_lo = 0.1 * e0;
+              Real sie_hi = 10.0 * e0;
+              eos.InternalEnergyFromDensityPressure(rho, P, sie_lo);
+              eos.InternalEnergyFromDensityPressure(rho, P, sie_hi);
+              nw += !isClose(sie_lo, sie_hi, 1e-12);
+              nw += !isClose(sie_lo, sie, 1e-12);
+            },
+            nwrong);
+        REQUIRE(nwrong == 0);
+      }
+    }
+
     eos_host.Finalize();
     eos.Finalize();
   }
@@ -188,6 +237,55 @@ SCENARIO("Davis products EOS basic calls", "[DavisProducts]") {
               const Real Pminus = eos.PressureFromDensityInternalEnergy(rminus, sie);
               const Real dpdr_fd = (Pplus - Pminus) / (rho * 2e-6);
               nw += !(isClose(dpdr / dpdr_fd, 1.0, 1e-4));
+            },
+            nwrong);
+        REQUIRE(nwrong == 0);
+      }
+    }
+
+    WHEN("Internal energy is computed from density and pressure") {
+      THEN("It inverts the pressure lookup over a range of states") {
+        int nwrong = 0;
+        portableReduce(
+            "Round trip sie -> P -> sie for DavisProducts", 0, N,
+            PORTABLE_LAMBDA(const int i, int &nw) {
+              // sweep both density and energy across the grid
+              const Real rho = rho0 * (0.5 + 2.5 * i / (N - 1.0));
+              const Real sie = e0 * (0.25 + 1.75 * i / (N - 1.0));
+              const Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
+
+              // the out-param signature, which also accepts an initial guess
+              Real sie_out = 0.0;
+              eos.InternalEnergyFromDensityPressure(rho, P, sie_out);
+              nw += !isClose(sie_out, sie, 1e-12);
+
+              // the guess-free signature must agree
+              const Real sie_ret = eos.InternalEnergyFromDensityPressure(rho, P);
+              nw += !isClose(sie_ret, sie, 1e-12);
+
+              // and the recovered energy must reproduce the pressure
+              nw += !isClose(eos.PressureFromDensityInternalEnergy(rho, sie_out), P,
+                             1e-12);
+            },
+            nwrong);
+        REQUIRE(nwrong == 0);
+      }
+
+      THEN("A supplied initial guess does not change the answer") {
+        int nwrong = 0;
+        portableReduce(
+            "Initial guess independence for DavisProducts", 0, N,
+            PORTABLE_LAMBDA(const int i, int &nw) {
+              const Real rho = rho0 * (0.5 + 2.5 * i / (N - 1.0));
+              const Real sie = e0 * (0.25 + 1.75 * i / (N - 1.0));
+              const Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
+              // the analytic inverse should ignore the guess entirely
+              Real sie_lo = 0.1 * e0;
+              Real sie_hi = 10.0 * e0;
+              eos.InternalEnergyFromDensityPressure(rho, P, sie_lo);
+              eos.InternalEnergyFromDensityPressure(rho, P, sie_hi);
+              nw += !isClose(sie_lo, sie_hi, 1e-12);
+              nw += !isClose(sie_lo, sie, 1e-12);
             },
             nwrong);
         REQUIRE(nwrong == 0);
