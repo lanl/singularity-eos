@@ -82,8 +82,6 @@ class DavisReactants : public EosBase<DavisReactants> {
     return Es(rho) +
            _Cv0 * t_s * _i1pa * (std::pow(robust::ratio(temp, t_s), 1.0 + _alpha) - 1.0);
   }
-  // Analytic inverse of PressureFromDensityInternalEnergy, so no root find
-  // is needed. Overrides the iterative version in EosBase.
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void InternalEnergyFromDensityPressure(
       const Real rho, const Real P, Real &sie,
