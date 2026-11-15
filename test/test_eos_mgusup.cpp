@@ -536,3 +536,68 @@ SCENARIO("MGUsup EOS SetUp", "[VectorEOS][MGUsupEOS]") {
     }
   }
 }
+
+SCENARIO("MGUsup EOS SetUp", "PofRE EofRP are inverse operations") {
+  GIVEN("Parameters for a MGUsup EOS") {
+
+    constexpr int N = 100;
+    // Unit conversions
+    constexpr Real Mbcc_per_g = 1e12;
+    // MGUsup parameters for copper
+    Real rho0 = 7.285;
+    Real T0 = 298.0;
+    Real Cs = 2766.0e2;
+    Real s = 1.5344;
+    Real G0 = 2.4659;
+    Real Cv0 = 0.2149e-05 * Mbcc_per_g;
+    constexpr Real E0 = 0.658e-03 * Mbcc_per_g;
+    constexpr Real S0 = 0.4419e-05 * Mbcc_per_g;
+    // Create the EOS
+    EOS eos = MGUsup(rho0, T0, Cs, s, G0, Cv0, E0, S0);
+
+    WHEN("Internal energy is computed from density and pressure") {
+      THEN("It inverts the pressure lookup over a range of states") {
+        int nwrong = 0;
+        portableReduce(
+            "Round trip sie -> P -> sie for DavisProducts", 0, N,
+            PORTABLE_LAMBDA(const int i, int &nw) {
+              // sweep both density and energy across the grid
+              const Real rho = rho0 * (0.5 + 2.5 * i / (N - 1.0));
+              const Real sie = E0 * (0.25 + 1.75 * i / (N - 1.0));
+              const Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
+
+              Real sie_out = 0.0;
+              eos.InternalEnergyFromDensityPressure(rho, P, sie_out);
+              nw += !isClose(sie_out, sie, 1e-12);
+
+              // and the recovered energy must reproduce the pressure
+              nw +=
+                  !isClose(eos.PressureFromDensityInternalEnergy(rho, sie_out), P, 1e-12);
+            },
+            nwrong);
+        REQUIRE(nwrong == 0);
+      }
+
+      THEN("A supplied initial guess does not change the answer") {
+        int nwrong = 0;
+        portableReduce(
+            "Initial guess independence for DavisProducts", 0, N,
+            PORTABLE_LAMBDA(const int i, int &nw) {
+              const Real rho = rho0 * (0.5 + 2.5 * i / (N - 1.0));
+              const Real sie = E0 * (0.25 + 1.75 * i / (N - 1.0));
+              const Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
+              // the analytic inverse should ignore the guess entirely
+              Real sie_lo = 0.1 * E0;
+              Real sie_hi = 10.0 * E0;
+              eos.InternalEnergyFromDensityPressure(rho, P, sie_lo);
+              eos.InternalEnergyFromDensityPressure(rho, P, sie_hi);
+              nw += !isClose(sie_lo, sie_hi, 1e-12);
+              nw += !isClose(sie_lo, sie, 1e-12);
+            },
+            nwrong);
+        REQUIRE(nwrong == 0);
+      }
+    }
+    eos.Finalize();
+  }
+}
