@@ -64,6 +64,18 @@ class MGUsup : public EosBase<MGUsup> {
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void InternalEnergyFromDensityPressure(
+      const Real rho, const Real P, Real &sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityPressure(
+      const Real rho, const Real P,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    Real sie;
+    InternalEnergyFromDensityPressure(rho, P, sie, lambda);
+    return sie;
+  }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
   EntropyFromDensityTemperature(const Real rho, const Real temp,
                                 Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
@@ -328,6 +340,12 @@ PORTABLE_INLINE_FUNCTION Real MGUsup::PressureFromDensityInternalEnergy(
   Real value = HugPressureFromDensity(rho) +
                _rho0 * _G0 * (sie - HugInternalEnergyFromDensity(rho));
   return value;
+}
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void MGUsup::InternalEnergyFromDensityPressure(
+    const Real rho, const Real P, Real &sie, Indexer_t &&lambda) const {
+  sie = HugInternalEnergyFromDensity(rho) +
+        robust::ratio(P - HugPressureFromDensity(rho), _rho0 * _G0);
 }
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real MGUsup::EntropyFromDensityInternalEnergy(
