@@ -57,21 +57,21 @@ namespace {
 template <bool EnergyPreferred = false>
 class ModifierTestEOS : public singularity::EosBase<ModifierTestEOS<EnergyPreferred>> {
  public:
-   using Base = EosBase<ModifierTestEOS<EnergyPreferred>>;
+  using Base = EosBase<ModifierTestEOS<EnergyPreferred>>;
 
-   using Base::InternalEnergyFromDensityTemperature;
-   using Base::TemperatureFromDensityInternalEnergy;
-   using Base::PressureFromDensityTemperature;
-   using Base::PressureFromDensityInternalEnergy;
-   using Base::SpecificHeatFromDensityTemperature;
-   using Base::SpecificHeatFromDensityInternalEnergy;
-   using Base::EntropyFromDensityTemperature;
-   using Base::EntropyFromDensityInternalEnergy;
-   using Base::BulkModulusFromDensityTemperature;
-   using Base::BulkModulusFromDensityInternalEnergy;
-   using Base::GruneisenParamFromDensityTemperature;
-   using Base::GruneisenParamFromDensityInternalEnergy;
-// Intentionally no: using Base::MinInternalEnergyFromDensity;
+  using Base::BulkModulusFromDensityInternalEnergy;
+  using Base::BulkModulusFromDensityTemperature;
+  using Base::EntropyFromDensityInternalEnergy;
+  using Base::EntropyFromDensityTemperature;
+  using Base::GruneisenParamFromDensityInternalEnergy;
+  using Base::GruneisenParamFromDensityTemperature;
+  using Base::InternalEnergyFromDensityTemperature;
+  using Base::PressureFromDensityInternalEnergy;
+  using Base::PressureFromDensityTemperature;
+  using Base::SpecificHeatFromDensityInternalEnergy;
+  using Base::SpecificHeatFromDensityTemperature;
+  using Base::TemperatureFromDensityInternalEnergy;
+  // Intentionally not: using Base::MinInternalEnergyFromDensity;
   PORTABLE_FUNCTION void CheckParams() const {}
   static constexpr unsigned long PreferredInput() {
     return thermalqs::density | (EnergyPreferred ? thermalqs::specific_internal_energy
