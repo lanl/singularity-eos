@@ -342,8 +342,9 @@ PORTABLE_INLINE_FUNCTION Real MGUsup::PressureFromDensityInternalEnergy(
   return value;
 }
 template <typename Indexer_t>
-PORTABLE_INLINE_FUNCTION void MGUsup::InternalEnergyFromDensityPressure(
-    const Real rho, const Real P, Real &sie, Indexer_t &&lambda) const {
+PORTABLE_INLINE_FUNCTION void
+MGUsup::InternalEnergyFromDensityPressure(const Real rho, const Real P, Real &sie,
+                                          Indexer_t &&lambda) const {
   sie = HugInternalEnergyFromDensity(rho) +
         robust::ratio(P - HugPressureFromDensity(rho), _rho0 * _G0);
 }
