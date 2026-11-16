@@ -86,7 +86,11 @@ class DavisReactants : public EosBase<DavisReactants> {
   PORTABLE_INLINE_FUNCTION void InternalEnergyFromDensityPressure(
       const Real rho, const Real P, Real &sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    sie = Es(rho) + robust::ratio(P - Ps(rho), Gamma(rho) * rho);
+
+    const Real Es_ = Es(rho);
+    const Real Ps_ = Ps(rho);
+    const Real Gamma_ = Gamma(rho);
+    sie = Es_ + robust::ratio(P - Ps_, Gamma_* rho);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityPressure(
