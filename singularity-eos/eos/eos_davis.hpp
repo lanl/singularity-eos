@@ -90,7 +90,7 @@ class DavisReactants : public EosBase<DavisReactants> {
     const Real Es_ = Es(rho);
     const Real Ps_ = Ps(rho);
     const Real Gamma_ = Gamma(rho);
-    sie = Es_ + robust::ratio(P - Ps_, Gamma_* rho);
+    sie = Es_ + robust::ratio(P - Ps_, Gamma_ * rho);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityPressure(

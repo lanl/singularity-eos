@@ -437,8 +437,7 @@ PORTABLE_INLINE_FUNCTION void
 PowerMG::InternalEnergyFromDensityPressure(const Real rho, const Real P, Real &sie,
                                            Indexer_t &&lambda) const {
   const Real Ph_ = AllHugPressureFromDensity(rho);
-  sie = AllHugInternalEnergyFromDensity(rho) +
-        robust::ratio(P - Ph_, _rho0 * _G0);
+  sie = AllHugInternalEnergyFromDensity(rho) + robust::ratio(P - Ph_, _rho0 * _G0);
 }
 
 template <typename Indexer_t>
