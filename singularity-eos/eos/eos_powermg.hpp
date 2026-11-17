@@ -70,6 +70,18 @@ class PowerMG : public EosBase<PowerMG> {
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void InternalEnergyFromDensityPressure(
+      const Real rho, const Real P, Real &sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityPressure(
+      const Real rho, const Real P,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    Real sie;
+    InternalEnergyFromDensityPressure(rho, P, sie, lambda);
+    return sie;
+  }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
   EntropyFromDensityTemperature(const Real rho, const Real temp,
                                 Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
@@ -400,7 +412,6 @@ PORTABLE_INLINE_FUNCTION Real PowerMG::BulkModulusFromDensityInternalEnergy(
   }
   return value;
 }
-
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real PowerMG::TemperatureFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
@@ -421,6 +432,14 @@ PORTABLE_INLINE_FUNCTION Real PowerMG::PressureFromDensityInternalEnergy(
                _rho0 * _G0 * (sie - AllHugInternalEnergyFromDensity(rho));
   return value;
 }
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+PowerMG::InternalEnergyFromDensityPressure(const Real rho, const Real P, Real &sie,
+                                           Indexer_t &&lambda) const {
+  const Real Ph_ = AllHugPressureFromDensity(rho);
+  sie = AllHugInternalEnergyFromDensity(rho) + robust::ratio(P - Ph_, _rho0 * _G0);
+}
+
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real PowerMG::EntropyFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {

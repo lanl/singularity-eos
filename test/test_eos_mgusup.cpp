@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -534,5 +534,78 @@ SCENARIO("MGUsup EOS SetUp", "[VectorEOS][MGUsupEOS]") {
       REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, Cs, s, G0, Cv0, E0, S0));
       THEN("An error message should be written out") {}
     }
+  }
+}
+
+SCENARIO("MGUsup EOS SetUp", "PofRE EofRP are inverse operations") {
+  GIVEN("Parameters for a MGUsup EOS") {
+
+    constexpr int N = 100;
+    // Unit conversions
+    constexpr Real Mbcc_per_g = 1e12;
+    // MGUsup parameters for copper
+    Real rho0 = 7.285;
+    Real T0 = 298.0;
+    Real Cs = 2766.0e2;
+    Real s = 1.5344;
+    Real G0 = 2.4659;
+    Real Cv0 = 0.2149e-05 * Mbcc_per_g;
+    constexpr Real E0 = 0.658e-03 * Mbcc_per_g;
+    constexpr Real S0 = 0.4419e-05 * Mbcc_per_g;
+    // Create the EOS
+    EOS eos = MGUsup(rho0, T0, Cs, s, G0, Cv0, E0, S0);
+
+    // The MGUsup Hugoniot has a (1 - s*eta)^2 in the denominator, so the
+    // reference curve blows up as rho -> rho0 / (1 - 1/s), which is about
+    // 2.87 * rho0 here. Keep the sweep well below that, and scale the energies
+    // to the local reference energy: a fixed absolute sie becomes a vanishing
+    // fraction of Es(rho) at high compression, and recovering it from P is then
+    // a difference of two much larger numbers.
+    WHEN("Internal energy is computed from density and pressure") {
+      THEN("It inverts the pressure lookup over a range of states") {
+        int nwrong = 0;
+        portableReduce(
+            "Round trip sie -> P -> sie for MGUsup", 0, N,
+            PORTABLE_LAMBDA(const int i, int &nw) {
+              // sweep both density and energy across the grid
+              const Real rho = rho0 * (0.5 + 2.0 * i / (N - 1.0));
+              const Real es = eos.InternalEnergyFromDensityTemperature(rho, T0);
+              const Real sie = es * (0.25 + 1.75 * i / (N - 1.0));
+              const Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
+
+              Real sie_out = 0.0;
+              eos.InternalEnergyFromDensityPressure(rho, P, sie_out);
+              nw += !isClose(sie_out, sie, 1e-12);
+
+              // and the recovered energy must reproduce the pressure
+              nw +=
+                  !isClose(eos.PressureFromDensityInternalEnergy(rho, sie_out), P, 1e-12);
+            },
+            nwrong);
+        REQUIRE(nwrong == 0);
+      }
+
+      THEN("A supplied initial guess does not change the answer") {
+        int nwrong = 0;
+        portableReduce(
+            "Initial guess independence for MGUsup", 0, N,
+            PORTABLE_LAMBDA(const int i, int &nw) {
+              const Real rho = rho0 * (0.5 + 2.0 * i / (N - 1.0));
+              const Real es = eos.InternalEnergyFromDensityTemperature(rho, T0);
+              const Real sie = es * (0.25 + 1.75 * i / (N - 1.0));
+              const Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
+              // the analytic inverse should ignore the guess entirely
+              Real sie_lo = 0.1 * es;
+              Real sie_hi = 10.0 * es;
+              eos.InternalEnergyFromDensityPressure(rho, P, sie_lo);
+              eos.InternalEnergyFromDensityPressure(rho, P, sie_hi);
+              nw += !isClose(sie_lo, sie_hi, 1e-12);
+              nw += !isClose(sie_lo, sie, 1e-12);
+            },
+            nwrong);
+        REQUIRE(nwrong == 0);
+      }
+    }
+    eos.Finalize();
   }
 }
