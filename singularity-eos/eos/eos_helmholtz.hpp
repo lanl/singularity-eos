@@ -959,6 +959,7 @@ PORTABLE_INLINE_FUNCTION Real Helmholtz::lTFromRhoSie_(const Real rho, const Rea
     }
     lT = electrons_.lTMax();
   }
+  IndexerUtils::SafeSet<IndexableTypes::LogTemperature>(lambda, Lambda::lT, lT);
   return lT;
 }
 
