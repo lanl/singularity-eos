@@ -695,7 +695,7 @@ the atomic mass and number as a final optional parameter, e.g.,
 
    StiffGas(Real gm1, Real Cv, Real Pinf, Real q, MeanAtomicProperties(Abar, Zbar));
    StiffGas(Real gm1, Real Cv, Real Pinf, Real q, Real qp, Real T0, Real P0,
-            EntropyRho0, MeanAtomicProperties(Abar, Zbar));
+            MeanAtomicProperties(Abar, Zbar));
 
 Noble-Abel
 ``````````
