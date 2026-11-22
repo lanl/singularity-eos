@@ -41,15 +41,13 @@ using namespace eos_base;
 // transformation is valid only while amplitude is positive and fixed with
 // respect to thermodynamic derivatives.
 template <typename T>
-class FreeEnergyAmplitudeScaling
-    : public EosBase<FreeEnergyAmplitudeScaling<T>> {
+class FreeEnergyAmplitudeScaling : public EosBase<FreeEnergyAmplitudeScaling<T>> {
  public:
   SG_ADD_BASE_CLASS_USINGS(FreeEnergyAmplitudeScaling<T>);
   using BaseType = T;
 
   static std::string EosType() {
-    return std::string("FreeEnergyAmplitudeScaling<") + T::EosType() +
-           std::string(">");
+    return std::string("FreeEnergyAmplitudeScaling<") + T::EosType() + std::string(">");
   }
 
   static std::string EosPyType() {
@@ -58,8 +56,7 @@ class FreeEnergyAmplitudeScaling
 
   // Move semantics ensures dynamic memory comes along for the ride.
   FreeEnergyAmplitudeScaling(T &&t, const Real amplitude)
-      : t_(std::forward<T>(t)), amplitude_(amplitude),
-        inv_amplitude_(1. / amplitude) {
+      : t_(std::forward<T>(t)), amplitude_(amplitude), inv_amplitude_(1. / amplitude) {
     CheckParams();
   }
   FreeEnergyAmplitudeScaling() = default;
@@ -67,14 +64,11 @@ class FreeEnergyAmplitudeScaling
   PORTABLE_INLINE_FUNCTION void CheckParams() const {
     PORTABLE_ALWAYS_REQUIRE(!std::isnan(amplitude_),
                             "Free-energy amplitude must be well defined.");
-    PORTABLE_ALWAYS_REQUIRE(
-        !std::isnan(inv_amplitude_),
-        "Inverse free-energy amplitude must be well defined.");
-    PORTABLE_ALWAYS_REQUIRE(amplitude_ > 0,
-                            "Free-energy amplitude must be positive.");
-    PORTABLE_ALWAYS_REQUIRE(
-        inv_amplitude_ > 0,
-        "Inverse free-energy amplitude must be positive.");
+    PORTABLE_ALWAYS_REQUIRE(!std::isnan(inv_amplitude_),
+                            "Inverse free-energy amplitude must be well defined.");
+    PORTABLE_ALWAYS_REQUIRE(amplitude_ > 0, "Free-energy amplitude must be positive.");
+    PORTABLE_ALWAYS_REQUIRE(inv_amplitude_ > 0,
+                            "Inverse free-energy amplitude must be positive.");
     t_.CheckParams();
   }
 
@@ -86,22 +80,20 @@ class FreeEnergyAmplitudeScaling
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
-    return t_.TemperatureFromDensityInternalEnergy(rho, inv_amplitude_ * sie,
-                                                   lambda);
+    return t_.TemperatureFromDensityInternalEnergy(rho, inv_amplitude_ * sie, lambda);
   }
 
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
-    return amplitude_ *
-           t_.InternalEnergyFromDensityTemperature(rho, temperature, lambda);
+    return amplitude_ * t_.InternalEnergyFromDensityTemperature(rho, temperature, lambda);
   }
 
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
-    return amplitude_ * t_.PressureFromDensityInternalEnergy(
-                            rho, inv_amplitude_ * sie, lambda);
+    return amplitude_ *
+           t_.PressureFromDensityInternalEnergy(rho, inv_amplitude_ * sie, lambda);
   }
 
   template <typename Indexer_t = Real *>
@@ -113,29 +105,28 @@ class FreeEnergyAmplitudeScaling
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION Real EntropyFromDensityInternalEnergy(
       const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
-    return amplitude_ * t_.EntropyFromDensityInternalEnergy(
-                            rho, inv_amplitude_ * sie, lambda);
+    return amplitude_ *
+           t_.EntropyFromDensityInternalEnergy(rho, inv_amplitude_ * sie, lambda);
   }
 
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
       const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
-    return amplitude_ * t_.SpecificHeatFromDensityInternalEnergy(
-                            rho, inv_amplitude_ * sie, lambda);
+    return amplitude_ *
+           t_.SpecificHeatFromDensityInternalEnergy(rho, inv_amplitude_ * sie, lambda);
   }
 
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
-    return amplitude_ * t_.BulkModulusFromDensityInternalEnergy(
-                            rho, inv_amplitude_ * sie, lambda);
+    return amplitude_ *
+           t_.BulkModulusFromDensityInternalEnergy(rho, inv_amplitude_ * sie, lambda);
   }
 
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
-    return t_.GruneisenParamFromDensityInternalEnergy(rho, inv_amplitude_ * sie,
-                                                      lambda);
+    return t_.GruneisenParamFromDensityInternalEnergy(rho, inv_amplitude_ * sie, lambda);
   }
 
   template <typename Indexer_t = Real *>
@@ -153,15 +144,13 @@ class FreeEnergyAmplitudeScaling
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
-    return amplitude_ *
-           t_.SpecificHeatFromDensityTemperature(rho, temperature, lambda);
+    return amplitude_ * t_.SpecificHeatFromDensityTemperature(rho, temperature, lambda);
   }
 
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION Real BulkModulusFromDensityTemperature(
       const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
-    return amplitude_ *
-           t_.BulkModulusFromDensityTemperature(rho, temperature, lambda);
+    return amplitude_ * t_.BulkModulusFromDensityTemperature(rho, temperature, lambda);
   }
 
   template <typename Indexer_t = Real *>
@@ -184,9 +173,8 @@ class FreeEnergyAmplitudeScaling
   PTDerivativesFromPreferred(const Real rho, const Real sie, const Real press,
                              const Real temp, Lambda_t &&lambda, Real &dedP_T,
                              Real &drdP_T, Real &dedT_P, Real &drdT_P) const {
-    t_.PTDerivativesFromPreferred(rho, inv_amplitude_ * sie,
-                                  inv_amplitude_ * press, temp, lambda, dedP_T,
-                                  drdP_T, dedT_P, drdT_P);
+    t_.PTDerivativesFromPreferred(rho, inv_amplitude_ * sie, inv_amplitude_ * press, temp,
+                                  lambda, dedP_T, drdP_T, dedT_P, drdT_P);
     // de_new/dP_new at fixed T is unchanged. Density derivatives with
     // respect to pressure scale inversely, while energy derivatives with
     // respect to temperature scale with the amplitude.
@@ -318,13 +306,9 @@ class FreeEnergyAmplitudeScaling
     return amplitude_ * t_.MaximumInternalEnergy();
   }
 
-  PORTABLE_INLINE_FUNCTION Real MeanAtomicMass() const {
-    return t_.MeanAtomicMass();
-  }
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicMass() const { return t_.MeanAtomicMass(); }
 
-  PORTABLE_INLINE_FUNCTION Real MeanAtomicNumber() const {
-    return t_.MeanAtomicNumber();
-  }
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicNumber() const { return t_.MeanAtomicNumber(); }
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(

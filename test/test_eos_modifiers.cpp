@@ -621,8 +621,8 @@ SCENARIO("FreeEnergyAmplitudeScaling scales the free energy consistently",
       }
 
       THEN("T(rho, amplitude*sie) recovers the unscaled temperature") {
-        const Real T2 = eos_fe_scaled.TemperatureFromDensityInternalEnergy(
-            test_rho, fescale * sie1);
+        const Real T2 =
+            eos_fe_scaled.TemperatureFromDensityInternalEnergy(test_rho, fescale * sie1);
         bool close = isClose(T2, test_T, EPS);
         if (!close) {
           printf("Temperature(rho,sie) mismatch: eos = %.14e, scaled eos = %.14e, diff = "
