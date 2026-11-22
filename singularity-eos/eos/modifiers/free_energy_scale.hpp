@@ -13,7 +13,7 @@
 //------------------------------------------------------------------------------
 
 #ifndef _SINGULARITY_EOS_EOS_FREE_ENERGY_SCALE_
-#define _SINGULARITY_EOS_EOS_FREE_ENERGY_SCALE__
+#define _SINGULARITY_EOS_EOS_FREE_ENERGY_SCALE_
 
 #include <cmath>
 #include <cstdio>
@@ -350,4 +350,4 @@ class FreeEnergyAmplitudeScaling
 
 } // namespace singularity
 
-#endif // _SINGULARITY_EOS_EOS_FREE_ENERGY_SCALE__
+#endif // _SINGULARITY_EOS_EOS_FREE_ENERGY_SCALE_

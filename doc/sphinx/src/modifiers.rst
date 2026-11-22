@@ -11,13 +11,21 @@ given EOS model by shifting all energies up or down. Modifiers can be
 used to, for example, production-harden a model.
 
 Only certain combinations of ``EOS`` and ``modifier`` are permitted by
-the default ``Variant``. For example, only ``IdealGas``,
-``SpinerEOS``, and ``StellarCollapse`` support the ``RelativisticEOS``
-and ``UnitSystem`` modifiers. All models support the ``ShiftedEOS``
-and ``ScaledEOS`` modifiers. However, note that modifiers do not
-commute, and only one order is supported. The ordering, inside-out, is
-``UnitSystem`` or ``RelativisticEOS``, then ``ScaledEOS``, then
-``ShiftedEOS``.
+the default ``Variant``. All models support the ``ShiftedEOS``,
+``ScaledEOS``, and ``BilinearRampEOS`` modifiers, which are the only
+modifiers the default variant contains. Modifiers do not commute, and
+the default variant provides exactly one nesting order. From the
+innermost modifier outward that order is ``ShiftedEOS``, then
+``ScaledEOS``, then ``BilinearRampEOS``; a shifted and scaled ideal gas
+therefore has the concrete type ``ScaledEOS<ShiftedEOS<IdealGas>>``.
+
+The remaining modifiers documented below --- ``RelativisticEOS``,
+``UnitSystem``, ``FreeEnergyAmplitudeScaling``, ``FlooredEnergy``, and
+``ZSplit`` --- are *not* members of the default variant. You may still
+use them by naming the concrete modified type directly, or by building
+your own variant as described in :ref:`customization`. See
+:ref:`modifier-ordering` below for how to choose the nesting order when
+you do.
 
 We list below the available modifiers and their constructors.
 
@@ -125,6 +133,84 @@ The scale factor must be strictly positive. A negative scale is not
 physically meaningful: it would invert the sign of energy and entropy,
 and would turn every minimum bound reported by the bounds introspection
 API into a maximum. ``CheckParams`` enforces this.
+
+
+The Free-Energy Amplitude Scaling EOS
+-------------------------------------
+
+The ``ScaledEOS`` modifier changes the density at which an underlying
+equation of state is evaluated. ``FreeEnergyAmplitudeScaling`` performs a
+different operation: it scales the Helmholtz free energy at fixed density and
+temperature. If the specific Helmholtz free energy of the underlying model is
+:math:`f(\rho, T)`, then the amplitude-scaled free energy is
+
+.. math::
+
+   f_\mathrm{scaled}(\rho, T) = a f(\rho, T),
+
+where :math:`a` is the free-energy amplitude scale factor.
+
+The thermodynamic quantities returned by the modifier follow from this free
+energy. In particular,
+
+.. math::
+
+   \begin{aligned}
+   P_\mathrm{scaled}(\rho, T) &= a P(\rho, T), \\
+   e_\mathrm{scaled}(\rho, T) &= a e(\rho, T), \\
+   S_\mathrm{scaled}(\rho, T) &= a S(\rho, T), \\
+   C_{V,\mathrm{scaled}}(\rho, T) &= a C_V(\rho, T), \\
+   K_\mathrm{scaled}(\rho, T) &= a K(\rho, T).
+   \end{aligned}
+
+The Gruneisen parameter is unchanged because pressure and specific internal
+energy have the same amplitude factor:
+
+.. math::
+
+   \Gamma_\mathrm{scaled} = \frac{1}{\rho}
+   \left(\frac{\partial P_\mathrm{scaled}}
+   {\partial e_\mathrm{scaled}}\right)_\rho = \Gamma.
+
+For calls with density and specific internal energy as inputs, the underlying
+model is evaluated at the inverse-scaled energy:
+
+.. math::
+
+   \begin{aligned}
+   T_\mathrm{scaled}(\rho, e) &= T\left(\rho, e/a\right), \\
+   P_\mathrm{scaled}(\rho, e) &= a P\left(\rho, e/a\right).
+   \end{aligned}
+
+Thus, unlike ``ScaledEOS``, free-energy amplitude scaling does not change the
+density coordinate of the underlying EOS. For an ideal gas, ``ScaledEOS``
+leaves pressure unchanged, while ``FreeEnergyAmplitudeScaling`` multiplies it
+by :math:`a`.
+
+The constructor for ``FreeEnergyAmplitudeScaling`` takes the underlying model
+and the amplitude. For example, an amplitude-scaled ideal gas might be
+initialized as:
+
+.. code-block:: cpp
+
+   using namespace singularity;
+   auto my_eos = FreeEnergyAmplitudeScaling<IdealGas>(IdealGas(gm1, Cv), amplitude);
+
+The amplitude must be strictly positive. A negative amplitude would reverse
+the signs of the heat capacity and bulk modulus, violating thermodynamic
+stability. Positivity also preserves the ordering of the minimum and maximum
+specific-internal-energy bounds, both of which are multiplied by the
+amplitude.
+
+.. note::
+
+  ``FreeEnergyAmplitudeScaling`` is not in the default variant provided
+  by ``singularity-eos``. The example above uses ``auto`` for that
+  reason: assigning the modified object to the default ``EOS`` variant
+  will abort at runtime with ``Modifier must be in variant``. To hold an
+  amplitude-scaled model in a variant, you must build your own; see
+  :ref:`modifier-ordering`.
+
 
 The Relativistic EOS
 ---------------------
@@ -372,6 +458,8 @@ zero K isotherm for two reasons:
   defined, an error will occur at runtime.
 
 
+.. _composing-modifiers:
+
 Composing Modifiers
 --------------------
 
@@ -380,7 +468,7 @@ Modifiers can be composed. For example:
 .. code-block:: cpp
 
   using namespace singularity;
-  auto my_eos = ShiftedEOS<ScaledEOS<IdealGas>>(ScaledEOS(IdealGas(gm1, Cv), scale), shift);
+  auto my_eos = ScaledEOS<ShiftedEOS<IdealGas>>(ShiftedEOS<IdealGas>(IdealGas(gm1, Cv), shift), scale);
 
 You can build modifiers up iteratively by, for example:
 
@@ -395,10 +483,122 @@ You can build modifiers up iteratively by, for example:
     eos = eos.template Modify<ScaledEOS>(scale);
   }
 
+.. _modifier-ordering:
+
+Choosing a Modifier Order in a Custom Variant
+----------------------------------------------
+
+A modifier wraps the model below it: in ``Mod<T>``, ``Mod`` transforms
+the inputs on their way down into ``T`` and the outputs on their way
+back up. The *outermost* modifier therefore acts first on every input
+and last on every output. Because of this, the nesting order you choose
+when declaring a custom variant is part of the physics, not a matter of
+taste.
+
+Two properties determine which orders actually differ:
+
+* ``ScaledEOS`` and ``FreeEnergyAmplitudeScaling`` are
+  *multiplicative*. Each multiplies the energy input by a constant on
+  the way down and the outputs by constants on the way up, and constant
+  factors commute, so these two modifiers commute with each other
+  exactly: ``FreeEnergyAmplitudeScaling<ScaledEOS<T>>`` and
+  ``ScaledEOS<FreeEnergyAmplitudeScaling<T>>`` agree on every method.
+  Note that they are not the same transformation --- ``ScaledEOS`` is a
+  mass rescaling, so it applies no amplitude factor to pressure or bulk
+  modulus (though it does rescale the density argument), whereas
+  ``FreeEnergyAmplitudeScaling`` multiplies both by :math:`a` and leaves
+  the density argument alone. They merely commute.
+* ``ShiftedEOS`` is *additive*, so it commutes with neither. Any
+  multiplicative modifier placed outside a shift also rescales the
+  shift.
+
+The second point is the one that matters in practice. For an underlying
+energy :math:`e_b`, a shift :math:`q`, a scale :math:`s`, and an
+amplitude :math:`a`, the two candidate placements give
+
+.. math::
+
+  \begin{aligned}
+  \mathrm{FEAS}\left[\mathrm{Scaled}\left[\mathrm{Shifted}\right]\right]
+    &: \quad e(\rho, T) = a s\, e_b(s \rho, T) + a s q, \\
+  \mathrm{Scaled}\left[\mathrm{Shifted}\left[\mathrm{FEAS}\right]\right]
+    &: \quad e(\rho, T) = a s\, e_b(s \rho, T) + s q.
+  \end{aligned}
+
+The two differ only in whether the energy offset :math:`q` picks up the
+amplitude. Placing ``FreeEnergyAmplitudeScaling`` outside the shift, as
+in the first form, treats the offset the same way ``ScaledEOS`` already
+does in the default variant, and is the recommended choice. Placing it
+innermost, directly on the base model, leaves a host-supplied reference
+energy offset untouched; prefer that form if the amplitude belongs to
+the material's free-energy fit rather than to the assembled EOS.
+``BilinearRampEOS`` should always be outermost, which is where the
+default variant puts it.
+
+Putting this together, a custom variant holding an amplitude-scaled,
+shifted, and scaled ideal gas looks like
+
+.. code-block:: cpp
+
+  #include <singularity-eos/eos/eos.hpp>
+  #include <singularity-eos/eos/modifiers/free_energy_scale.hpp>
+  using namespace singularity;
+
+  using MyEOS_t =
+      Variant<IdealGas, ShiftedEOS<IdealGas>, ScaledEOS<ShiftedEOS<IdealGas>>,
+              FreeEnergyAmplitudeScaling<ScaledEOS<ShiftedEOS<IdealGas>>>>;
+
+Use ``singularity::Variant``, not ``singularity::eos_variant``. The
+latter is a bare alias for ``PortsOfCall::variant`` and carries none of
+the EOS API; ``Variant`` is the wrapper that holds it and provides
+``Modify``, the lookup methods, and the vector overloads.
+
+Every *intermediate* type must be listed, not only the fully modified
+one. ``Modify`` builds the stack one layer at a time, and each
+intermediate concrete type has to be a member of the variant:
+
+.. code-block:: cpp
+
+  MyEOS_t eos = IdealGas(gm1, Cv);
+  eos = eos.Modify<ShiftedEOS>(shift);   // needs ShiftedEOS<IdealGas>
+  eos = eos.Modify<ScaledEOS>(scale);    // needs ScaledEOS<ShiftedEOS<IdealGas>>
+  eos = eos.Modify<FreeEnergyAmplitudeScaling>(amplitude);
+
+Omitting an intermediate type is not a compile-time error. It aborts at
+runtime with ``Modifier must be in variant``, because the variant must
+be able to hold the result of every ``Modify`` call it might see.
+
+For larger variants, the ``variadic_utils`` helpers that
+``singularity-eos`` uses internally apply a modifier across a whole
+list of models at once. The pattern, which mirrors
+``singularity-eos/eos/eos_type_lists.hpp``, is
+
+.. code-block:: cpp
+
+  #include <singularity-eos/eos/eos_type_lists.hpp>
+  using namespace singularity;
+
+  static constexpr const auto my_models = tl<IdealGas, Gruneisen>{};
+  static constexpr const auto shifted =
+      transform_variadic_list(my_models, al<ShiftedEOS>{});
+  static constexpr const auto scaled =
+      transform_variadic_list(shifted, al<ScaledEOS>{});
+  static constexpr const auto amplitude_scaled =
+      transform_variadic_list(scaled, al<FreeEnergyAmplitudeScaling>{});
+  static constexpr const auto my_list = variadic_utils::concat(
+      my_models, shifted, scaled, amplitude_scaled);
+  using MyEOS_t = typename decltype(tl_to_Variant(my_list))::vt;
+
+Note that applying a modifier across a list multiplies the number of
+types in the variant, and every alternative is instantiated for every
+call site. Adding one modifier over the full default list would roughly
+double its size, so list only the combinations your code actually uses.
+
 Undoing Modifiers
 ------------------
 
-Modifiers can also be undone, extracting the underlying EOS. Continuing the example above,
+Modifiers can also be undone, extracting the underlying EOS. Continuing
+the ``my_eos`` example from :ref:`Composing Modifiers<composing-modifiers>`,
 
 .. code-block:: cpp
 
@@ -420,6 +620,7 @@ section<using-eos>`) are transformed to match:
 * ``ShiftedEOS`` adds the shift to both bounds.
 * ``ScaledEOS`` multiplies both bounds by the scale factor. Since the
   scale factor is required to be positive, this preserves their ordering.
+* ``FreeEnergyAmplitudeScaling`` multiplies both bounds by the amplitude factor.
 * ``RelativisticEOS`` and ``BilinearRampEOS`` leave energy alone, so the
   bounds pass through unchanged.
 * ``FlooredEnergy`` clamps energy to the per-density cold curve, which
