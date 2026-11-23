@@ -46,10 +46,10 @@ namespace variadic_utils = singularity::variadic_utils;
 
 using EOSBuilder::Modify;
 using singularity::BilinearRampEOS;
-using singularity::ScaledFreeEnergy;
 using singularity::IdealGas;
 using singularity::RelativisticEOS;
 using singularity::ScaledEOS;
+using singularity::ScaledFreeEnergy;
 using singularity::ShiftedEOS;
 using singularity::UnitSystem;
 
@@ -544,10 +544,9 @@ SCENARIO("ScaledFreeEnergy scales the free energy consistently",
     // ScaledFreeEnergy is not yet part of the default
     // variant, so spell out only the combinations this test needs. See
     // test/test_modifier_floored_energy.cpp for the same pattern.
-    using EOS =
-        singularity::Variant<IdealGas, ShiftedEOS<IdealGas>,
-                             ScaledEOS<ShiftedEOS<IdealGas>>,
-                             ScaledFreeEnergy<ScaledEOS<ShiftedEOS<IdealGas>>>>;
+    using EOS = singularity::Variant<IdealGas, ShiftedEOS<IdealGas>,
+                                     ScaledEOS<ShiftedEOS<IdealGas>>,
+                                     ScaledFreeEnergy<ScaledEOS<ShiftedEOS<IdealGas>>>>;
 
     EOS eos = IdealGas(gm1, Cv);
     eos = eos.Modify<ShiftedEOS>(shift);

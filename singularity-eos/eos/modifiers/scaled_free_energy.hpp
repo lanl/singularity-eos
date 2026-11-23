@@ -72,9 +72,7 @@ class ScaledFreeEnergy : public EosBase<ScaledFreeEnergy<T>> {
     t_.CheckParams();
   }
 
-  auto GetOnDevice() {
-    return ScaledFreeEnergy<T>(t_.GetOnDevice(), amplitude_);
-  }
+  auto GetOnDevice() { return ScaledFreeEnergy<T>(t_.GetOnDevice(), amplitude_); }
   inline void Finalize() { t_.Finalize(); }
 
   template <typename Indexer_t = Real *>
