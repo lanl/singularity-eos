@@ -3,6 +3,7 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+- [[PR670]](https://github.com/lanl/singularity-eos/pull/670) Add an eos scaling described by a scale factor applied to the helmholtz free energy.
 - [[PR668]](https://github.com/lanl/singularity-eos/pull/668) Add analytic `InternalEnergyFromDensityPressure` methods to Davis Reactants, Davis Products, MGUsup, and powerMG overriding the iterative solve previously used.
 - [[PR659]](https://github.com/lanl/singularity-eos/pull/659) Add `sesame2spiner::saveAllMaterials` overloads taking a list of matids instead of a list of input files, with optional per-material `Params` overrides, so host codes can generate an sp5 file without writing input decks to disk. Also added an overload taking an already-open `hid_t`, plus `writeSP5RootAttributes`, so a single sp5 file can be built up one material at a time.
 - [[PR658]](https://github.com/lanl/singularity-eos/pull/658) Add `MinimumInternalEnergy`/`MaximumInternalEnergy` to the EOS introspection API, so energy bounds are reachable through modifiers and the `singularity::EOS` variant
