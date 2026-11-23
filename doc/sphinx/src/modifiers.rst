@@ -209,7 +209,60 @@ amplitude.
   reason: assigning the modified object to the default ``EOS`` variant
   will abort at runtime with ``Modifier must be in variant``. To hold an
   amplitude-scaled model in a variant, you must build your own; see
-  :ref:`modifier-ordering`.
+  :ref:`custom-variant-modifiers`.
+
+.. _scaled-free-energy-ordering:
+
+Where to Place ``ScaledFreeEnergy``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``ScaledFreeEnergy`` is multiplicative, so by the rules in
+:ref:`modifier-ordering` it commutes exactly with ``ScaledEOS``:
+``ScaledFreeEnergy<ScaledEOS<T>>`` and
+``ScaledEOS<ScaledFreeEnergy<T>>`` agree on every method. The two are
+not the same transformation, though. ``ScaledEOS`` is a mass rescaling,
+so it applies no amplitude factor to pressure or bulk modulus, although
+it does rescale the density argument. ``ScaledFreeEnergy`` multiplies
+both by :math:`a` and leaves the density argument alone.
+
+Its position relative to ``ShiftedEOS`` does matter. For an underlying
+energy :math:`e_b`, a shift :math:`q`, a scale :math:`s`, and an
+amplitude :math:`a`, the two candidate placements give
+
+.. math::
+
+  \begin{aligned}
+  \mathtt{ScaledFreeEnergy}
+    &\left[\mathtt{ScaledEOS}\left[\mathtt{ShiftedEOS}\right]\right]
+    : \quad e(\rho, T) = a s\, e_b(s \rho, T) + a s q, \\
+  \mathtt{ScaledEOS}
+    &\left[\mathtt{ShiftedEOS}\left[\mathtt{ScaledFreeEnergy}\right]\right]
+    : \quad e(\rho, T) = a s\, e_b(s \rho, T) + s q.
+  \end{aligned}
+
+The two differ only in whether the energy offset :math:`q` picks up the
+amplitude. Placing ``ScaledFreeEnergy`` outside the shift, as in the
+first form, treats the offset the same way ``ScaledEOS`` already does in
+the default variant, and is the recommended choice. Placing it
+innermost, directly on the base model, leaves a host-supplied reference
+energy offset untouched; prefer that form if the amplitude belongs to
+the material's free-energy fit rather than to the assembled EOS.
+
+A custom variant holding an amplitude-scaled, shifted, and scaled ideal
+gas in the recommended order is then
+
+.. code-block:: cpp
+
+  #include <singularity-eos/eos/eos.hpp>
+  #include <singularity-eos/eos/modifiers/scaled_free_energy.hpp>
+  using namespace singularity;
+
+  using MyEOS_t =
+      Variant<IdealGas, ShiftedEOS<IdealGas>, ScaledEOS<ShiftedEOS<IdealGas>>,
+              ScaledFreeEnergy<ScaledEOS<ShiftedEOS<IdealGas>>>>;
+
+Remember that the intermediate types are required as well as the fully
+modified one; see :ref:`custom-variant-modifiers`.
 
 
 The Relativistic EOS
@@ -485,68 +538,56 @@ You can build modifiers up iteratively by, for example:
 
 .. _modifier-ordering:
 
-Choosing a Modifier Order in a Custom Variant
-----------------------------------------------
+Why the Order Matters
+^^^^^^^^^^^^^^^^^^^^^^
 
 A modifier wraps the model below it: in ``Mod<T>``, ``Mod`` transforms
 the inputs on their way down into ``T`` and the outputs on their way
 back up. The *outermost* modifier therefore acts first on every input
-and last on every output. Because of this, the nesting order you choose
-when declaring a custom variant is part of the physics, not a matter of
-taste.
+and last on every output. Because of this, nesting order is part of the
+physics, not a matter of taste.
 
-Two properties determine which orders actually differ:
+Whether two modifiers commute depends on the kind of transformation each
+applies:
 
-* ``ScaledEOS`` and ``ScaledFreeEnergy`` are
-  *multiplicative*. Each multiplies the energy input by a constant on
-  the way down and the outputs by constants on the way up, and constant
-  factors commute, so these two modifiers commute with each other
-  exactly: ``ScaledFreeEnergy<ScaledEOS<T>>`` and
-  ``ScaledEOS<ScaledFreeEnergy<T>>`` agree on every method.
-  Note that they are not the same transformation --- ``ScaledEOS`` is a
-  mass rescaling, so it applies no amplitude factor to pressure or bulk
-  modulus (though it does rescale the density argument), whereas
-  ``ScaledFreeEnergy`` multiplies both by :math:`a` and leaves
-  the density argument alone. They merely commute.
-* ``ShiftedEOS`` is *additive*, so it commutes with neither. Any
-  multiplicative modifier placed outside a shift also rescales the
-  shift.
+* *Multiplicative* modifiers, such as ``ScaledEOS`` and
+  ``ScaledFreeEnergy``, multiply inputs and outputs by constant
+  factors. Constant factors commute, so multiplicative modifiers commute
+  with one another exactly, and the order you choose among them is free.
+  Note that commuting does not make them equivalent: they generally
+  scale different quantities.
+* ``ShiftedEOS`` is *additive*, so it commutes with neither itself nor a
+  multiplicative modifier. A multiplicative modifier placed *outside* a
+  shift rescales the shift along with everything else, while one placed
+  *inside* leaves the shift at its original magnitude. This is the
+  asymmetry to watch: a reference-energy offset does not survive an
+  outer rescaling unchanged.
+* ``BilinearRampEOS`` should always be outermost, which is where the
+  default variant puts it.
 
-The second point is the one that matters in practice. For an underlying
-energy :math:`e_b`, a shift :math:`q`, a scale :math:`s`, and an
-amplitude :math:`a`, the two candidate placements give
+The default variant resolves these choices by nesting ``ShiftedEOS``
+innermost, then ``ScaledEOS``, then ``BilinearRampEOS``. The shift is
+therefore rescaled by the scale factor. When you place an additional
+multiplicative modifier in your own variant, deciding whether it sits
+inside or outside ``ShiftedEOS`` is the substantive decision; see
+:ref:`scaled-free-energy-ordering` for a worked example.
 
-.. math::
+.. _custom-variant-modifiers:
 
-  \begin{aligned}
-  \mathrm{FEAS}\left[\mathrm{Scaled}\left[\mathrm{Shifted}\right]\right]
-    &: \quad e(\rho, T) = a s\, e_b(s \rho, T) + a s q, \\
-  \mathrm{Scaled}\left[\mathrm{Shifted}\left[\mathrm{FEAS}\right]\right]
-    &: \quad e(\rho, T) = a s\, e_b(s \rho, T) + s q.
-  \end{aligned}
+Building a Custom Variant
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The two differ only in whether the energy offset :math:`q` picks up the
-amplitude. Placing ``ScaledFreeEnergy`` outside the shift, as
-in the first form, treats the offset the same way ``ScaledEOS`` already
-does in the default variant, and is the recommended choice. Placing it
-innermost, directly on the base model, leaves a host-supplied reference
-energy offset untouched; prefer that form if the amplitude belongs to
-the material's free-energy fit rather than to the assembled EOS.
-``BilinearRampEOS`` should always be outermost, which is where the
-default variant puts it.
-
-Putting this together, a custom variant holding an amplitude-scaled,
-shifted, and scaled ideal gas looks like
+Any modifier that is not in the default variant must be held in a
+variant you declare yourself. For example, to hold a shifted and scaled
+ideal gas:
 
 .. code-block:: cpp
 
   #include <singularity-eos/eos/eos.hpp>
-  #include <singularity-eos/eos/modifiers/free_energy_scale.hpp>
   using namespace singularity;
 
   using MyEOS_t =
-      Variant<IdealGas, ShiftedEOS<IdealGas>, ScaledEOS<ShiftedEOS<IdealGas>>,
-              ScaledFreeEnergy<ScaledEOS<ShiftedEOS<IdealGas>>>>;
+      Variant<IdealGas, ShiftedEOS<IdealGas>, ScaledEOS<ShiftedEOS<IdealGas>>>;
 
 Use ``singularity::Variant``, not ``singularity::eos_variant``. The
 latter is a bare alias for ``PortsOfCall::variant`` and carries none of
@@ -562,7 +603,6 @@ intermediate concrete type has to be a member of the variant:
   MyEOS_t eos = IdealGas(gm1, Cv);
   eos = eos.Modify<ShiftedEOS>(shift);   // needs ShiftedEOS<IdealGas>
   eos = eos.Modify<ScaledEOS>(scale);    // needs ScaledEOS<ShiftedEOS<IdealGas>>
-  eos = eos.Modify<ScaledFreeEnergy>(amplitude);
 
 Omitting an intermediate type is not a compile-time error. It aborts at
 runtime with ``Modifier must be in variant``, because the variant must
@@ -583,11 +623,13 @@ list of models at once. The pattern, which mirrors
       transform_variadic_list(my_models, al<ShiftedEOS>{});
   static constexpr const auto scaled =
       transform_variadic_list(shifted, al<ScaledEOS>{});
-  static constexpr const auto amplitude_scaled =
-      transform_variadic_list(scaled, al<ScaledFreeEnergy>{});
-  static constexpr const auto my_list = variadic_utils::concat(
-      my_models, shifted, scaled, amplitude_scaled);
+  static constexpr const auto my_list =
+      variadic_utils::concat(my_models, shifted, scaled);
   using MyEOS_t = typename decltype(tl_to_Variant(my_list))::vt;
+
+Each call to ``transform_variadic_list`` wraps every model in the list
+it is given, so modifiers are layered by chaining the calls, exactly as
+in the hand-written form above.
 
 Note that applying a modifier across a list multiplies the number of
 types in the variant, and every alternative is instantiated for every
