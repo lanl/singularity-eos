@@ -22,6 +22,7 @@
 #include <singularity-eos/base/serialization_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_builder.hpp>
+#include <singularity-eos/eos/modifiers/scaled_free_energy.hpp>
 #include <singularity-utils/fast-math/logs.hpp>
 #include <singularity-utils/robust_utils.hpp>
 #include <singularity-utils/root-finding-1d/root_finding.hpp>
@@ -48,6 +49,7 @@ using singularity::BilinearRampEOS;
 using singularity::IdealGas;
 using singularity::RelativisticEOS;
 using singularity::ScaledEOS;
+using singularity::ScaledFreeEnergy;
 using singularity::ShiftedEOS;
 using singularity::UnitSystem;
 
@@ -175,7 +177,6 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder][Modifiers][IdealGas]") {
           eos_ramped.PrintParams();
         }
       }
-
       WHEN("We compute PT derivatives from preferred for the modified EOS") {
         // Choose a representative state
         constexpr Real test_rho = 1.5;
@@ -523,6 +524,124 @@ SCENARIO("UnitSystem  modifier converts units correctly",
 
       REQUIRE(isClose(eos.InternalEnergyFromDensityTemperature(rho_code, temp_code),
                       e_code, 1e-12));
+    }
+  }
+}
+
+SCENARIO("ScaledFreeEnergy scales the free energy consistently",
+         "[Modifiers][FreeEnergyScale][IdealGas]") {
+  GIVEN("A shifted and scaled ideal gas in a variant that admits free energy scaling") {
+    constexpr Real Cv = 2.0;
+    constexpr Real gm1 = 0.5;
+    constexpr Real scale = 2.0;
+    constexpr Real shift = 0.1;
+    // Representative state
+    constexpr Real test_rho = 1.5;
+    constexpr Real test_T = 2.0;
+    constexpr Real fescale = 0.8;
+    constexpr Real EPS = 1.e-12;
+
+    // ScaledFreeEnergy is not yet part of the default
+    // variant, so spell out only the combinations this test needs. See
+    // test/test_modifier_floored_energy.cpp for the same pattern.
+    using EOS = singularity::Variant<IdealGas, ShiftedEOS<IdealGas>,
+                                     ScaledEOS<ShiftedEOS<IdealGas>>,
+                                     ScaledFreeEnergy<ScaledEOS<ShiftedEOS<IdealGas>>>>;
+
+    EOS eos = IdealGas(gm1, Cv);
+    eos = eos.Modify<ShiftedEOS>(shift);
+    eos = eos.Modify<ScaledEOS>(scale);
+
+    WHEN("We apply free energy scaling") {
+      EOS eos_fe_scaled = Modify<ScaledFreeEnergy>(eos, fescale);
+
+      const Real sie1 = eos.InternalEnergyFromDensityTemperature(test_rho, test_T);
+      const Real sie2 =
+          eos_fe_scaled.InternalEnergyFromDensityTemperature(test_rho, test_T);
+
+      THEN("Pressure scales with the amplitude") {
+        const Real P1 = eos.PressureFromDensityTemperature(test_rho, test_T);
+        const Real P2 = eos_fe_scaled.PressureFromDensityTemperature(test_rho, test_T);
+        bool close = isClose(P2, fescale * P1, EPS);
+        if (!close) {
+          printf("Pressure mismatch: fescale*eos = %.14e, scaled eos = %.14e, diff = "
+                 "%.14e\n",
+                 fescale * P1, P2, fescale * P1 - P2);
+        }
+        REQUIRE(close);
+      }
+
+      THEN("Specific internal energy scales with the amplitude") {
+        bool close = isClose(sie2, fescale * sie1, EPS);
+        if (!close) {
+          printf("Specific internal energy mismatch: fescale*eos = %.14e, scaled eos = "
+                 "%.14e, diff = %.14e\n",
+                 fescale * sie1, sie2, fescale * sie1 - sie2);
+        }
+        REQUIRE(close);
+      }
+
+      THEN("Specific heat scales with the amplitude") {
+        const Real cv1 = eos.SpecificHeatFromDensityTemperature(test_rho, test_T);
+        const Real cv2 =
+            eos_fe_scaled.SpecificHeatFromDensityTemperature(test_rho, test_T);
+        bool close = isClose(cv2, fescale * cv1, EPS);
+        if (!close) {
+          printf("Specific heat mismatch: fescale*eos = %.14e, scaled eos = %.14e, diff "
+                 "= %.14e\n",
+                 fescale * cv1, cv2, fescale * cv1 - cv2);
+        }
+        REQUIRE(close);
+      }
+
+      THEN("Bulk modulus scales with the amplitude") {
+        const Real K1 = eos.BulkModulusFromDensityTemperature(test_rho, test_T);
+        const Real K2 = eos_fe_scaled.BulkModulusFromDensityTemperature(test_rho, test_T);
+        bool close = isClose(K2, fescale * K1, EPS);
+        if (!close) {
+          printf("Bulk modulus mismatch: fescale*eos = %.14e, scaled eos = %.14e, diff = "
+                 "%.14e\n",
+                 fescale * K1, K2, fescale * K1 - K2);
+        }
+        REQUIRE(close);
+      }
+
+      THEN("The Gruneisen parameter is unchanged") {
+        const Real G1 = eos.GruneisenParamFromDensityTemperature(test_rho, test_T);
+        const Real G2 =
+            eos_fe_scaled.GruneisenParamFromDensityTemperature(test_rho, test_T);
+        bool close = isClose(G2, G1, EPS);
+        if (!close) {
+          printf("Gruneisen parameter mismatch: eos = %.14e, scaled eos = %.14e, diff = "
+                 "%.14e\n",
+                 G1, G2, G1 - G2);
+        }
+        REQUIRE(close);
+      }
+
+      THEN("T(rho, amplitude*sie) recovers the unscaled temperature") {
+        const Real T2 =
+            eos_fe_scaled.TemperatureFromDensityInternalEnergy(test_rho, fescale * sie1);
+        bool close = isClose(T2, test_T, EPS);
+        if (!close) {
+          printf("Temperature(rho,sie) mismatch: eos = %.14e, scaled eos = %.14e, diff = "
+                 "%.14e\n",
+                 test_T, T2, test_T - T2);
+        }
+        REQUIRE(close);
+      }
+
+      THEN("P(rho, sie) scales with the amplitude") {
+        const Real Pe1 = eos.PressureFromDensityInternalEnergy(test_rho, sie1);
+        const Real Pe2 = eos_fe_scaled.PressureFromDensityInternalEnergy(test_rho, sie2);
+        bool close = isClose(Pe2, fescale * Pe1, EPS);
+        if (!close) {
+          printf("Pressure(rho,sie) mismatch: fescale*eos = %.14e, scaled eos = %.14e, "
+                 "diff = %.14e\n",
+                 fescale * Pe1, Pe2, fescale * Pe1 - Pe2);
+        }
+        REQUIRE(close);
+      }
     }
   }
 }
