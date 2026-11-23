@@ -22,7 +22,7 @@
 #include <singularity-eos/base/serialization_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_builder.hpp>
-#include <singularity-eos/eos/modifiers/free_energy_scale.hpp>
+#include <singularity-eos/eos/modifiers/scaled_free_energy.hpp>
 #include <singularity-utils/fast-math/logs.hpp>
 #include <singularity-utils/robust_utils.hpp>
 #include <singularity-utils/root-finding-1d/root_finding.hpp>
