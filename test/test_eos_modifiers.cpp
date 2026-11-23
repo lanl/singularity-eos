@@ -46,7 +46,7 @@ namespace variadic_utils = singularity::variadic_utils;
 
 using EOSBuilder::Modify;
 using singularity::BilinearRampEOS;
-using singularity::FreeEnergyAmplitudeScaling;
+using singularity::ScaledFreeEnergy;
 using singularity::IdealGas;
 using singularity::RelativisticEOS;
 using singularity::ScaledEOS;
@@ -528,7 +528,7 @@ SCENARIO("UnitSystem  modifier converts units correctly",
   }
 }
 
-SCENARIO("FreeEnergyAmplitudeScaling scales the free energy consistently",
+SCENARIO("ScaledFreeEnergy scales the free energy consistently",
          "[Modifiers][FreeEnergyScale][IdealGas]") {
   GIVEN("A shifted and scaled ideal gas in a variant that admits free energy scaling") {
     constexpr Real Cv = 2.0;
@@ -541,20 +541,20 @@ SCENARIO("FreeEnergyAmplitudeScaling scales the free energy consistently",
     constexpr Real fescale = 0.8;
     constexpr Real EPS = 1.e-12;
 
-    // FreeEnergyAmplitudeScaling is not yet part of the default
+    // ScaledFreeEnergy is not yet part of the default
     // variant, so spell out only the combinations this test needs. See
     // test/test_modifier_floored_energy.cpp for the same pattern.
     using EOS =
         singularity::Variant<IdealGas, ShiftedEOS<IdealGas>,
                              ScaledEOS<ShiftedEOS<IdealGas>>,
-                             FreeEnergyAmplitudeScaling<ScaledEOS<ShiftedEOS<IdealGas>>>>;
+                             ScaledFreeEnergy<ScaledEOS<ShiftedEOS<IdealGas>>>>;
 
     EOS eos = IdealGas(gm1, Cv);
     eos = eos.Modify<ShiftedEOS>(shift);
     eos = eos.Modify<ScaledEOS>(scale);
 
     WHEN("We apply free energy scaling") {
-      EOS eos_fe_scaled = Modify<FreeEnergyAmplitudeScaling>(eos, fescale);
+      EOS eos_fe_scaled = Modify<ScaledFreeEnergy>(eos, fescale);
 
       const Real sie1 = eos.InternalEnergyFromDensityTemperature(test_rho, test_T);
       const Real sie2 =

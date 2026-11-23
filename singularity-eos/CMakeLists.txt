@@ -51,7 +51,7 @@ register_headers(
     eos/eos_helmholtz.hpp
     eos/eos_sap_polynomial.hpp
     eos/eos_type_lists.hpp
-    eos/modifiers/free_energy_scale.hpp
+    eos/modifiers/scaled_free_energy.hpp
     eos/modifiers/modifier_vector_macros.hpp
     eos/modifiers/relativistic_eos.hpp
     eos/modifiers/scaled_eos.hpp

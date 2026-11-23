@@ -20,7 +20,7 @@ innermost modifier outward that order is ``ShiftedEOS``, then
 therefore has the concrete type ``ScaledEOS<ShiftedEOS<IdealGas>>``.
 
 The remaining modifiers documented below --- ``RelativisticEOS``,
-``UnitSystem``, ``FreeEnergyAmplitudeScaling``, ``FlooredEnergy``, and
+``UnitSystem``, ``ScaledFreeEnergy``, ``FlooredEnergy``, and
 ``ZSplit`` --- are *not* members of the default variant. You may still
 use them by naming the concrete modified type directly, or by building
 your own variant as described in :ref:`customization`. See
@@ -139,7 +139,7 @@ The Free-Energy Amplitude Scaling EOS
 -------------------------------------
 
 The ``ScaledEOS`` modifier changes the density at which an underlying
-equation of state is evaluated. ``FreeEnergyAmplitudeScaling`` performs a
+equation of state is evaluated. ``ScaledFreeEnergy`` performs a
 different operation: it scales the Helmholtz free energy at fixed density and
 temperature. If the specific Helmholtz free energy of the underlying model is
 :math:`f(\rho, T)`, then the amplitude-scaled free energy is
@@ -184,17 +184,17 @@ model is evaluated at the inverse-scaled energy:
 
 Thus, unlike ``ScaledEOS``, free-energy amplitude scaling does not change the
 density coordinate of the underlying EOS. For an ideal gas, ``ScaledEOS``
-leaves pressure unchanged, while ``FreeEnergyAmplitudeScaling`` multiplies it
+leaves pressure unchanged, while ``ScaledFreeEnergy`` multiplies it
 by :math:`a`.
 
-The constructor for ``FreeEnergyAmplitudeScaling`` takes the underlying model
+The constructor for ``ScaledFreeEnergy`` takes the underlying model
 and the amplitude. For example, an amplitude-scaled ideal gas might be
 initialized as:
 
 .. code-block:: cpp
 
    using namespace singularity;
-   auto my_eos = FreeEnergyAmplitudeScaling<IdealGas>(IdealGas(gm1, Cv), amplitude);
+   auto my_eos = ScaledFreeEnergy<IdealGas>(IdealGas(gm1, Cv), amplitude);
 
 The amplitude must be strictly positive. A negative amplitude would reverse
 the signs of the heat capacity and bulk modulus, violating thermodynamic
@@ -204,7 +204,7 @@ amplitude.
 
 .. note::
 
-  ``FreeEnergyAmplitudeScaling`` is not in the default variant provided
+  ``ScaledFreeEnergy`` is not in the default variant provided
   by ``singularity-eos``. The example above uses ``auto`` for that
   reason: assigning the modified object to the default ``EOS`` variant
   will abort at runtime with ``Modifier must be in variant``. To hold an
@@ -497,16 +497,16 @@ taste.
 
 Two properties determine which orders actually differ:
 
-* ``ScaledEOS`` and ``FreeEnergyAmplitudeScaling`` are
+* ``ScaledEOS`` and ``ScaledFreeEnergy`` are
   *multiplicative*. Each multiplies the energy input by a constant on
   the way down and the outputs by constants on the way up, and constant
   factors commute, so these two modifiers commute with each other
-  exactly: ``FreeEnergyAmplitudeScaling<ScaledEOS<T>>`` and
-  ``ScaledEOS<FreeEnergyAmplitudeScaling<T>>`` agree on every method.
+  exactly: ``ScaledFreeEnergy<ScaledEOS<T>>`` and
+  ``ScaledEOS<ScaledFreeEnergy<T>>`` agree on every method.
   Note that they are not the same transformation --- ``ScaledEOS`` is a
   mass rescaling, so it applies no amplitude factor to pressure or bulk
   modulus (though it does rescale the density argument), whereas
-  ``FreeEnergyAmplitudeScaling`` multiplies both by :math:`a` and leaves
+  ``ScaledFreeEnergy`` multiplies both by :math:`a` and leaves
   the density argument alone. They merely commute.
 * ``ShiftedEOS`` is *additive*, so it commutes with neither. Any
   multiplicative modifier placed outside a shift also rescales the
@@ -526,7 +526,7 @@ amplitude :math:`a`, the two candidate placements give
   \end{aligned}
 
 The two differ only in whether the energy offset :math:`q` picks up the
-amplitude. Placing ``FreeEnergyAmplitudeScaling`` outside the shift, as
+amplitude. Placing ``ScaledFreeEnergy`` outside the shift, as
 in the first form, treats the offset the same way ``ScaledEOS`` already
 does in the default variant, and is the recommended choice. Placing it
 innermost, directly on the base model, leaves a host-supplied reference
@@ -546,7 +546,7 @@ shifted, and scaled ideal gas looks like
 
   using MyEOS_t =
       Variant<IdealGas, ShiftedEOS<IdealGas>, ScaledEOS<ShiftedEOS<IdealGas>>,
-              FreeEnergyAmplitudeScaling<ScaledEOS<ShiftedEOS<IdealGas>>>>;
+              ScaledFreeEnergy<ScaledEOS<ShiftedEOS<IdealGas>>>>;
 
 Use ``singularity::Variant``, not ``singularity::eos_variant``. The
 latter is a bare alias for ``PortsOfCall::variant`` and carries none of
@@ -562,7 +562,7 @@ intermediate concrete type has to be a member of the variant:
   MyEOS_t eos = IdealGas(gm1, Cv);
   eos = eos.Modify<ShiftedEOS>(shift);   // needs ShiftedEOS<IdealGas>
   eos = eos.Modify<ScaledEOS>(scale);    // needs ScaledEOS<ShiftedEOS<IdealGas>>
-  eos = eos.Modify<FreeEnergyAmplitudeScaling>(amplitude);
+  eos = eos.Modify<ScaledFreeEnergy>(amplitude);
 
 Omitting an intermediate type is not a compile-time error. It aborts at
 runtime with ``Modifier must be in variant``, because the variant must
@@ -584,7 +584,7 @@ list of models at once. The pattern, which mirrors
   static constexpr const auto scaled =
       transform_variadic_list(shifted, al<ScaledEOS>{});
   static constexpr const auto amplitude_scaled =
-      transform_variadic_list(scaled, al<FreeEnergyAmplitudeScaling>{});
+      transform_variadic_list(scaled, al<ScaledFreeEnergy>{});
   static constexpr const auto my_list = variadic_utils::concat(
       my_models, shifted, scaled, amplitude_scaled);
   using MyEOS_t = typename decltype(tl_to_Variant(my_list))::vt;
@@ -620,7 +620,7 @@ section<using-eos>`) are transformed to match:
 * ``ShiftedEOS`` adds the shift to both bounds.
 * ``ScaledEOS`` multiplies both bounds by the scale factor. Since the
   scale factor is required to be positive, this preserves their ordering.
-* ``FreeEnergyAmplitudeScaling`` multiplies both bounds by the amplitude factor.
+* ``ScaledFreeEnergy`` multiplies both bounds by the amplitude factor.
 * ``RelativisticEOS`` and ``BilinearRampEOS`` leave energy alone, so the
   bounds pass through unchanged.
 * ``FlooredEnergy`` clamps energy to the per-density cold curve, which

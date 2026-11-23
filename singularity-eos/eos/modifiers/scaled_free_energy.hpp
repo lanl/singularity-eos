@@ -41,25 +41,25 @@ using namespace eos_base;
 // transformation is valid only while amplitude is positive and fixed with
 // respect to thermodynamic derivatives.
 template <typename T>
-class FreeEnergyAmplitudeScaling : public EosBase<FreeEnergyAmplitudeScaling<T>> {
+class ScaledFreeEnergy : public EosBase<ScaledFreeEnergy<T>> {
  public:
-  SG_ADD_BASE_CLASS_USINGS(FreeEnergyAmplitudeScaling<T>);
+  SG_ADD_BASE_CLASS_USINGS(ScaledFreeEnergy<T>);
   using BaseType = T;
 
   static std::string EosType() {
-    return std::string("FreeEnergyAmplitudeScaling<") + T::EosType() + std::string(">");
+    return std::string("ScaledFreeEnergy<") + T::EosType() + std::string(">");
   }
 
   static std::string EosPyType() {
-    return std::string("FreeEnergyAmplitudeScaling") + T::EosPyType();
+    return std::string("ScaledFreeEnergy") + T::EosPyType();
   }
 
   // Move semantics ensures dynamic memory comes along for the ride.
-  FreeEnergyAmplitudeScaling(T &&t, const Real amplitude)
+  ScaledFreeEnergy(T &&t, const Real amplitude)
       : t_(std::forward<T>(t)), amplitude_(amplitude), inv_amplitude_(1. / amplitude) {
     CheckParams();
   }
-  FreeEnergyAmplitudeScaling() = default;
+  ScaledFreeEnergy() = default;
 
   PORTABLE_INLINE_FUNCTION void CheckParams() const {
     PORTABLE_ALWAYS_REQUIRE(!std::isnan(amplitude_),
@@ -73,7 +73,7 @@ class FreeEnergyAmplitudeScaling : public EosBase<FreeEnergyAmplitudeScaling<T>>
   }
 
   auto GetOnDevice() {
-    return FreeEnergyAmplitudeScaling<T>(t_.GetOnDevice(), amplitude_);
+    return ScaledFreeEnergy<T>(t_.GetOnDevice(), amplitude_);
   }
   inline void Finalize() { t_.Finalize(); }
 
