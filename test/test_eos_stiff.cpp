@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2026. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -11,6 +11,8 @@
 // prepare derivative works, distribute copies to the public, perform
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
+
+// An Agentic assistent was used in creation of this file.
 
 #include <array>
 #include <cmath>
@@ -95,10 +97,12 @@ SCENARIO("StiffGas1", "[StiffGas][StiffGas1]") {
       Kokkos::View<Real[num]> v_pressure("Pressure");
       Kokkos::View<Real[num]> v_bulkmodulus("bmod");
       Kokkos::View<Real[num]> v_gruneisen("Gamma");
+      Kokkos::View<Real[num]> v_inverted_energy("inverted_energy");
       auto h_temperature = Kokkos::create_mirror_view(v_temperature);
       auto h_pressure = Kokkos::create_mirror_view(v_pressure);
       auto h_bulkmodulus = Kokkos::create_mirror_view(v_bulkmodulus);
       auto h_gruneisen = Kokkos::create_mirror_view(v_gruneisen);
+      auto h_inverted_energy = Kokkos::create_mirror_view(v_inverted_energy);
 #else
       // Create arrays for the outputs and then pointers to those arrays that
       // will be passed to the functions in place of the Kokkos views
@@ -106,11 +110,13 @@ SCENARIO("StiffGas1", "[StiffGas][StiffGas1]") {
       std::array<Real, num> h_pressure;
       std::array<Real, num> h_bulkmodulus;
       std::array<Real, num> h_gruneisen;
+      std::array<Real, num> h_inverted_energy;
       // Just alias the existing pointers
       auto v_temperature = h_temperature.data();
       auto v_pressure = h_pressure.data();
       auto v_bulkmodulus = h_bulkmodulus.data();
       auto v_gruneisen = h_gruneisen.data();
+      auto v_inverted_energy = h_inverted_energy.data();
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
       WHEN("A P(rho, e) lookup is performed") {
@@ -124,6 +130,32 @@ SCENARIO("StiffGas1", "[StiffGas][StiffGas1]") {
                         "Energy");
         }
       }
+
+
+      WHEN("An e(rho, P) lookup is performed") {
+        // Supply P independently, rather than producing it from e in this
+        // test, so this checks the analytic inverse against known states.
+        portableFor(
+            "Initialize pressure", 0, 1, PORTABLE_LAMBDA(int i) {
+              v_pressure[0] = 1.01324999999964016e+06;
+              v_pressure[1] = 3.44504999999983162e+07;
+              v_pressure[2] = 6.78877500000010729e+07;
+              v_pressure[3] = 1.01324999999999583e+08;
+            });
+
+        eos.InternalEnergyFromDensityPressure(v_density, v_pressure,
+                                              v_inverted_energy, num);
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+        Kokkos::fence();
+        Kokkos::deep_copy(h_pressure, v_pressure);
+        Kokkos::deep_copy(h_inverted_energy, v_inverted_energy);
+#endif
+        THEN("The returned e(rho, P) should recover the true energy") {
+          array_compare(num, density, h_pressure, h_inverted_energy, energy,
+                        "Density", "Pressure");
+        }
+      }
+
 
       WHEN("A B_S(rho, e) lookup is performed") {
         eos.BulkModulusFromDensityInternalEnergy(v_density, v_energy, v_bulkmodulus, num);
@@ -593,6 +625,34 @@ SCENARIO("Test Stiff Gas Entropy Calls", "[StiffGas][StiffGas5]") {
               nwrong);
           AND_THEN("There are no errors") { REQUIRE(nwrong == 0); }
         }
+      }
+    }
+  }
+}
+SCENARIO("StiffGas e(rho,P) respects the pressure floor",
+         "[StiffGas][InternalEnergyFromDensityPressure]") {
+  GIVEN("A StiffGas EOS with nonzero Pinf") {
+    constexpr Real gm1 = 1.35;
+    constexpr Real Cv = 1816.e4;
+    constexpr Real Pinf = 1.e10;
+    constexpr Real qq = -1167.e7;
+    constexpr Real rho = 2.0;
+
+    const StiffGas eos(gm1, Cv, Pinf, qq);
+    const Real floor_energy = qq + Pinf / rho;
+
+    WHEN("pressure is at or below its allowable floor") {
+      const Real energy_at_floor =
+          eos.InternalEnergyFromDensityPressure(rho, -Pinf);
+      const Real energy_below_floor =
+          eos.InternalEnergyFromDensityPressure(rho, -2.0 * Pinf);
+
+      THEN("the limiting energy and pressure are returned") {
+        REQUIRE(isClose(energy_at_floor, floor_energy, 1.e-14));
+        REQUIRE(isClose(energy_below_floor, floor_energy, 1.e-14));
+        REQUIRE(isClose(
+            eos.PressureFromDensityInternalEnergy(rho, energy_at_floor),
+            -Pinf, 1.e-14));
       }
     }
   }
