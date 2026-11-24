@@ -131,7 +131,6 @@ SCENARIO("StiffGas1", "[StiffGas][StiffGas1]") {
         }
       }
 
-
       WHEN("An e(rho, P) lookup is performed") {
         // Supply P independently, rather than producing it from e in this
         // test, so this checks the analytic inverse against known states.
@@ -143,19 +142,18 @@ SCENARIO("StiffGas1", "[StiffGas][StiffGas1]") {
               v_pressure[3] = 1.01324999999999583e+08;
             });
 
-        eos.InternalEnergyFromDensityPressure(v_density, v_pressure,
-                                              v_inverted_energy, num);
+        eos.InternalEnergyFromDensityPressure(v_density, v_pressure, v_inverted_energy,
+                                              num);
 #ifdef PORTABILITY_STRATEGY_KOKKOS
         Kokkos::fence();
         Kokkos::deep_copy(h_pressure, v_pressure);
         Kokkos::deep_copy(h_inverted_energy, v_inverted_energy);
 #endif
         THEN("The returned e(rho, P) should recover the true energy") {
-          array_compare(num, density, h_pressure, h_inverted_energy, energy,
-                        "Density", "Pressure");
+          array_compare(num, density, h_pressure, h_inverted_energy, energy, "Density",
+                        "Pressure");
         }
       }
-
 
       WHEN("A B_S(rho, e) lookup is performed") {
         eos.BulkModulusFromDensityInternalEnergy(v_density, v_energy, v_bulkmodulus, num);
@@ -642,17 +640,15 @@ SCENARIO("StiffGas e(rho,P) respects the pressure floor",
     const Real floor_energy = qq + Pinf / rho;
 
     WHEN("pressure is at or below its allowable floor") {
-      const Real energy_at_floor =
-          eos.InternalEnergyFromDensityPressure(rho, -Pinf);
+      const Real energy_at_floor = eos.InternalEnergyFromDensityPressure(rho, -Pinf);
       const Real energy_below_floor =
           eos.InternalEnergyFromDensityPressure(rho, -2.0 * Pinf);
 
       THEN("the limiting energy and pressure are returned") {
         REQUIRE(isClose(energy_at_floor, floor_energy, 1.e-14));
         REQUIRE(isClose(energy_below_floor, floor_energy, 1.e-14));
-        REQUIRE(isClose(
-            eos.PressureFromDensityInternalEnergy(rho, energy_at_floor),
-            -Pinf, 1.e-14));
+        REQUIRE(isClose(eos.PressureFromDensityInternalEnergy(rho, energy_at_floor),
+                        -Pinf, 1.e-14));
       }
     }
   }

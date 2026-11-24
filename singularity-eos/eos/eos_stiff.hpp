@@ -87,7 +87,8 @@ class StiffGas : public EosBase<StiffGas> {
   PORTABLE_INLINE_FUNCTION void InternalEnergyFromDensityPressure(
       const Real rho, const Real P, Real &sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    sie = (P > -_Pinf) ? _qq + robust::ratio(P + (1.0 + _gm1) * _Pinf, _gm1 * rho) : _qq + robust::ratio(_Pinf,rho);
+    sie = (P > -_Pinf) ? _qq + robust::ratio(P + (1.0 + _gm1) * _Pinf, _gm1 * rho)
+                       : _qq + robust::ratio(_Pinf, rho);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityPressure(
