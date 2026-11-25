@@ -19,8 +19,8 @@
 #include <utility>
 
 #include <ports-of-call/portability.hpp>
-#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
+#include <singularity-utils/variadic_utils.hpp>
 
 namespace singularity {
 namespace init_utils_impl {
